@@ -1,6 +1,7 @@
 # maze.py
 # Playing with OpenGL
 
+from math           import radians, sin, cos, fmod
 import pygame
 from pygame.locals  import *
 from pygame.event   import Event
@@ -26,8 +27,9 @@ World = {
 }
 
 Player = {
-    "pos":  [0, -1, 0],
-    "dir":  [0, 1, 0],
+    "pos":      [0, -1, 0],
+    "theta":    0,
+    "dir":      [0, 0, 0],
 }
 
 DL = {}
@@ -36,6 +38,9 @@ DL = {}
 
 def vec_add(a, b):
     return (a[0]+b[0], a[1]+b[1], a[2]+b[2])
+
+def vec_mul(v, s):
+    return (v[0]*s, v[1]*s, v[2]*s)
 
 def vec_norm(v):
     return sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2])
@@ -165,12 +170,32 @@ def render(ticks):
 
 # Player
 
-def player_move (x, y, z):
+def init_player():
+    player_turn(0)
+
+def player_turn(by):
+    th = Player["theta"]
+    # This fmod() function divides by 360 and takes the remainder. It
+    # makes sure we are always between 0 and 360 degrees.
+    th = fmod(th + by, 360)
+    Player["theta"] = th
+
+    d = Player["dir"]
+    d[0] = cos(radians(th))
+    d[1] = sin(radians(th))
+
+    print("Player direction:", th, "vector:", d)
+
+def player_walk(by):
+    d = Player["dir"]
+    d = vec_mul(d, by)
+    player_move(d)
+
+def player_move(v):
     p = Player["pos"]
-    p[0] += x
-    p[1] += y
-    p[2] += z
-    print("Player pos: ", p)
+    p = vec_add(p, v)
+    Player["pos"] = p
+    print("Player pos:", p)
 
 # Events
 
@@ -180,17 +205,17 @@ def handle_key(k):
     elif k == K_q:
         pygame.event.post(Event(QUIT))
     elif k == K_a:
-        player_move(-1, 0, 0)
+        player_turn(5)
     elif k == K_d:
-        player_move(1, 0, 0)
+        player_turn(-5)
     elif k == K_w:
-        player_move(0, 1, 0)
+        player_walk(1)
     elif k == K_s:
-        player_move(0, -1, 0)
+        player_walk(-1)
     elif k == K_i:
-        player_move(0, 0, 1)
+        player_move([0, 0, 1])
     elif k == K_j:
-        player_move(0, 0, -1)
+        player_move([0, 0, -1])
         
 def mainloop():
     clock = pygame.time.Clock()
@@ -218,6 +243,7 @@ def main():
     try:
         init_opengl()
         init_world()
+        init_player()
 
         mainloop()
     finally:
