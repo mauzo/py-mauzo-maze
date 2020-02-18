@@ -219,4 +219,4 @@ def main():
     finally:
         pygame.display.quit()
 
-if __name__ == '__main__': main()
+main()
