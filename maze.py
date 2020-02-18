@@ -7,6 +7,8 @@ from pygame.event   import Event
 from OpenGL.GL      import *
 from OpenGL.GLU     import *
 
+# Data
+
 WINSIZE = (1024, 768)
 
 World = {
@@ -27,6 +29,8 @@ Player = {
 
 DL = {}
 
+# Vector operations
+
 def vec_add(a, b):
     return (a[0]+b[0], a[1]+b[1], a[2]+b[2])
 
@@ -45,6 +49,7 @@ def vec_cross(a, b):
             a[2]*b[0] - a[0]*b[2],
             a[0]*b[1] - a[1]*b[0],)
 
+# Drawing
 
 def draw_cube_10():
     glBegin(GL_QUADS)
@@ -108,6 +113,8 @@ def draw_floors():
         glVertex3f(x1, y2, z)
         glEnd()
 
+# Init
+
 def init_display():
     pygame.init()
     pygame.display.set_mode(WINSIZE, OPENGL|DOUBLEBUF)
@@ -134,6 +141,8 @@ def init_world():
 
     DL["world"] = dl
 
+#  Render
+
 def render_clear():
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
 
@@ -151,6 +160,16 @@ def render(ticks):
     render_camera()
     glCallList(DL["world"])
 
+# Player
+
+def player_move (x, y):
+    p = Player["pos"]
+    p[0] += x
+    p[1] += y
+    print("Player pos: ", p)
+
+# Events
+
 def handle_key(k):
     if k == K_ESCAPE:
         pygame.event.post(Event(QUIT))
@@ -164,12 +183,6 @@ def handle_key(k):
         player_move(0, 1)
     elif k == K_s:
         player_move(0, -1)
-
-def player_move (x, y):
-    p = Player["pos"]
-    p[0] += x
-    p[1] += y
-    print("Player pos: ", p)
 
 def mainloop():
     clock = pygame.time.Clock()
@@ -187,6 +200,8 @@ def mainloop():
         render(pygame.time.get_ticks())
         pygame.display.flip()
         clock.tick(80)
+
+# Main
 
 def main():
     "run the maze"
