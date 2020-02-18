@@ -45,26 +45,6 @@ def vec_cross(a, b):
             a[2]*b[0] - a[0]*b[2],
             a[0]*b[1] - a[1]*b[0],)
 
-def drawcube():
-    "draw the cube"
-    allpoints = list(zip(CUBE_POINTS, CUBE_COLORS))
-
-    glBegin(GL_QUADS)
-    for face in CUBE_QUAD_VERTS:
-        for vert in face:
-            pos, color = allpoints[vert]
-            glColor3fv(color)
-            glVertex3fv(pos)
-    glEnd()
-
-    glColor3f(1.0, 1.0, 1.0)
-    glBegin(GL_LINES)
-    for line in CUBE_EDGES:
-        for vert in line:
-            pos, color = allpoints[vert]
-            glVertex3fv(pos)
-
-    glEnd()
 
 def draw_cube_10():
     glBegin(GL_QUADS)
