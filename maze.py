@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+# maze.py
+# Playing with OpenGL
 
 import pygame
 from pygame.locals  import *
