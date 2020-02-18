@@ -19,6 +19,9 @@ World = {
         { "coords":     (-10, 10, 0, 15, -1),
           "colour":     (0, 0.5, 0),
         },
+        { "coords":     (0, 10, 10, 15, -1),
+          "colour":     (0, 0, 0.6),
+        },
     ],
 }
 
@@ -162,10 +165,11 @@ def render(ticks):
 
 # Player
 
-def player_move (x, y):
+def player_move (x, y, z):
     p = Player["pos"]
     p[0] += x
     p[1] += y
+    p[2] += z
     print("Player pos: ", p)
 
 # Events
@@ -176,14 +180,18 @@ def handle_key(k):
     elif k == K_q:
         pygame.event.post(Event(QUIT))
     elif k == K_a:
-        player_move(-1, 0)
+        player_move(-1, 0, 0)
     elif k == K_d:
-        player_move(1, 0)
+        player_move(1, 0, 0)
     elif k == K_w:
-        player_move(0, 1)
+        player_move(0, 1, 0)
     elif k == K_s:
-        player_move(0, -1)
-
+        player_move(0, -1, 0)
+    elif k == K_i:
+        player_move(0, 0, 1)
+    elif k == K_j:
+        player_move(0, 0, -1)
+        
 def mainloop():
     clock = pygame.time.Clock()
     
@@ -216,3 +224,8 @@ def main():
         pygame.display.quit()
 
 main()
+
+# hit floors
+# gravity
+# look around
+# walls
