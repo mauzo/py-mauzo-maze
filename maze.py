@@ -1,3 +1,4 @@
+
 # maze.py
 # Playing with OpenGL
 
@@ -16,12 +17,19 @@ World = {
     "floors": [
         { "coords":     (-10, -10, 10, 10, -1),
           "colour":     (0.5, 0, 0),
+          "name":       "red",
         },
         { "coords":     (-10, 10, 0, 15, -1),
           "colour":     (0, 0.5, 0),
+          "name":       "green",
         },
         { "coords":     (0, 10, 10, 15, -1),
           "colour":     (0, 0, 0.6),
+          "name":       "blue",
+        },
+        { "coords":     (0, 0, 5, 5, 1),
+          "colour":     (1, 0, 1),
+          "name":       "pink",
         },
     ],
 }
@@ -56,6 +64,23 @@ def vec_cross(a, b):
     return (a[1]*b[2] - a[2]*b[1],
             a[2]*b[0] - a[0]*b[2],
             a[0]*b[1] - a[1]*b[0],)
+
+# Physics
+
+def find_floor_below(v):
+    found = None
+    for f in World["floors"]:
+        c = f["coords"]
+        if v[0] < c[0] or v[1] < c[1]:
+            continue
+        if v[0] > c[2] or v[1] > c[3]:
+            continue
+        if v[2] < c[4]:
+            continue
+        if found and c[4] <= found["coords"][4]:
+            continue
+        found = f
+    return found
 
 # Drawing
 
@@ -195,7 +220,9 @@ def player_move(v):
     p = Player["pos"]
     p = vec_add(p, v)
     Player["pos"] = p
-    print("Player pos:", p)
+
+    f = find_floor_below(p)
+    print("Player pos:", p, "floor:", (f["name"] if f else "<none>"))
 
 # Events
 
@@ -253,5 +280,4 @@ main()
 
 # hit floors
 # gravity
-# look around
 # walls
