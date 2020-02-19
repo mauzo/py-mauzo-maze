@@ -38,6 +38,9 @@ Player = {
     "pos":      [0, -1, 0],
     "theta":    0,
     "dir":      [0, 0, 0],
+    "speed":    0,
+    "jump":     0,
+    "falling":  True,
 }
 
 DL = {}
@@ -45,25 +48,25 @@ DL = {}
 # Vector operations
 
 def vec_add(a, b):
-    return (a[0]+b[0], a[1]+b[1], a[2]+b[2])
+    return [a[0]+b[0], a[1]+b[1], a[2]+b[2]]
 
 def vec_mul(v, s):
-    return (v[0]*s, v[1]*s, v[2]*s)
+    return [v[0]*s, v[1]*s, v[2]*s]
 
 def vec_norm(v):
     return sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2])
 
 def vec_unit(v):
     n = vec_norm(v)
-    return (v[0]/n, v[1]/n, v[2]/n)
+    return [v[0]/n, v[1]/n, v[2]/n]
 
 def vec_dot(a, b):
     return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
 
 def vec_cross(a, b):
-    return (a[1]*b[2] - a[2]*b[1],
+    return [a[1]*b[2] - a[2]*b[1],
             a[2]*b[0] - a[0]*b[2],
-            a[0]*b[1] - a[1]*b[0],)
+            a[0]*b[1] - a[1]*b[0]]
 
 # Physics
 
@@ -184,8 +187,8 @@ def render_camera():
     drc = Player["dir"]
     
     glLoadIdentity()
-    gluLookAt(pos[0], pos[1], pos[2],
-              pos[0]+drc[0], pos[1]+drc[1], pos[2]+drc[2],
+    gluLookAt(pos[0], pos[1], pos[2]+1, # player is 1 unit tall
+              pos[0]+drc[0], pos[1]+drc[1], pos[2]+drc[2]+1,
               0, 0, 1)
 
 def render(ticks):
@@ -216,6 +219,18 @@ def player_walk(by):
     d = vec_mul(d, by)
     player_move(d)
 
+Speed = {
+    "walk":     0.1,
+    "jump":     0.1,
+    "fall":     0.1,
+}
+
+def player_set_speed (to):
+    Player["speed"] = to * Speed["walk"]
+
+def player_set_jump (to):
+    Player["jump"] = to
+
 def player_move(v):
     p = Player["pos"]
     p = vec_add(p, v)
@@ -224,9 +239,47 @@ def player_move(v):
     f = find_floor_below(p)
     print("Player pos:", p, "floor:", (f["name"] if f else "<none>"))
 
+def find_floor_z (pos):
+    f = find_floor_below(pos)
+    if (f):
+        return f["coords"][4] + 0.01
+    else:
+        return None
+
+def player_physics(ticks):
+    pos = Player["pos"]
+    drc = Player["dir"]
+    spd = Player["speed"]
+    jmp = Player["jump"]
+
+    falling     = False
+    fall_speed  = Speed["fall"]
+
+    floor_z = find_floor_z(pos)
+    if (not floor_z or pos[2] > floor_z):
+        falling = True
+        
+    if (jmp):
+        oldz = pos[2]
+        pos = vec_add(pos, (0, 0, Speed["jump"]))
+    elif (falling):
+        oldz = pos[2]
+        pos = vec_add(pos, (0, 0, -fall_speed))
+    elif (spd != 0):
+        pos = vec_add(pos, vec_mul(drc, spd))
+
+    if (floor_z and pos[2] < floor_z):
+        pos[2] = floor_z
+
+    if (pos[2] < -20):
+        print("AAAAAAAAAAAAARGH!!")
+        pygame.event.post(Event(QUIT))
+        
+    Player["pos"] = pos
+
 # Events
 
-def handle_key(k):
+def handle_key(k, down):
     if k == K_ESCAPE:
         pygame.event.post(Event(QUIT))
     elif k == K_q:
@@ -236,13 +289,20 @@ def handle_key(k):
     elif k == K_d:
         player_turn(-5)
     elif k == K_w:
-        player_walk(1)
+        if (down):
+            player_set_speed(1)
+        else:
+            player_set_speed(0)
     elif k == K_s:
-        player_walk(-1)
+        if (down):
+            player_set_speed(-1)
+        else:
+            player_set_speed(0)
     elif k == K_i:
-        player_move([0, 0, 1])
-    elif k == K_j:
-        player_move([0, 0, -1])
+        if (down):
+            player_set_jump(True)
+        else:
+            player_set_jump(False)
         
 def mainloop():
     clock = pygame.time.Clock()
@@ -255,10 +315,16 @@ def mainloop():
                 return
 
             elif event.type == KEYDOWN:
-                handle_key(event.key)
+                handle_key(event.key, True)
+
+            elif event.type == KEYUP:
+                handle_key(event.key, False)
 
         render(pygame.time.get_ticks())
         pygame.display.flip()
+
+        player_physics(clock.get_time())
+        
         clock.tick(80)
 
 # Main
@@ -278,6 +344,6 @@ def main():
 
 main()
 
-# hit floors
-# gravity
 # walls
+# Jump through platforms
+# Move whle jumping
