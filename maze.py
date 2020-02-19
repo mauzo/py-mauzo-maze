@@ -17,29 +17,29 @@ World = {
     "floors": [
         { "coords":     (-10, -10, 10, 10, -1),
           "colour":     (0.5, 0, 0),
-          "name":       "red",
         },
         { "coords":     (-10, 10, 0, 15, -1),
           "colour":     (0, 0.5, 0),
-          "name":       "green",
         },
         { "coords":     (0, 10, 10, 15, -1),
           "colour":     (0, 0, 0.6),
-          "name":       "blue",
         },
-        { "coords":     (0, 0, 5, 5, 1),
+        { "coords":     (0, 0, 5, 5, 2),
           "colour":     (1, 0, 1),
-          "name":       "pink",
+        },
+        { "coords":     (0, 6, 5, 11, 3),
+          "colour":     (1, 1, 0),
         },
     ],
 }
 
 Player = {
     "pos":      [0, -1, 0],
+    "vel":      [0, 0, 0],
     "theta":    0,
     "dir":      [0, 0, 0],
     "speed":    0,
-    "jump":     0,
+    "jump":     False,
     "falling":  True,
 }
 
@@ -201,6 +201,10 @@ def render(ticks):
 def init_player():
     player_turn(0)
 
+def player_die ():
+    print("AAAARGH!!!")
+    event_post_quit()
+
 def player_turn(by):
     th = Player["theta"]
     # This fmod() function divides by 360 and takes the remainder. It
@@ -221,8 +225,8 @@ def player_walk(by):
 
 Speed = {
     "walk":     0.1,
-    "jump":     0.1,
-    "fall":     0.1,
+    "jump":     0.4,
+    "fall":     0.02,
 }
 
 def player_set_speed (to):
@@ -230,14 +234,6 @@ def player_set_speed (to):
 
 def player_set_jump (to):
     Player["jump"] = to
-
-def player_move(v):
-    p = Player["pos"]
-    p = vec_add(p, v)
-    Player["pos"] = p
-
-    f = find_floor_below(p)
-    print("Player pos:", p, "floor:", (f["name"] if f else "<none>"))
 
 def find_floor_z (pos):
     f = find_floor_below(pos)
@@ -247,43 +243,47 @@ def find_floor_z (pos):
         return None
 
 def player_physics(ticks):
-    pos = Player["pos"]
-    drc = Player["dir"]
-    spd = Player["speed"]
-    jmp = Player["jump"]
+    pos     = Player["pos"]
+    vel     = Player["vel"]
+    face    = Player["dir"]
+    speed   = Player["speed"]
+    jump    = Player["jump"]
 
-    falling     = False
-    fall_speed  = Speed["fall"]
+    falling = False
 
     floor_z = find_floor_z(pos)
     if (not floor_z or pos[2] > floor_z):
         falling = True
-        
-    if (jmp):
-        oldz = pos[2]
-        pos = vec_add(pos, (0, 0, Speed["jump"]))
-    elif (falling):
-        oldz = pos[2]
-        pos = vec_add(pos, (0, 0, -fall_speed))
-    elif (spd != 0):
-        pos = vec_add(pos, vec_mul(drc, spd))
+
+    if (falling):
+        vel[2] -= Speed["fall"]
+    else:
+        vel = vec_mul(face, speed)
+        if (jump):
+            vel[2] = Speed["jump"]
+            Player["jump"] = False
+
+    pos = vec_add(pos, vel)    
 
     if (floor_z and pos[2] < floor_z):
         pos[2] = floor_z
 
-    if (pos[2] < -20):
-        print("AAAAAAAAAAAAARGH!!")
-        pygame.event.post(Event(QUIT))
+    if (pos[2] < -10):
+        player_die()
         
     Player["pos"] = pos
+    Player["vel"] = vel
 
 # Events
 
+def event_post_quit ():
+    pygame.event.post(Event(QUIT))
+
 def handle_key(k, down):
     if k == K_ESCAPE:
-        pygame.event.post(Event(QUIT))
+        event_post_quit()
     elif k == K_q:
-        pygame.event.post(Event(QUIT))
+        event_post_quit()
     elif k == K_a:
         player_turn(5)
     elif k == K_d:
@@ -298,11 +298,9 @@ def handle_key(k, down):
             player_set_speed(-1)
         else:
             player_set_speed(0)
-    elif k == K_i:
+    elif k == K_SPACE:
         if (down):
             player_set_jump(True)
-        else:
-            player_set_jump(False)
         
 def mainloop():
     clock = pygame.time.Clock()
