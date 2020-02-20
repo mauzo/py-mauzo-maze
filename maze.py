@@ -284,16 +284,16 @@ def handle_key(k, down):
         event_post_quit()
     elif k == K_q:
         event_post_quit()
-    elif k == K_a:
+    elif k == K_LEFT:
         player_turn(5)
-    elif k == K_d:
+    elif k == K_RIGHT:
         player_turn(-5)
-    elif k == K_w:
+    elif k == K_UP:
         if (down):
             player_set_speed(1)
         else:
             player_set_speed(0)
-    elif k == K_s:
+    elif k == K_DOWN:
         if (down):
             player_set_speed(-1)
         else:
@@ -344,4 +344,4 @@ main()
 
 # walls
 # Jump through platforms
-# Move whle jumping
+# hold a direction
