@@ -17,19 +17,28 @@ World = {
     "floors": [
         { "coords":     (-10, -10, 10, 10, -1),
           "colour":     (0.5, 0, 0),
+          "win":        False,
         },
         { "coords":     (-10, 10, 0, 15, -1),
           "colour":     (0, 0.5, 0),
+          "win":        False,
         },
         { "coords":     (0, 10, 10, 15, -1),
           "colour":     (0, 0, 0.6),
+          "win":        False,
         },
         { "coords":     (0, 0, 5, 5, 2),
           "colour":     (1, 0, 1),
+          "win":        False,
         },
-        { "coords":     (0, 6, 5, 11, 3),
+        { "coords":     (0, 6, 5, 11, 4),
           "colour":     (1, 1, 0),
+          "win":        False,
         },
+        { "coords":     (0, 10, 5, 11, 7),
+          "colour":     (1, 1, 1),
+          "win":        True,
+        }
     ],
 }
 
@@ -205,6 +214,10 @@ def player_die ():
     print("AAAARGH!!!")
     event_post_quit()
 
+
+def player_win ():
+    print("YaaaY!!!!")
+    
 def player_turn(by):
     th = Player["theta"]
     # This fmod() function divides by 360 and takes the remainder. It
