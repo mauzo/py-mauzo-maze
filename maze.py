@@ -33,7 +33,7 @@ World = {
         },
         { "coords":     (-10, 10, 0, 15, -1),
           "colour":     (0, 0.5, 0),
-          "win":        False,
+          "win":        True,
         },
         { "coords":     (0, 10, 10, 15, -1),
           "colour":     (0, 0, 0.6),
@@ -47,9 +47,9 @@ World = {
           "colour":     (1, 1, 0),
           "win":        False,
         },
-        { "coords":     (0, 10, 5, 11, 7),
-          "colour":     (1, 1, 1),
-          "win":        True,
+        { "coords":     (0, 6, 5, 11, 6),
+          "colour":     (1, 1, 0.1),
+          "win":        False,
         }
     ],
 
@@ -57,13 +57,32 @@ World = {
     "doom_z":   -20,
 }
 
+# This dict has information about the camera. The camera moves with the
+# player but has its own direction. Most of these values are just dummies
+# which will be set up by camera_init.
+Camera = {
+    # Are we up to date with the player position?
+    "uptodate": False,
+    # Where is the camera position, relative to the player position?
+    "offset":   [0, 0, 1],
+    # The current position of the camera.
+    "pos":      [0, 0, 0],
+    # The current camera angle, horizontal and vertical.
+    "angle":    [0, 0],
+    # The camera 'look-at' point.
+    "lookat":   [0, 0, 0],
+    # The camera 'up' vector.
+    "up":       [0, 0, 0],
+}
+    
 # This dict has information about the player.
 Player = {
     # Our current position
-    "pos":      [0, -1, 0],
+    "pos":      [-1, 0, 0],
     # Our current veolcity (our speed in the X, Y and Z directions)
     "vel":      [0, 0, 0],
-    # The direction we are facing, in degrees CCW from the +ve X-axis
+    # The horizontal direction we are facing, in degrees CCW
+    # from the +ve X-axis
     "theta":    0,
     # The direction we are facing, as a vector of length 1. This is
     # kept up-to-date by player_turn.
@@ -242,7 +261,8 @@ def init_opengl():
 def init_world():
     dl = glGenLists(1)
     glNewList(dl, GL_COMPILE)
-    draw_floors()
+    draw_cube_10()
+    #draw_floors()
     draw_origin_marker()
     glEndList()
 
@@ -259,13 +279,24 @@ def render_clear():
 # Position the camera based on the player's current position. We put
 # the camera 1 unit above the player's position.
 def render_camera():
-    pos = Player["pos"]
-    drc = Player["dir"]
-    
+    pos     = Camera["pos"]
+    angle   = Camera["angle"]
+
+    # Clear the previous camera position
     glLoadIdentity()
-    gluLookAt(pos[0], pos[1], pos[2]+1,
-              pos[0]+drc[0], pos[1]+drc[1], pos[2]+drc[2]+1,
-              0, 0, 1)
+    # Annoyingly, the camera starts pointing down (z-negative)
+    #glRotatef(90, 0, 0, -1)
+    #glRotatef(90, 0, -1, 0)
+    # Move to the camera position
+    #glTranslatef(pos[0], pos[1], pos[2])
+    # Horizontal rotation
+    #glRotatef(angle[0], 0, 0, 1)
+    # Vertical rotation
+    #glRotatef(angle[1], 1, 0, 0)
+    
+    gluLookAt(pos[0], pos[1], pos[2],
+              look[0], look[1], look[2],
+              up[0], up[1], up[2])
 
 # This is called to render every frame. We clear the window, position the
 # camera, and then call the display list to draw the world.
@@ -273,6 +304,37 @@ def render():
     render_clear()
     render_camera()
     glCallList(DL["world"])
+
+# Camera
+
+# Tell the camera it needs to update itself
+def camera_needs_update ():
+    Camera["uptodate"] = False
+
+# Update the camera position based on the player position
+def camera_update_position ():
+    # If we are already up to date there is nothing to do
+    if (Camera["uptodate"]):
+        return
+
+    # Find our position from the player position and our offset.
+    pos = vec_add(Player["pos"], Camera["offset"])
+    Camera["pos"] = pos
+
+    # Set our horizontal angle to the player's angle. Our vertical
+    # angle is separate.
+    angle = Player["theta"]
+    Camera["angle"][0] = angle
+
+    print("Camera position", pos, "angle", Camera["angle"])
+
+    Camera["uptodate"] = True
+
+def camera_init ():
+    camera_update_position()
+
+def camera_physics ():
+    camera_update_position()
 
 # Player
 
@@ -289,6 +351,7 @@ def player_die ():
 # The player has won...
 def player_win ():
     print("YaaaY!!!!")
+    event_post_quit()
 
 # Turn the player. Changes theta and updates dir to point in the new
 # direction. 'by' is the angle in degrees CCW to turn the player by. 
@@ -306,6 +369,7 @@ def player_turn(by):
     d[1] = sin(radians(th))
 
     print("Player direction:", th, "vector:", d)
+    #camera_needs_update()
 
 # Set the speed we're trying to walk. We will only move if we're on the
 # ground.
@@ -349,6 +413,12 @@ def player_physics(ticks):
             vel[2] = Speed["jump"]
             Player["jump"] = False
 
+    Player["vel"] = vel
+
+    # If there is nothing to do, return
+    if (vel[0] == 0 and vel[1] == 0 and vel[2] == 0):
+        return
+
     # Take the velocity vector we have calculated and add it to our position
     # vector to give our new position.
     pos = vec_add(pos, vel)    
@@ -358,13 +428,14 @@ def player_physics(ticks):
     if (floor and pos[2] < floor_z):
         pos[2] = floor_z
 
+    print("Player move from", Player["pos"], "to", pos)
+
     # If we fall too far we die.
     if (pos[2] < World["doom_z"]):
         player_die()
 
-    # Save our position and velocity for next time.        
     Player["pos"] = pos
-    Player["vel"] = vel
+    #camera_needs_update()
 
 # Events
 # These functions manage things that happen while the program is running.
@@ -379,16 +450,16 @@ def handle_key(k, down):
         event_post_quit()
     elif k == K_q:
         event_post_quit()
-    elif k == K_LEFT:
+    elif k == K_a:
         player_turn(5)
-    elif k == K_RIGHT:
+    elif k == K_d:
         player_turn(-5)
-    elif k == K_UP:
+    elif k == K_w:
         if (down):
             player_set_speed(1)
         else:
             player_set_speed(0)
-    elif k == K_DOWN:
+    elif k == K_s:
         if (down):
             player_set_speed(-1)
         else:
@@ -426,7 +497,8 @@ def mainloop():
         pygame.display.flip()
 
         # Run the physics. Pass in the time taken since the last frame.
-        player_physics(clock.get_time())
+        #player_physics(clock.get_time())
+        #camera_physics()
 
         # Wait if necessary so that we don't draw more frames per second
         # than we want. Any more is just wasting processor time.
@@ -445,6 +517,7 @@ def main():
         init_opengl()
         init_world()
         init_player()
+        camera_init()
 
         # Go into the main loop, which doesn't return until we quit the game.
         mainloop()
@@ -457,3 +530,4 @@ main()
 # walls
 # Jump through platforms
 # hold a direction
+#looking up and down
