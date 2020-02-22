@@ -212,18 +212,51 @@ def draw_origin_marker():
     glVertex3f(0, 0, 1)
     glEnd()
 
+FLOOR_THICKNESS = 0.2
+
 # Draw the floors out of World["floors"]. This breaks each rectangle into
 # two triangles but doesn't subdivide any further; this will probably need
 # changing when we get lights and/or textures.
-def draw_floors():
+def draw_floors ():
     for f in World["floors"]:
-        glBegin(GL_TRIANGLE_FAN)
-        glColor(f["colour"])
         (x1, y1, x2, y2, z) = f["coords"]
+        glColor(f["colour"])
+        
+        glBegin(GL_TRIANGLE_FAN)
         glVertex3f(x1, y1, z)
         glVertex3f(x2, y1, z)
         glVertex3f(x2, y2, z)
         glVertex3f(x1, y2, z)
+        glEnd()
+        glBegin(GL_TRIANGLE_FAN)
+        glVertex3f(x1, y1, z-FLOOR_THICKNESS)
+        glVertex3f(x2, y1, z-FLOOR_THICKNESS)
+        glVertex3f(x2, y2, z-FLOOR_THICKNESS)
+        glVertex3f(x1, y2, z-FLOOR_THICKNESS)
+        glEnd()
+        glBegin(GL_TRIANGLE_FAN)
+        glVertex3f(x1, y1, z-FLOOR_THICKNESS)
+        glVertex3f(x2, y1, z-FLOOR_THICKNESS)
+        glVertex3f(x2, y1, z)
+        glVertex3f(x1, y1, z)
+        glEnd()
+        glBegin(GL_TRIANGLE_FAN)
+        glVertex3f(x1, y2, z)
+        glVertex3f(x2, y2, z)
+        glVertex3f(x2, y2, z-FLOOR_THICKNESS)
+        glVertex3f(x1, y2, z-FLOOR_THICKNESS)
+        glEnd()
+        glBegin(GL_TRIANGLE_FAN)
+        glVertex3f(x1, y1, z-FLOOR_THICKNESS)
+        glVertex3f(x1, y2, z-FLOOR_THICKNESS)
+        glVertex3f(x1, y2, z)
+        glVertex3f(x1, y2, z)
+        glEnd()
+        glBegin(GL_TRIANGLE_FAN)
+        glVertex3f(x2, y1, z-FLOOR_THICKNESS)
+        glVertex3f(x2, y2, z-FLOOR_THICKNESS)
+        glVertex3f(x2, y2, z)
+        glVertex3f(x2, y2, z)
         glEnd()
 
 # Init
