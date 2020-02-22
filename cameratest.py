@@ -10,7 +10,10 @@ Display = {
     "fps":      80,
 }
 
-Angle = [0, 0]
+Camera = {
+    "angle":    [0, 0],
+    "pos":      [0, 0, 0],
+}
 
 # Draw a coloured cube around the origin. Not used; for checking on
 # camera positioning.
@@ -95,21 +98,30 @@ def render_clear():
 # Position the camera based on the player's current position. We put
 # the camera 1 unit above the player's position.
 def render_camera():
+    pos     = Camera["pos"]
+    angle   = Camera["angle"]
+    
     # Clear the previous camera position
     glLoadIdentity()
-    # Annoyingly, the camera starts pointing down (z-negative)
+    # Annoyingly, the camera starts pointing down (-Z).
+    # Rotate so we are pointing down +X with +Y upwards.
     glRotatef(90, 0, 0, 1)
     glRotatef(90, 0, 1, 0)
-    # Move to the camera position
-    #glTranslatef(pos[0], pos[1], pos[2])
-    # Vertical rotation
-    glRotatef(Angle[1], 0, 1, 0)
-    # Horizontal rotation
-    glRotatef(Angle[0], 0, 0, 1)
+
+    # Set the new camera position for this frame. Everything has to be
+    # done backwards because we are moving the world rather than moving
+    # the camera. This is why we rotate before we translate rather than
+    # the other way round.
     
-    #gluLookAt(pos[0], pos[1], pos[2],
-    #          look[0], look[1], look[2],
-    #          up[0], up[1], up[2])
+    # Vertical rotation. We are pointing down +X so we would expect a
+    # CCW rotation about -Y to make +ve angles turn upwards, but as
+    # everthing is backwards we need to turn the other way.
+    glRotatef(angle[1], 0, 1, 0)
+    # Horizontal rotation. Again we rotate about -Z rather than +Z.
+    glRotatef(angle[0], 0, 0, -1)
+    # Move to the camera position. These need to be negative because we
+    # are moving the world rather than moving the camera.
+    glTranslatef(-pos[0], -pos[1], -pos[2])
 
 def render ():
     render_clear()
@@ -120,15 +132,28 @@ def render ():
 def handle_key(k, down):
     if k == K_q:
         pygame.event.post(Event(QUIT))
+    elif k == K_j:
+        Camera["angle"][0] += 5
+    elif k == K_l:
+        Camera["angle"][0] -= 5
+    elif k == K_k:
+        Camera["angle"][1] -= 5
+    elif k == K_i:
+        Camera["angle"][1] += 5
     elif k == K_a:
-        Angle[0] -= 5
+        Camera["pos"][0] -= 1
     elif k == K_d:
-        Angle[0] += 5
-    elif k == K_w:
-        Angle[1] += 5
+        Camera["pos"][0] += 1
     elif k == K_s:
-        Angle[1] -= 5
-    print("New angle", Angle)
+        Camera["pos"][1] -= 1
+    elif k == K_w:
+        Camera["pos"][1] += 1
+    elif k == K_f:
+        Camera["pos"][2] -= 1
+    elif k == K_r:
+        Camera["pos"][2] += 1
+    print("New camera pos", Camera)
+    
 
 # This is the main loop that runs the whole game. We wait for events
 # and handle them as we need to.
