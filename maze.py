@@ -2,7 +2,7 @@
 # maze.py
 # Playing with OpenGL
 
-from math           import radians, sin, cos, fmod
+from math           import radians, sin, cos, fmod, pi
 import pygame
 from pygame.locals  import *
 from pygame.event   import Event
@@ -47,8 +47,8 @@ World = {
           "colour":     (1, 1, 0),
           "win":        False,
         },
-        { "coords":     (0, 6, 5, 11, 6),
-          "colour":     (1, 1, 0.1),
+        { "coords":     (6, 6, 12, 11, 6),
+          "colour":     (1, 1, 1),
           "win":        False,
         }
     ],
@@ -69,10 +69,10 @@ Camera = {
     "pos":      [0, 0, 0],
     # The current camera angle, horizontal and vertical.
     "angle":    [0, 0],
-    # The camera 'look-at' point.
-    "lookat":   [0, 0, 0],
-    # The camera 'up' vector.
-    "up":       [0, 0, 0],
+    # The vector the player walks along.
+    "walk_vec": [0, 0, 0],
+    # The vector the player walks sideways along.
+    "strafe_vec": [0, 0, 0],
 }
     
 # This dict has information about the player.
@@ -81,15 +81,10 @@ Player = {
     "pos":      [-1, 0, 0],
     # Our current veolcity (our speed in the X, Y and Z directions)
     "vel":      [0, 0, 0],
-    # The horizontal direction we are facing, in degrees CCW
-    # from the +ve X-axis
-    "theta":    0,
-    # The direction we are facing, as a vector of length 1. This is
-    # kept up-to-date by player_turn.
-    "dir":      [0, 0, 0],
-    # The speed we want to be walking (in the direction 'dir'). We
-    # only actually walk if we are on a floor.
-    "speed":    0,
+    # Our current walk speed.
+    "walk":     0,
+    # Our current strafe speed.
+    "strafe":   0,
     # True if we are currently jumping.
     "jump":     False,
 }
@@ -261,8 +256,8 @@ def init_opengl():
 def init_world():
     dl = glGenLists(1)
     glNewList(dl, GL_COMPILE)
-    draw_cube_10()
-    #draw_floors()
+    #draw_cube_10()
+    draw_floors()
     draw_origin_marker()
     glEndList()
 
@@ -281,22 +276,28 @@ def render_clear():
 def render_camera():
     pos     = Camera["pos"]
     angle   = Camera["angle"]
-
+    
     # Clear the previous camera position
     glLoadIdentity()
-    # Annoyingly, the camera starts pointing down (z-negative)
-    #glRotatef(90, 0, 0, -1)
-    #glRotatef(90, 0, -1, 0)
-    # Move to the camera position
-    #glTranslatef(pos[0], pos[1], pos[2])
-    # Horizontal rotation
-    #glRotatef(angle[0], 0, 0, 1)
-    # Vertical rotation
-    #glRotatef(angle[1], 1, 0, 0)
+    # Annoyingly, the camera starts pointing down (-Z).
+    # Rotate so we are pointing down +X with +Y upwards.
+    glRotatef(90, 0, 0, 1)
+    glRotatef(90, 0, 1, 0)
+
+    # Set the new camera position for this frame. Everything has to be
+    # done backwards because we are moving the world rather than moving
+    # the camera. This is why we rotate before we translate rather than
+    # the other way round.
     
-    gluLookAt(pos[0], pos[1], pos[2],
-              look[0], look[1], look[2],
-              up[0], up[1], up[2])
+    # Vertical rotation. We are pointing down +X so we would expect a
+    # CCW rotation about -Y to make +ve angles turn upwards, but as
+    # everthing is backwards we need to turn the other way.
+    glRotatef(angle[1], 0, 1, 0)
+    # Horizontal rotation. Again we rotate about -Z rather than +Z.
+    glRotatef(angle[0], 0, 0, -1)
+    # Move to the camera position. These need to be negative because we
+    # are moving the world rather than moving the camera.
+    glTranslatef(-pos[0], -pos[1], -pos[2])
 
 # This is called to render every frame. We clear the window, position the
 # camera, and then call the display list to draw the world.
@@ -311,6 +312,56 @@ def render():
 def camera_needs_update ():
     Camera["uptodate"] = False
 
+# Update the vectors for moving the player.
+def camera_update_movement_vectors ():
+    angle   = Camera["angle"]
+
+    # This is the angle we walk along, in radians
+    walk    = radians(angle[0])
+
+    # This is the angle we walk sideways along
+    strafe  = walk - pi/2
+
+    # This is the direction we walk forwards
+    Camera["walk_vec"] = [cos(walk), sin(walk), 0]
+
+    # This is the direction we walk right
+    Camera["strafe_vec"] = [cos(strafe), sin(strafe), 0]
+
+    print("Camera angle", angle)
+    #print("New vectors walk", Camera["walk_vec"],
+    #        "strafe", Camera["strafe_vec"])
+    
+    camera_needs_update()
+
+# Look up or down.
+def camera_look_updown (by):
+    angle = Camera["angle"]
+    
+    new = angle[1] + by
+    if (new > 90):
+        new = 90
+    if (new < -90):
+        new = -90
+    angle[1] = new
+
+    print("New camera angle", angle)    
+    camera_needs_update()
+
+# Look left or right. -ve means look left.
+def camera_look_leftright (by):
+    angle = Camera["angle"]
+
+    # This fmod() function divides by 360 and takes the remainder.
+    # This makes sure we are always between 0 and 360 degrees.
+    # We subtract 'by' because angles are measured CCW but we want
+    # a +ve 'by' to turn us right. Otherwise it's confusing.
+    angle[0] = fmod(angle[0] - by, 360)
+    if (angle[0] < 0):
+        angle[0] += 360
+    
+    camera_update_movement_vectors()
+
 # Update the camera position based on the player position
 def camera_update_position ():
     # If we are already up to date there is nothing to do
@@ -321,16 +372,12 @@ def camera_update_position ():
     pos = vec_add(Player["pos"], Camera["offset"])
     Camera["pos"] = pos
 
-    # Set our horizontal angle to the player's angle. Our vertical
-    # angle is separate.
-    angle = Player["theta"]
-    Camera["angle"][0] = angle
-
-    print("Camera position", pos, "angle", Camera["angle"])
+    print("Camera position", pos)
 
     Camera["uptodate"] = True
 
 def camera_init ():
+    camera_update_movement_vectors()
     camera_update_position()
 
 def camera_physics ():
@@ -338,10 +385,9 @@ def camera_physics ():
 
 # Player
 
-# When we start we need to set up Player["dir"] based on Player["theta"],
-# so call player_turn to do this.
+# Nothing to do at the moment.
 def init_player():
-    player_turn(0)
+    pass
 
 # The player has died...
 def player_die ():
@@ -353,40 +399,29 @@ def player_win ():
     print("YaaaY!!!!")
     event_post_quit()
 
-# Turn the player. Changes theta and updates dir to point in the new
-# direction. 'by' is the angle in degrees CCW to turn the player by. 
-def player_turn(by):
-    th = Player["theta"]
-    
-    # This fmod() function divides by 360 and takes the remainder. It
-    # makes sure we are always between 0 and 360 degrees.
-    th = fmod(th + by, 360)
-    Player["theta"] = th
-
-    # Calculate the new direction vector.
-    d = Player["dir"]
-    d[0] = cos(radians(th))
-    d[1] = sin(radians(th))
-
-    print("Player direction:", th, "vector:", d)
-    #camera_needs_update()
-
 # Set the speed we're trying to walk. We will only move if we're on the
 # ground.
-def player_set_speed (to):
-    Player["speed"] = to * Speed["walk"]
+def player_walk (to):
+    Player["walk"] = to * Speed["walk"]
+
+# Set the speed we're trying to walk sideways. 
+def player_strafe (to):
+    Player["strafe"] = to * Speed["walk"]
 
 # Set the flag to show we're jumping. We will only jump if we're on the
 # ground.
-def player_set_jump (to):
+def player_jump (to):
     Player["jump"] = to
 
 def player_physics(ticks):
     pos     = Player["pos"]
     vel     = Player["vel"]
-    face    = Player["dir"]
-    speed   = Player["speed"]
+    walk    = Player["walk"]
+    strafe  = Player["strafe"]
     jump    = Player["jump"]
+
+    walk_vec    = Camera["walk_vec"]
+    strafe_vec  = Camera["strafe_vec"]
 
     # Assume we are falling.
     falling = True
@@ -404,15 +439,18 @@ def player_physics(ticks):
         # by the fall speed (actually an acceleration). 
         vel[2] -= Speed["fall"]
     else:
-        # Otherwise, start by multiplying our direction vector by our
+        # Otherwise, start by multiplying our walk vector by our
         # walk speed (which might be negative to walk backwards).
-        vel = vec_mul(face, speed)
+        vel = vec_mul(walk_vec, walk)
+        # Then add our strafe (sideways) vector.
+        vel = vec_add(vel, vec_mul(strafe_vec, strafe))
         # Then, if we are jumping, set our z velocity to be the jump speed
         # and turn off the jump (we only jump once).
         if (jump):
             vel[2] = Speed["jump"]
-            Player["jump"] = False
+            player_jump(False)
 
+    # Save our velocity for next time
     Player["vel"] = vel
 
     # If there is nothing to do, return
@@ -434,8 +472,9 @@ def player_physics(ticks):
     if (pos[2] < World["doom_z"]):
         player_die()
 
+    # Save our new position and tell the camera we've moved.
     Player["pos"] = pos
-    #camera_needs_update()
+    camera_needs_update()
 
 # Events
 # These functions manage things that happen while the program is running.
@@ -450,25 +489,41 @@ def handle_key(k, down):
         event_post_quit()
     elif k == K_q:
         event_post_quit()
-    elif k == K_a:
-        player_turn(5)
-    elif k == K_d:
-        player_turn(-5)
+        
+    elif k == K_i:
+        camera_look_updown(5)
+    elif k == K_k:
+        camera_look_updown(-5)
+    elif k == K_j:
+        camera_look_leftright(-5)
+    elif k == K_l:
+        camera_look_leftright(5)
+        
     elif k == K_w:
         if (down):
-            player_set_speed(1)
+            player_walk(1)
         else:
-            player_set_speed(0)
+            player_walk(0)
     elif k == K_s:
         if (down):
-            player_set_speed(-1)
+            player_walk(-1)
         else:
-            player_set_speed(0)
+            player_walk(0)
+    elif k == K_a:
+        if (down):
+            player_strafe(-1)
+        else:
+            player_strafe(0)
+    elif k == K_d:
+        if (down):
+            player_strafe(1)
+        else:
+            player_strafe(0)
     elif k == K_SPACE:
         # We don't need to clear jump on keyup, this happens automatically
         # after we jump.
         if (down):
-            player_set_jump(True)
+            player_jump(True)
 
 # This is the main loop that runs the whole game. We wait for events
 # and handle them as we need to.
@@ -497,8 +552,8 @@ def mainloop():
         pygame.display.flip()
 
         # Run the physics. Pass in the time taken since the last frame.
-        #player_physics(clock.get_time())
-        #camera_physics()
+        player_physics(clock.get_time())
+        camera_physics()
 
         # Wait if necessary so that we don't draw more frames per second
         # than we want. Any more is just wasting processor time.
