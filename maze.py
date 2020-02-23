@@ -19,6 +19,23 @@ Display = {
     "fps":      80,
 }
 
+# This defines what all the keys do. Each keycode maps to a 2-element tuple;
+# the first says what to do on keydown, the second what to do on keyup.
+# The names are looked up as functions in the current module.
+Key_Bindings = {
+    K_ESCAPE:   (["event_post_quit"],               None),
+    K_q:        (["event_post_quit"],               None),
+    K_i:        (["camera_look_updown", 5],         None),
+    K_k:        (["camera_look_updown", -5],        None),
+    K_j:        (["camera_look_leftright", -5],     None),
+    K_l:        (["camera_look_leftright", 5],      None),
+    K_w:        (["player_walk", 1],                ["player_walk", 0]),
+    K_s:        (["player_walk", -1],               ["player_walk", 0]),
+    K_a:        (["player_strafe", -1],             ["player_strafe", 0]),
+    K_d:        (["player_strafe", 1],              ["player_strafe", 0]),
+    K_SPACE:    (["player_jump", True],             None),
+}
+
 # This defines the world (the level layout).
 World = {
     # A list of all the floors. Floors are horizontal rectangles. Each
@@ -533,45 +550,31 @@ def event_post_quit ():
 
 # Handle a key-up or key-down event. k is the keycode, down is True or False.
 def handle_key(k, down):
-    if k == K_ESCAPE:
-        event_post_quit()
-    elif k == K_q:
-        event_post_quit()
-        
-    elif k == K_i:
-        camera_look_updown(5)
-    elif k == K_k:
-        camera_look_updown(-5)
-    elif k == K_j:
-        camera_look_leftright(-5)
-    elif k == K_l:
-        camera_look_leftright(5)
-        
-    elif k == K_w:
-        if (down):
-            player_walk(1)
-        else:
-            player_walk(0)
-    elif k == K_s:
-        if (down):
-            player_walk(-1)
-        else:
-            player_walk(0)
-    elif k == K_a:
-        if (down):
-            player_strafe(-1)
-        else:
-            player_strafe(0)
-    elif k == K_d:
-        if (down):
-            player_strafe(1)
-        else:
-            player_strafe(0)
-    elif k == K_SPACE:
-        # We don't need to clear jump on keyup, this happens automatically
-        # after we jump.
-        if (down):
-            player_jump(True)
+    # If the keycode is not in our dict, we have nothing to do.
+    if (k not in Key_Bindings):
+        return
+
+    # Find the entry for the keycode, and choose the first part for keydown
+    # and the second for keyup. If we have None then there is nothing to do.
+    bindings = Key_Bindings[k]
+    if (down):
+        binding = bindings[0]
+    else:
+        binding = bindings[1]
+
+    if (binding is None):
+        return
+
+    # The first entry in the list is the function name, the rest are the
+    # arguments for the function.
+    function_name   = binding[0]
+    function_args   = binding[1:]
+
+    # Find the function by looking up in the globals() dict.
+    function        = globals()[function_name]
+    # Call the function, passing the arguments. The * passes the
+    # pieces of the list separately, rather than passing the whole list.
+    function(*function_args)
 
 # This is the main loop that runs the whole game. We wait for events
 # and handle them as we need to.
