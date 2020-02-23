@@ -498,6 +498,8 @@ def player_physics(ticks):
         floor_z = floor["coords"][4] + 0.01
         if (pos[2] <= floor_z):
             falling = False
+            if (floor["win"]):
+                player_win()
 
     if (falling):
         # If we are falling, increase our velocity in the downwards z direction
