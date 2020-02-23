@@ -175,6 +175,32 @@ def quat_mul (q0, q1):
             q0[3]*q1[2] + q0[2]*q1[3] + q0[0]*q1[1] - q0[1]*q1[0],
             q0[3]*q1[3] - q0[0]*q1[0] - q0[1]*q1[1] - q0[2]*q1[2]]
 
+# Convert a quaternion into a matrix which represents the same rotation.
+# Optionally include a translation vector too.
+# Returns the matrix as a flat list for passing to GL.
+def quat_to_matrix (q, v):
+    if (v is None):
+        v = (0.0, 0.0, 0.0)
+    qx2     = q[0] + q[0];
+    qy2     = q[1] + q[1];
+    qz2     = q[2] + q[2];
+    qxqx2   = q[0] * qx2;
+    qxqy2   = q[0] * qy2;
+    qxqz2   = q[0] * qz2;
+    qxqw2   = q[3] * qx2;
+    qyqy2   = q[1] * qy2;
+    qyqz2   = q[1] * qz2;
+    qyqw2   = q[3] * qy2;
+    qzqz2   = q[2] * qz2;
+    qzqw2   = q[3] * qz2;
+
+    # XXX This does a pre-multiply by the translation. Is it easy to
+    # do a post-multiply instead, for camera matrices?
+    return [((1.0 - qyqy2) - qzqz2), (qxqy2 + qzqw2), (qxqz2 - qyqw2), 0.0,
+            (qxqy2 - qzqw2), ((1.0 - qxqx2) - qzqz2), (qyqz2 + qxqw2), 0.0,
+            (qxqz2 + qyqw2), (qyqz2 - qxqw2), ((1.0 - qxqx2) - qyqy2), 0.0,
+            v[0], v[1], v[2], 1.0]
+
 # Physics
 
 # Find the floor below a given position.
