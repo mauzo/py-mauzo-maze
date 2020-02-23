@@ -29,10 +29,10 @@ Key_Bindings = {
     K_k:        (["camera_look_updown", -5],        None),
     K_j:        (["camera_look_leftright", -5],     None),
     K_l:        (["camera_look_leftright", 5],      None),
-    K_w:        (["player_walk", 1],                ["player_walk", 0]),
-    K_s:        (["player_walk", -1],               ["player_walk", 0]),
-    K_a:        (["player_strafe", -1],             ["player_strafe", 0]),
-    K_d:        (["player_strafe", 1],              ["player_strafe", 0]),
+    K_w:        (["player_walk", [1, 0, 0]],        ["player_walk", [-1, 0, 0]]),
+    K_s:        (["player_walk", [-1, 0, 0]],       ["player_walk", [1, 0, 0]]),
+    K_a:        (["player_walk", [0, 1, 0]],        ["player_walk", [0, -1, 0]]),
+    K_d:        (["player_walk", [0, -1, 0]],       ["player_walk", [0, 1, 0]]),
     K_SPACE:    (["player_jump", True],             None),
 }
 
@@ -86,10 +86,8 @@ Camera = {
     "pos":      [0, 0, 0],
     # The current camera angle, horizontal and vertical.
     "angle":    [0, 0],
-    # The vector the player walks along.
-    "walk_vec": [0, 0, 0],
-    # The vector the player walks sideways along.
-    "strafe_vec": [0, 0, 0],
+    # The camera angle as a quaternion
+    "walk_quat": [0, 0, 0, 0],
 }
     
 # This dict has information about the player.
@@ -99,9 +97,7 @@ Player = {
     # Our current veolcity (our speed in the X, Y and Z directions)
     "vel":      [0, 0, 0],
     # Our current walk speed.
-    "walk":     0,
-    # Our current strafe speed.
-    "strafe":   0,
+    "walk":     [0, 0, 0],
     # True if we are currently jumping.
     "jump":     False,
 }
@@ -149,6 +145,35 @@ def vec_cross(a, b):
     return [a[1]*b[2] - a[2]*b[1],
             a[2]*b[0] - a[0]*b[2],
             a[0]*b[1] - a[1]*b[0]]
+
+# Quaternions are an extension of the complex numbers to use 3
+# imaginary units i,j,k. They can be used to represent 3D rotations.
+# Quaternions are represented by 4-element lists [i, j, k, 1].
+
+# Make a quaternion to rotate by 'by' around v
+def quat_rotate_about (by, v):
+    angle   = radians(by/2.0)
+    s       = sin(angle)
+    c       = cos(angle)
+    return [v[0]*s, v[1]*s, v[2]*s, c]
+
+# Apply a quaternion rotation to a vector
+def quat_apply (q, v):
+    x = q[3]*v[0] + q[1]*v[2] - q[2]*v[1]
+    y = q[3]*v[1] + q[2]*v[0] - q[0]*v[2]
+    z = q[3]*v[2] + q[0]*v[1] - q[1]*v[0]
+    w = q[0]*v[0] + q[1]*v[1] + q[2]*v[2]
+
+    return [w*q[0] + x*q[3] - y*q[2] + z*q[1],
+            w*q[1] + y*q[3] - z*q[0] + x*q[2],
+            w*q[2] + z*q[3] - x*q[1] + y*q[0]]
+
+# Multiply two quaternions (apply the rotations one after the other)
+def quat_mul (q0, q1):
+    return [q0[3]*q1[0] + q0[0]*q1[3] + q0[1]*q1[2] - q0[2]*q1[1],
+            q0[3]*q1[1] + q0[1]*q1[3] + q0[2]*q1[0] - q0[0]*q1[2],
+            q0[3]*q1[2] + q0[2]*q1[3] + q0[0]*q1[1] - q0[1]*q1[0],
+            q0[3]*q1[3] - q0[0]*q1[0] - q0[1]*q1[1] - q0[2]*q1[2]]
 
 # Physics
 
@@ -345,7 +370,7 @@ def render_camera():
     # Clear the previous camera position
     glLoadIdentity()
     # Annoyingly, the camera starts pointing down (-Z).
-    # Rotate so we are pointing down +X with +Y upwards.
+    # Rotate so we are pointing down +X with +Z upwards.
     glRotatef(90, 0, 0, 1)
     glRotatef(90, 0, 1, 0)
 
@@ -381,23 +406,11 @@ def camera_needs_update ():
 def camera_update_movement_vectors ():
     angle   = Camera["angle"]
 
-    # This is the angle we walk along, in radians
-    walk    = radians(angle[0])
+    Camera["walk_quat"] = quat_rotate_about(angle[0], [0, 0, 1])
 
-    # This is the angle we walk sideways along
-    strafe  = walk - pi/2
-
-    # This is the direction we walk forwards
-    Camera["walk_vec"] = [cos(walk), sin(walk), 0]
-
-    # This is the direction we walk right
-    Camera["strafe_vec"] = [cos(strafe), sin(strafe), 0]
-
-    print("Camera angle", angle)
+    print("Camera angle", angle, "quat", Camera["walk_quat"])
     #print("New vectors walk", Camera["walk_vec"],
     #        "strafe", Camera["strafe_vec"])
-    
-    camera_needs_update()
 
 # Look up or down.
 def camera_look_updown (by):
@@ -411,7 +424,6 @@ def camera_look_updown (by):
     angle[1] = new
 
     print("New camera angle", angle)    
-    camera_needs_update()
 
 # Look left or right. -ve means look left.
 def camera_look_leftright (by):
@@ -464,14 +476,10 @@ def player_win ():
     print("YaaaY!!!!")
     event_post_quit()
 
-# Set the speed we're trying to walk. We will only move if we're on the
-# ground.
-def player_walk (to):
-    Player["walk"] = to * Speed["walk"]
-
-# Set the speed we're trying to walk sideways. 
-def player_strafe (to):
-    Player["strafe"] = to * Speed["walk"]
+# Set how we're trying to walk. We will only move if we're on the
+# ground. Don't attempt to set a Z coordinate
+def player_walk (v):
+    Player["walk"] = vec_add(Player["walk"], vec_mul(v, Speed["walk"]))
 
 # Set the flag to show we're jumping. We will only jump if we're on the
 # ground.
@@ -482,11 +490,9 @@ def player_physics(ticks):
     pos     = Player["pos"]
     vel     = Player["vel"]
     walk    = Player["walk"]
-    strafe  = Player["strafe"]
     jump    = Player["jump"]
 
-    walk_vec    = Camera["walk_vec"]
-    strafe_vec  = Camera["strafe_vec"]
+    walk_q  = Camera["walk_quat"]
 
     # Assume we are falling.
     falling = True
@@ -504,11 +510,9 @@ def player_physics(ticks):
         # by the fall speed (actually an acceleration). 
         vel[2] -= Speed["fall"]
     else:
-        # Otherwise, start by multiplying our walk vector by our
-        # walk speed (which might be negative to walk backwards).
-        vel = vec_mul(walk_vec, walk)
-        # Then add our strafe (sideways) vector.
-        vel = vec_add(vel, vec_mul(strafe_vec, strafe))
+        # Otherwise, set our velocity to our walk vector rotated to the
+        # camera angle.
+        vel = quat_apply(walk_q, walk)
         # Then, if we are jumping, set our z velocity to be the jump speed
         # and turn off the jump (we only jump once).
         if (jump):
