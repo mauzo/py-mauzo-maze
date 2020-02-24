@@ -41,6 +41,15 @@ Key_Bindings = {
 
 # This defines the world (the level layout).
 World = {
+    "colours":{
+        "Blue":     (0, 0, 0.5),
+        "Green":    (0, 0.5, 0),
+        "Red":      (0.5, 0, 0),
+        "Grey":     (1, 1, 0.5),
+        "Pink":     (1, 0, 1),
+        "White":    (1, 1, 1),
+        "Yellow":   (1, 1, 0),
+     },
     # A list of all the floors. Floors are horizontal rectangles. Each
     # floor has a dict with these keys:
     #   coords      A tuple of (x1, y1, x2, y2, z) defining the rectangle
@@ -48,27 +57,31 @@ World = {
     #   win         True if this is a winning platform, False otherwise
     "floors": [
         { "coords":     (-10, -10, 10, 10, -1),
-          "colour":     (0.5, 0, 0),
+          "colour":     "Red",
           "win":        False,
         },
         { "coords":     (-10, 10, 0, 15, -1),
-          "colour":     (0, 0.5, 0),
-          "win":        True,
+          "colour":     "Green",
+          "win":        False,
         },
         { "coords":     (0, 10, 10, 15, -1),
-          "colour":     (0, 0, 0.6),
+          "colour":     "Blue",
           "win":        False,
         },
         { "coords":     (0, 0, 5, 5, 2),
-          "colour":     (1, 0, 1),
+          "colour":     "Yellow",
           "win":        False,
         },
         { "coords":     (0, 6, 5, 11, 4),
-          "colour":     (1, 1, 0),
+          "colour":     "Pink",
           "win":        False,
         },
         { "coords":     (6, 6, 12, 11, 6),
-          "colour":     (1, 1, 1),
+          "colour":     "White",
+          "win":        True,
+        },
+        { "coords":     (-10, 10, 5, 15, 3),
+          "colour":     "Grey",
           "win":        False,
         }
     ],
@@ -317,9 +330,11 @@ FLOOR_THICKNESS = 0.2
 # two triangles but doesn't subdivide any further; this will probably need
 # changing when we get lights and/or textures.
 def draw_floors ():
+    col = World["colours"]
     for f in World["floors"]:
         (x1, y1, x2, y2, z) = f["coords"]
-        glColor(f["colour"])
+        colname = f["colour"]
+        glColor(col[colname])
         
         glBegin(GL_TRIANGLE_FAN)
         glNormal3f(0, 0, 1)
