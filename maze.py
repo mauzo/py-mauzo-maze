@@ -2,12 +2,13 @@
 # maze.py
 # Playing with OpenGL
 
-from math           import radians, sin, cos, fmod, pi
+from math           import cos, fmod, pi, sin, sqrt, radians
+import numpy        as np
+from OpenGL.GL      import *
+from OpenGL.GLU     import *
 import pygame
 from pygame.locals  import *
 from pygame.event   import Event
-from OpenGL.GL      import *
-from OpenGL.GLU     import *
 
 # Data
 
@@ -115,9 +116,20 @@ DL = {}
 
 # Vector operations
 # These are mathematical operations on 3D vectors. Maybe we should be using
-# a library instead?
+# a library instead? (numpy will not work as-is with 4-vectors, since it
+# doesn't handle the w-coordinate specially.)
 # Vectors are represented as 3-element lists. Currently passing in a 3-element
 # tuple will work as well.
+
+# NOTE: despite the documentation, it is easier to consider GL matrices
+# as being in row-major order, with successive operations pre-
+# multiplied, and the matrix pre-multiplied to a column vector.
+# That is, given a translation T, a rotation R and a vector v calling
+#       glTranslate(...)
+#       glRotate(...)
+# will give R @ T @ v as the transformed vector. This matches the usual
+# conventions, and is equivalent to post-multiplying column-major
+# matrices as the GL documentation describes.
 
 # Add two vectors
 def vec_add(a, b):
@@ -149,6 +161,7 @@ def vec_cross(a, b):
 # Quaternions are an extension of the complex numbers to use 3
 # imaginary units i,j,k. They can be used to represent 3D rotations.
 # Quaternions are represented by 4-element lists [i, j, k, 1].
+# XXX Should I use bivectors instead?
 
 # Make a quaternion to rotate by 'by' around v
 def quat_rotate_about (by, v):
@@ -177,7 +190,7 @@ def quat_mul (q0, q1):
 
 # Convert a quaternion into a matrix which represents the same rotation.
 # Optionally include a translation vector too.
-# Returns the matrix as a flat list for passing to GL.
+# Returns the matrix as a ndarray for passing to GL.
 def quat_to_matrix (q, v):
     if (v is None):
         v = (0.0, 0.0, 0.0)
@@ -196,10 +209,13 @@ def quat_to_matrix (q, v):
 
     # XXX This does a pre-multiply by the translation. Is it easy to
     # do a post-multiply instead, for camera matrices?
-    return [((1.0 - qyqy2) - qzqz2), (qxqy2 + qzqw2), (qxqz2 - qyqw2), 0.0,
-            (qxqy2 - qzqw2), ((1.0 - qxqx2) - qzqz2), (qyqz2 + qxqw2), 0.0,
-            (qxqz2 + qyqw2), (qyqz2 - qxqw2), ((1.0 - qxqx2) - qyqy2), 0.0,
-            v[0], v[1], v[2], 1.0]
+    return np.array([
+        [(1.0 - qyqy2) - qzqz2, qxqy2 + qzqw2, qxqz2 - qyqw2, 0.0],
+        [qxqy2 - qzqw2, (1.0 - qxqx2) - qzqz2, qyqz2 + qxqw2, 0.0],
+        [qxqz2 + qyqw2, qyqz2 - qxqw2, (1.0 - qxqx2) - qyqy2, 0.0],
+            # q11*u1+q12*u2+q13*u3+v1, ...
+        [v[0], v[1], v[2], 1.0],
+    ], dtype=np.float)
 
 # Physics
 
