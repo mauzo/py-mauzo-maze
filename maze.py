@@ -35,6 +35,8 @@ Key_Bindings = {
     K_a:        (["player_walk", [0, 1, 0]],    ["player_walk", [0, -1, 0]]),
     K_d:        (["player_walk", [0, -1, 0]],   ["player_walk", [0, 1, 0]]),
     K_SPACE:    (["player_jump", True],         None),
+    K_F2:       (["toggle", "wireframe"],       None),
+    K_F3:       (["toggle", "backface"],        None),
 }
 
 # This defines the world (the level layout).
@@ -105,6 +107,14 @@ Player = {
     "jump":     False,
     # Have we moved this frame?
     "moved":    True,
+}
+
+# This holds options which can be changed at runtime
+Options = {
+    # Display in wireframe
+    "wireframe":    False,
+    # Show back faces
+    "backface":     False,
 }
 
 # The speeds at which the player walks, jumps and falls.
@@ -321,9 +331,9 @@ def draw_floors ():
         glBegin(GL_TRIANGLE_FAN)
         glNormal3f(0, 0, -1)
         glVertex3f(x1, y1, z-FLOOR_THICKNESS)
-        glVertex3f(x2, y1, z-FLOOR_THICKNESS)
-        glVertex3f(x2, y2, z-FLOOR_THICKNESS)
         glVertex3f(x1, y2, z-FLOOR_THICKNESS)
+        glVertex3f(x2, y2, z-FLOOR_THICKNESS)
+        glVertex3f(x2, y1, z-FLOOR_THICKNESS)
         glEnd()
         glBegin(GL_TRIANGLE_FAN)
         glNormal3f(0, -1, 0)
@@ -342,16 +352,16 @@ def draw_floors ():
         glBegin(GL_TRIANGLE_FAN)
         glNormal3f(-1, 0, 0)
         glVertex3f(x1, y1, z-FLOOR_THICKNESS)
+        glVertex3f(x1, y1, z)
+        glVertex3f(x1, y2, z)
         glVertex3f(x1, y2, z-FLOOR_THICKNESS)
-        glVertex3f(x1, y2, z)
-        glVertex3f(x1, y2, z)
         glEnd()
         glBegin(GL_TRIANGLE_FAN)
         glNormal3f(1, 0, 0)
         glVertex3f(x2, y1, z-FLOOR_THICKNESS)
         glVertex3f(x2, y2, z-FLOOR_THICKNESS)
         glVertex3f(x2, y2, z)
-        glVertex3f(x2, y2, z)
+        glVertex3f(x2, y1, z)
         glEnd()
 
 def draw_world_lights ():
@@ -375,6 +385,9 @@ def init_opengl():
     glEnable(GL_LIGHTING)
     glEnable(GL_COLOR_MATERIAL)
     glEnable(GL_LIGHT0)
+    glEnable(GL_CULL_FACE)
+
+    glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE)
 
     glPointSize(5)
 
@@ -442,6 +455,34 @@ def render():
     render_clear()
     render_camera()
     glCallList(DL["world"])
+
+# Options
+
+# Toggle an option
+def toggle (o):
+    # Change the options
+    Options[o] = not Options[o]
+
+    # Check if we have an update function and call it
+    func = "option_" + o
+    if (func in globals()):
+        f = globals()[func]
+        f(Options[o])
+
+def option_wireframe (on):
+    if (on):
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+    else:
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+
+def option_backface (on):
+    if (on):
+        glDisable(GL_CULL_FACE)
+        # Display back faces bright cyan
+        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1)
+        glMaterialfv(GL_BACK, GL_EMISSION, [0, 1, 1])
+    else:
+        glEnable(GL_CULL_FACE)
 
 # Camera
 
