@@ -2,12 +2,13 @@
 # maze.py
 # Playing with OpenGL
 
-from math           import radians, sin, cos, fmod, pi
+from math           import cos, fmod, pi, sin, sqrt, radians
+import numpy        as np
+from OpenGL.GL      import *
+from OpenGL.GLU     import *
 import pygame
 from pygame.locals  import *
 from pygame.event   import Event
-from OpenGL.GL      import *
-from OpenGL.GLU     import *
 
 # Data
 
@@ -23,17 +24,17 @@ Display = {
 # the first says what to do on keydown, the second what to do on keyup.
 # The names are looked up as functions in the current module.
 Key_Bindings = {
-    K_ESCAPE:   (["event_post_quit"],               None),
-    K_q:        (["event_post_quit"],               None),
-    K_i:        (["camera_look_updown", 5],         None),
-    K_k:        (["camera_look_updown", -5],        None),
-    K_j:        (["camera_look_leftright", -5],     None),
-    K_l:        (["camera_look_leftright", 5],      None),
-    K_w:        (["player_walk", [1, 0, 0]],        ["player_walk", [-1, 0, 0]]),
-    K_s:        (["player_walk", [-1, 0, 0]],       ["player_walk", [1, 0, 0]]),
-    K_a:        (["player_walk", [0, 1, 0]],        ["player_walk", [0, -1, 0]]),
-    K_d:        (["player_walk", [0, -1, 0]],       ["player_walk", [0, 1, 0]]),
-    K_SPACE:    (["player_jump", True],             None),
+    K_ESCAPE:   (["event_post_quit"],           None),
+    K_q:        (["event_post_quit"],           None),
+    K_i:        (["camera_pan", [0, 1]],        ["camera_pan", [0, -1]]),
+    K_k:        (["camera_pan", [0, -1]],       ["camera_pan", [0, 1]]),
+    K_j:        (["camera_pan", [-1, 0]],       ["camera_pan", [1, 0]]),
+    K_l:        (["camera_pan", [1, 0]],        ["camera_pan", [-1, 0]]),
+    K_w:        (["player_walk", [1, 0, 0]],    ["player_walk", [-1, 0, 0]]),
+    K_s:        (["player_walk", [-1, 0, 0]],   ["player_walk", [1, 0, 0]]),
+    K_a:        (["player_walk", [0, 1, 0]],    ["player_walk", [0, -1, 0]]),
+    K_d:        (["player_walk", [0, -1, 0]],   ["player_walk", [0, 1, 0]]),
+    K_SPACE:    (["player_jump", True],         None),
 }
 
 # This defines the world (the level layout).
@@ -86,7 +87,9 @@ Camera = {
     "pos":      [0, 0, 0],
     # The current camera angle, horizontal and vertical.
     "angle":    [0, 0],
-    # The camera angle as a quaternion
+    # The current pan speeds
+    "pan":      [0, 0],
+    # The horizontal camera angle as a quaternion
     "walk_quat": [0, 0, 0, 0],
 }
     
@@ -100,6 +103,8 @@ Player = {
     "walk":     [0, 0, 0],
     # True if we are currently jumping.
     "jump":     False,
+    # Have we moved this frame?
+    "moved":    True,
 }
 
 # The speeds at which the player walks, jumps and falls.
@@ -108,6 +113,7 @@ Speed = {
     "walk":     0.1,
     "jump":     0.4,
     "fall":     0.02,
+    "pan":      0.8,
 }
 
 # This holds display list numbers, to be used by the render functions.
@@ -115,9 +121,20 @@ DL = {}
 
 # Vector operations
 # These are mathematical operations on 3D vectors. Maybe we should be using
-# a library instead?
+# a library instead? (numpy will not work as-is with 4-vectors, since it
+# doesn't handle the w-coordinate specially.)
 # Vectors are represented as 3-element lists. Currently passing in a 3-element
 # tuple will work as well.
+
+# NOTE: despite the documentation, it is easier to consider GL matrices
+# as being in row-major order, with successive operations pre-
+# multiplied, and the matrix pre-multiplied to a column vector.
+# That is, given a translation T, a rotation R and a vector v calling
+#       glTranslate(...)
+#       glRotate(...)
+# will give R @ T @ v as the transformed vector. This matches the usual
+# conventions, and is equivalent to post-multiplying column-major
+# matrices as the GL documentation describes.
 
 # Add two vectors
 def vec_add(a, b):
@@ -149,6 +166,7 @@ def vec_cross(a, b):
 # Quaternions are an extension of the complex numbers to use 3
 # imaginary units i,j,k. They can be used to represent 3D rotations.
 # Quaternions are represented by 4-element lists [i, j, k, 1].
+# XXX Should I use bivectors instead?
 
 # Make a quaternion to rotate by 'by' around v
 def quat_rotate_about (by, v):
@@ -174,6 +192,35 @@ def quat_mul (q0, q1):
             q0[3]*q1[1] + q0[1]*q1[3] + q0[2]*q1[0] - q0[0]*q1[2],
             q0[3]*q1[2] + q0[2]*q1[3] + q0[0]*q1[1] - q0[1]*q1[0],
             q0[3]*q1[3] - q0[0]*q1[0] - q0[1]*q1[1] - q0[2]*q1[2]]
+
+# Convert a quaternion into a matrix which represents the same rotation.
+# Optionally include a translation vector too.
+# Returns the matrix as a ndarray for passing to GL.
+def quat_to_matrix (q, v):
+    if (v is None):
+        v = (0.0, 0.0, 0.0)
+    qx2     = q[0] + q[0];
+    qy2     = q[1] + q[1];
+    qz2     = q[2] + q[2];
+    qxqx2   = q[0] * qx2;
+    qxqy2   = q[0] * qy2;
+    qxqz2   = q[0] * qz2;
+    qxqw2   = q[3] * qx2;
+    qyqy2   = q[1] * qy2;
+    qyqz2   = q[1] * qz2;
+    qyqw2   = q[3] * qy2;
+    qzqz2   = q[2] * qz2;
+    qzqw2   = q[3] * qz2;
+
+    # XXX This does a pre-multiply by the translation. Is it easy to
+    # do a post-multiply instead, for camera matrices?
+    return np.array([
+        [(1.0 - qyqy2) - qzqz2, qxqy2 + qzqw2, qxqz2 - qyqw2, 0.0],
+        [qxqy2 - qzqw2, (1.0 - qxqx2) - qzqz2, qyqz2 + qxqw2, 0.0],
+        [qxqz2 + qyqw2, qyqz2 - qxqw2, (1.0 - qxqx2) - qyqy2, 0.0],
+            # q11*u1+q12*u2+q13*u3+v1, ...
+        [v[0], v[1], v[2], 1.0],
+    ], dtype=np.float)
 
 # Physics
 
@@ -398,67 +445,53 @@ def render():
 
 # Camera
 
-# Tell the camera it needs to update itself
-def camera_needs_update ():
-    Camera["uptodate"] = False
+# Change the camera pan speed
+def camera_pan (v):
+    Camera["pan"][0] += v[0] * Speed["pan"]
+    Camera["pan"][1] += v[1] * Speed["pan"]
 
-# Update the vectors for moving the player.
-def camera_update_movement_vectors ():
-    angle   = Camera["angle"]
+def camera_init ():
+    camera_update_walk_quat()
 
+def camera_update_walk_quat ():
+    angle = Camera["angle"]
     Camera["walk_quat"] = quat_rotate_about(angle[0], [0, 0, 1])
-
     print("Camera angle", angle, "quat", Camera["walk_quat"])
-    #print("New vectors walk", Camera["walk_vec"],
-    #        "strafe", Camera["strafe_vec"])
 
-# Look up or down.
-def camera_look_updown (by):
-    angle = Camera["angle"]
-    
-    new = angle[1] + by
-    if (new > 90):
-        new = 90
-    if (new < -90):
-        new = -90
-    angle[1] = new
+# Update the camera angle if we are panning.
+def camera_do_pan ():
+    pan     = Camera["pan"]
+    if (pan == [0, 0]):
+        return
 
-    print("New camera angle", angle)    
-
-# Look left or right. -ve means look left.
-def camera_look_leftright (by):
-    angle = Camera["angle"]
+    angle   = Camera["angle"]
 
     # This fmod() function divides by 360 and takes the remainder.
     # This makes sure we are always between 0 and 360 degrees.
-    # We subtract 'by' because angles are measured CCW but we want
-    # a +ve 'by' to turn us right. Otherwise it's confusing.
-    angle[0] = fmod(angle[0] - by, 360)
-    if (angle[0] < 0):
-        angle[0] += 360
+    # We subtract pan[0] because angles are measured CCW but we want
+    # a +ve pan to turn us right. Otherwise it's confusing.
+    horiz = fmod(angle[0] - pan[0], 360)
+    if (horiz < 0):
+        horiz += 360
     
-    camera_update_movement_vectors()
+    vert = angle[1] + pan[1]
+    if (vert > 90):
+        vert = 90
+    if (vert < -90):
+        vert = -90
 
-# Update the camera position based on the player position
-def camera_update_position ():
-    # If we are already up to date there is nothing to do
-    if (Camera["uptodate"]):
-        return
+    Camera["angle"]     = [horiz, vert]
+    camera_update_walk_quat()
 
-    # Find our position from the player position and our offset.
-    pos = vec_add(Player["pos"], Camera["offset"])
-    Camera["pos"] = pos
-
-    print("Camera position", pos)
-
-    Camera["uptodate"] = True
-
-def camera_init ():
-    camera_update_movement_vectors()
-    camera_update_position()
-
+# Move the camera if we need to.
 def camera_physics ():
-    camera_update_position()
+    if (Player["moved"]):
+        # Find our position from the player position and our offset.
+        pos = vec_add(Player["pos"], Camera["offset"])
+        Camera["pos"] = pos
+    
+    camera_do_pan()
+
 
 # Player
 
@@ -524,9 +557,13 @@ def player_physics(ticks):
     # Save our velocity for next time
     Player["vel"] = vel
 
-    # If there is nothing to do, return
-    if (vel[0] == 0 and vel[1] == 0 and vel[2] == 0):
+    # If we aren't moving, tell the camera we haven't moved and return.
+    if (vel == [0, 0, 0]):
+        Player["moved"] = False
         return
+
+    # Tell the camera we have moved.
+    Player["moved"] = True
 
     # Take the velocity vector we have calculated and add it to our position
     # vector to give our new position.
@@ -543,9 +580,8 @@ def player_physics(ticks):
     if (pos[2] < World["doom_z"]):
         player_die()
 
-    # Save our new position and tell the camera we've moved.
+    # Save our new position.
     Player["pos"] = pos
-    camera_needs_update()
 
 # Events
 # These functions manage things that happen while the program is running.
