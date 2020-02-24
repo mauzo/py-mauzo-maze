@@ -24,17 +24,17 @@ Display = {
 # the first says what to do on keydown, the second what to do on keyup.
 # The names are looked up as functions in the current module.
 Key_Bindings = {
-    K_ESCAPE:   (["event_post_quit"],               None),
-    K_q:        (["event_post_quit"],               None),
-    K_i:        (["camera_look_updown", 5],         None),
-    K_k:        (["camera_look_updown", -5],        None),
-    K_j:        (["camera_look_leftright", -5],     None),
-    K_l:        (["camera_look_leftright", 5],      None),
-    K_w:        (["player_walk", [1, 0, 0]],        ["player_walk", [-1, 0, 0]]),
-    K_s:        (["player_walk", [-1, 0, 0]],       ["player_walk", [1, 0, 0]]),
-    K_a:        (["player_walk", [0, 1, 0]],        ["player_walk", [0, -1, 0]]),
-    K_d:        (["player_walk", [0, -1, 0]],       ["player_walk", [0, 1, 0]]),
-    K_SPACE:    (["player_jump", True],             None),
+    K_ESCAPE:   (["event_post_quit"],           None),
+    K_q:        (["event_post_quit"],           None),
+    K_i:        (["camera_pan", [0, 1]],        ["camera_pan", [0, -1]]),
+    K_k:        (["camera_pan", [0, -1]],       ["camera_pan", [0, 1]]),
+    K_j:        (["camera_pan", [-1, 0]],       ["camera_pan", [1, 0]]),
+    K_l:        (["camera_pan", [1, 0]],        ["camera_pan", [-1, 0]]),
+    K_w:        (["player_walk", [1, 0, 0]],    ["player_walk", [-1, 0, 0]]),
+    K_s:        (["player_walk", [-1, 0, 0]],   ["player_walk", [1, 0, 0]]),
+    K_a:        (["player_walk", [0, 1, 0]],    ["player_walk", [0, -1, 0]]),
+    K_d:        (["player_walk", [0, -1, 0]],   ["player_walk", [0, 1, 0]]),
+    K_SPACE:    (["player_jump", True],         None),
 }
 
 # This defines the world (the level layout).
@@ -87,7 +87,9 @@ Camera = {
     "pos":      [0, 0, 0],
     # The current camera angle, horizontal and vertical.
     "angle":    [0, 0],
-    # The camera angle as a quaternion
+    # The current pan speeds
+    "pan":      [0, 0],
+    # The horizontal camera angle as a quaternion
     "walk_quat": [0, 0, 0, 0],
 }
     
@@ -101,6 +103,8 @@ Player = {
     "walk":     [0, 0, 0],
     # True if we are currently jumping.
     "jump":     False,
+    # Have we moved this frame?
+    "moved":    True,
 }
 
 # The speeds at which the player walks, jumps and falls.
@@ -109,6 +113,7 @@ Speed = {
     "walk":     0.1,
     "jump":     0.4,
     "fall":     0.02,
+    "pan":      0.8,
 }
 
 # This holds display list numbers, to be used by the render functions.
@@ -440,67 +445,53 @@ def render():
 
 # Camera
 
-# Tell the camera it needs to update itself
-def camera_needs_update ():
-    Camera["uptodate"] = False
+# Change the camera pan speed
+def camera_pan (v):
+    Camera["pan"][0] += v[0] * Speed["pan"]
+    Camera["pan"][1] += v[1] * Speed["pan"]
 
-# Update the vectors for moving the player.
-def camera_update_movement_vectors ():
-    angle   = Camera["angle"]
+def camera_init ():
+    camera_update_walk_quat()
 
+def camera_update_walk_quat ():
+    angle = Camera["angle"]
     Camera["walk_quat"] = quat_rotate_about(angle[0], [0, 0, 1])
-
     print("Camera angle", angle, "quat", Camera["walk_quat"])
-    #print("New vectors walk", Camera["walk_vec"],
-    #        "strafe", Camera["strafe_vec"])
 
-# Look up or down.
-def camera_look_updown (by):
-    angle = Camera["angle"]
-    
-    new = angle[1] + by
-    if (new > 90):
-        new = 90
-    if (new < -90):
-        new = -90
-    angle[1] = new
+# Update the camera angle if we are panning.
+def camera_do_pan ():
+    pan     = Camera["pan"]
+    if (pan == [0, 0]):
+        return
 
-    print("New camera angle", angle)    
-
-# Look left or right. -ve means look left.
-def camera_look_leftright (by):
-    angle = Camera["angle"]
+    angle   = Camera["angle"]
 
     # This fmod() function divides by 360 and takes the remainder.
     # This makes sure we are always between 0 and 360 degrees.
-    # We subtract 'by' because angles are measured CCW but we want
-    # a +ve 'by' to turn us right. Otherwise it's confusing.
-    angle[0] = fmod(angle[0] - by, 360)
-    if (angle[0] < 0):
-        angle[0] += 360
+    # We subtract pan[0] because angles are measured CCW but we want
+    # a +ve pan to turn us right. Otherwise it's confusing.
+    horiz = fmod(angle[0] - pan[0], 360)
+    if (horiz < 0):
+        horiz += 360
     
-    camera_update_movement_vectors()
+    vert = angle[1] + pan[1]
+    if (vert > 90):
+        vert = 90
+    if (vert < -90):
+        vert = -90
 
-# Update the camera position based on the player position
-def camera_update_position ():
-    # If we are already up to date there is nothing to do
-    if (Camera["uptodate"]):
-        return
+    Camera["angle"]     = [horiz, vert]
+    camera_update_walk_quat()
 
-    # Find our position from the player position and our offset.
-    pos = vec_add(Player["pos"], Camera["offset"])
-    Camera["pos"] = pos
-
-    print("Camera position", pos)
-
-    Camera["uptodate"] = True
-
-def camera_init ():
-    camera_update_movement_vectors()
-    camera_update_position()
-
+# Move the camera if we need to.
 def camera_physics ():
-    camera_update_position()
+    if (Player["moved"]):
+        # Find our position from the player position and our offset.
+        pos = vec_add(Player["pos"], Camera["offset"])
+        Camera["pos"] = pos
+    
+    camera_do_pan()
+
 
 # Player
 
@@ -564,9 +555,13 @@ def player_physics(ticks):
     # Save our velocity for next time
     Player["vel"] = vel
 
-    # If there is nothing to do, return
-    if (vel[0] == 0 and vel[1] == 0 and vel[2] == 0):
+    # If we aren't moving, tell the camera we haven't moved and return.
+    if (vel == [0, 0, 0]):
+        Player["moved"] = False
         return
+
+    # Tell the camera we have moved.
+    Player["moved"] = True
 
     # Take the velocity vector we have calculated and add it to our position
     # vector to give our new position.
@@ -583,9 +578,8 @@ def player_physics(ticks):
     if (pos[2] < World["doom_z"]):
         player_die()
 
-    # Save our new position and tell the camera we've moved.
+    # Save our new position.
     Player["pos"] = pos
-    camera_needs_update()
 
 # Events
 # These functions manage things that happen while the program is running.
