@@ -41,7 +41,8 @@ Key_Bindings = {
 
 # This defines the world (the level layout).
 World = {
-    "colours":{
+    # All the colours we use.
+    "colours": {
         "Blue":     (0, 0, 0.5),
         "Green":    (0, 0.5, 0),
         "Red":      (0.5, 0, 0),
@@ -49,7 +50,8 @@ World = {
         "Pink":     (1, 0, 1),
         "White":    (1, 1, 1),
         "Yellow":   (1, 1, 0),
-     },
+    },
+
     # A list of all the floors. Floors are horizontal rectangles. Each
     # floor has a dict with these keys:
     #   coords      A tuple of (x1, y1, x2, y2, z) defining the rectangle
@@ -94,14 +96,12 @@ World = {
 # player but has its own direction. Most of these values are just dummies
 # which will be set up by camera_init.
 Camera = {
-    # Are we up to date with the player position?
-    "uptodate": False,
     # Where is the camera position, relative to the player position?
     "offset":   [0, 0, 1],
     # The current position of the camera.
     "pos":      [0, 0, 0],
     # The current camera angle, horizontal and vertical.
-    "angle":    [0, 0],
+    "angle":    [70, 0],
     # The current pan speeds
     "pan":      [0, 0],
     # The horizontal camera angle as a quaternion
@@ -111,7 +111,7 @@ Camera = {
 # This dict has information about the player.
 Player = {
     # Our current position
-    "pos":      [-1, 0, 0],
+    "pos":      [-4, -8, 0],
     # Our current veolcity (our speed in the X, Y and Z directions)
     "vel":      [0, 0, 0],
     # Our current walk speed.
@@ -382,7 +382,7 @@ def draw_floors ():
 def draw_world_lights ():
     glLightfv(GL_LIGHT0, GL_AMBIENT,    [0.3, 0.3, 0.3, 1])
     glLightfv(GL_LIGHT0, GL_DIFFUSE,    [0.7, 0.7, 0.7, 1])
-    glLightfv(GL_LIGHT0, GL_POSITION,   [0, 1, -0.2, 0])
+    glLightfv(GL_LIGHT0, GL_POSITION,   [0.3, -1.2, 0.4, 0])
 
 # Init
 # Initialise various parts of the game.
