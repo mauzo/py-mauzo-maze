@@ -61,31 +61,38 @@ World = {
     #   colour      A tuple of (red, green, blue)
     #   win         True if this is a winning platform, False otherwise
     "floors": [
-        { "coords":     (-10, -10, 10, 10, -1),
+        { "pos":        (-10, -10, -1),
+          "edges":      ((20, 0, 0), (0, 20, 0)),
           "colour":     "Red",
           "win":        False,
         },
-        { "coords":     (-10, 10, 0, 15, -1),
+        { "pos":        (-10, 10, -1),
+          "edges":      ((10, 0, 0), (0, 5, 0)),
           "colour":     "Green",
           "win":        False,
         },
-        { "coords":     (0, 10, 10, 15, -1),
+        { "pos":        (0, 10, -1),
+          "edges":      ((10, 0, 0), (0, 5, 0)),
           "colour":     "Blue",
           "win":        False,
         },
-        { "coords":     (0, 0, 5, 5, 2),
+        { "pos":        (0, 0, 2),
+          "edges":      ((5, 0, 0), (0, 5, 0)),
           "colour":     "Yellow",
           "win":        False,
         },
-        { "coords":     (0, 6, 5, 11, 4),
+        { "pos":        (0, 6, 4),
+          "edges":      ((5, 0, 0), (0, 5, 0)),
           "colour":     "Pink",
           "win":        False,
         },
-        { "coords":     (6, 6, 12, 11, 6),
+        { "pos":        (6, 6, 6),
+          "edges":      ((6, 0, 0), (0, 5, 0)),
           "colour":     "White",
           "win":        True,
         },
-        { "coords":     (-10, 10, 5, 15, 3),
+        { "pos":        (-10, 10, 3),
+          "edges":      ((15, 0, 0), (0, 5, 0)),
           "colour":     "Grey",
           "win":        False,
         }
@@ -150,18 +157,20 @@ DL = {}
 # Find the floor below a given position.
 # v is the point in space we want to start from.
 # Returns one of the dictionaries from World["floors"], or None.
-# This assumes floors are horizontal rectangles.
+# This assumes floors are horizontal axis-aligned rectangles.
 def find_floor_below(v):
     found = None
     for f in World["floors"]:
-        c = f["coords"]
-        if v[0] < c[0] or v[1] < c[1]:
+        pos = f["pos"]
+        edg = f["edges"]
+
+        if v[0] < pos[0] or v[1] < pos[1]:
             continue
-        if v[0] > c[2] or v[1] > c[3]:
+        if v[0] > pos[0] + edg[0][0] or v[1] > pos[0]+edg[1][1]:
             continue
-        if v[2] < c[4]:
+        if v[2] < pos[2]:
             continue
-        if found and c[4] <= found["coords"][4]:
+        if found and pos[2] <= found["pos"][2]:
             continue
         found = f
     return found
@@ -224,60 +233,55 @@ def draw_origin_marker():
     glVertex3f(0, 0, 1)
     glEnd()
 
-FLOOR_THICKNESS = 0.2
+# Draw a parallelogram. p is the position of one corner. e1,e2 are the
+# vectors along the edges.
+def draw_pgram (p, e1, e2):
+    n = vec_unit(vec_cross(e1, e2)) 
+
+    p1  = vec_add(p, e1)
+    p2  = vec_add(p1, e2)
+    p3  = vec_add(p, e2)
+
+    glBegin(GL_TRIANGLE_FAN)
+    glNormal3d(*n)
+    glVertex3d(*p)
+    glVertex3d(*p1)
+    glVertex3d(*p2)
+    glVertex3d(*p3)
+    glEnd()
+
+# Draw a parallelepiped. p is the position of one corner. e1,e2,e3 are
+# vectors from that corner along the three edges.
+# The edges must be specified right-handed for an outward-facing ppiped.
+def draw_ppiped (p, e1, e2, e3):
+    draw_pgram(p, e1, e2)
+    draw_pgram(p, e2, e3)
+    draw_pgram(p, e3, e1)
+
+    p   = vec_add(p, vec_add(e1, vec_add(e2, e3)))
+    e1  = vec_neg(e1)
+    e2  = vec_neg(e2)
+    e3  = vec_neg(e3)
+
+    draw_pgram(p, e2, e1)
+    draw_pgram(p, e3, e2)
+    draw_pgram(p, e1, e3)
 
 # Draw the floors out of World["floors"]. This breaks each rectangle into
 # two triangles but doesn't subdivide any further; this will probably need
 # changing when we get lights and/or textures.
+FLOOR_THICKNESS = 0.2
 def draw_floors ():
     col = World["colours"]
     for f in World["floors"]:
-        (x1, y1, x2, y2, z) = f["coords"]
         colname = f["colour"]
         glColor(col[colname])
+
+        p           = f["pos"]
+        (e1, e2)    = f["edges"]
+        e3          = [0, 0, -FLOOR_THICKNESS]
         
-        glBegin(GL_TRIANGLE_FAN)
-        glNormal3f(0, 0, 1)
-        glVertex3f(x1, y1, z)
-        glVertex3f(x2, y1, z)
-        glVertex3f(x2, y2, z)
-        glVertex3f(x1, y2, z)
-        glEnd()
-        glBegin(GL_TRIANGLE_FAN)
-        glNormal3f(0, 0, -1)
-        glVertex3f(x1, y1, z-FLOOR_THICKNESS)
-        glVertex3f(x1, y2, z-FLOOR_THICKNESS)
-        glVertex3f(x2, y2, z-FLOOR_THICKNESS)
-        glVertex3f(x2, y1, z-FLOOR_THICKNESS)
-        glEnd()
-        glBegin(GL_TRIANGLE_FAN)
-        glNormal3f(0, -1, 0)
-        glVertex3f(x1, y1, z-FLOOR_THICKNESS)
-        glVertex3f(x2, y1, z-FLOOR_THICKNESS)
-        glVertex3f(x2, y1, z)
-        glVertex3f(x1, y1, z)
-        glEnd()
-        glBegin(GL_TRIANGLE_FAN)
-        glNormal3f(0, 1, 0)
-        glVertex3f(x1, y2, z)
-        glVertex3f(x2, y2, z)
-        glVertex3f(x2, y2, z-FLOOR_THICKNESS)
-        glVertex3f(x1, y2, z-FLOOR_THICKNESS)
-        glEnd()
-        glBegin(GL_TRIANGLE_FAN)
-        glNormal3f(-1, 0, 0)
-        glVertex3f(x1, y1, z-FLOOR_THICKNESS)
-        glVertex3f(x1, y1, z)
-        glVertex3f(x1, y2, z)
-        glVertex3f(x1, y2, z-FLOOR_THICKNESS)
-        glEnd()
-        glBegin(GL_TRIANGLE_FAN)
-        glNormal3f(1, 0, 0)
-        glVertex3f(x2, y1, z-FLOOR_THICKNESS)
-        glVertex3f(x2, y2, z-FLOOR_THICKNESS)
-        glVertex3f(x2, y2, z)
-        glVertex3f(x2, y1, z)
-        glEnd()
+        draw_ppiped(p, e1, e2, e3)
 
 def draw_world_lights ():
     glLightfv(GL_LIGHT0, GL_AMBIENT,    [0.3, 0.3, 0.3, 1])
@@ -490,7 +494,7 @@ def player_physics(ticks):
     # enough to it, we are not falling.
     floor = find_floor_below(pos)
     if (floor):
-        floor_z = floor["coords"][4] + 0.01
+        floor_z = floor["pos"][2] + 0.01
         if (pos[2] <= floor_z):
             falling = False
             if (floor["win"]):
