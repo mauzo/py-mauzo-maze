@@ -21,6 +21,8 @@ Display = {
     "winsize":  (1024, 768),
     # The framerate we are aiming for.
     "fps":      80,
+    # The LHS of the miniview
+    "miniview": 0,
 }
 
 # This defines what all the keys do. Each keycode maps to a 2-element tuple;
@@ -327,17 +329,37 @@ def init_opengl():
 
     glPointSize(5)
 
-def display_set_viewport (w, h):
+# Set up the viewport and projection after a window resize
+def display_set_viewport (full_w, h):
+    w       = full_w - 250
     aspect  = w/h
+
+    Display["miniview"] = w + 50
 
     glViewport(0, 0, w, h)
 
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-    #gluPerspective(45.0, aspect, 1.0, 20.0)
-    glOrtho(-10, 10, 0, 10, 0, 40)
+    gluPerspective(45.0, aspect, 1.0, 20.0)
+    #glOrtho(-10, 10, 0, 10, 0, 40)
 
     glMatrixMode(GL_MODELVIEW)
+
+# Push into the miniview. Leaves GL_PROJECTION selected and cleared.
+def display_push_miniview ():
+    x = Display["miniview"]
+    glPushAttrib(GL_VIEWPORT_BIT|GL_TRANSFORM_BIT|GL_ENABLE_BIT)
+    glViewport(x, 0, 200, 200)
+    glMatrixMode(GL_PROJECTION)
+    glPushMatrix()
+    glLoadIdentity()
+
+# Pop from the miniview. Make sure to balance calls to glPush/PopAttrib
+# before calling this.
+def display_pop_miniview ():
+    glMatrixMode(GL_PROJECTION)
+    glPopMatrix()
+    glPopAttrib()
 
 # Build a display list representing the world, so we don't have to
 # calculate all the triangles every frame.
@@ -388,12 +410,32 @@ def render_camera():
     # are moving the world rather than moving the camera.
     glTranslatef(-pos[0], -pos[1], -pos[2])
 
+def render_miniview ():
+    display_push_miniview()
+    glOrtho(-0.5, 0.5, -0.5, 0.5, 0, 1)
+
+    pos = Player["pos"]
+
+    glMatrixMode(GL_MODELVIEW)
+    # We are happy with the default orientation (down -Z)
+    glLoadIdentity()
+    glTranslatef(-pos[0], -pos[1], -pos[2])
+
+    render_world()
+
+    display_pop_miniview()
+
+def render_world ():
+    glCallList(DL["world"])
+
 # This is called to render every frame. We clear the window, position the
 # camera, and then call the display list to draw the world.
 def render():
     render_clear()
     render_camera()
-    glCallList(DL["world"])
+    render_world()
+
+    render_miniview()
 
 # Try a select buffer operation with the current view
 def render_try_select (mode):
