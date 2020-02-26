@@ -40,6 +40,8 @@ Key_Bindings = {
     K_SPACE:    (["player_jump", True],         None),
     K_F2:       (["toggle", "wireframe"],       None),
     K_F3:       (["toggle", "backface"],        None),
+    K_F4:       (["render_try_select", "select"],         None),
+    K_F6:       (["render_try_select", "feedback"],       None),
 }
 
 # This defines the world (the level layout).
@@ -220,8 +222,14 @@ def draw_cube_10():
     glVertex3f(-10, 10, -10)
     glEnd()
 
+Select = ["dummy"]
+def new_select_name (n):
+    Select.append(n)
+    glLoadName(len(Select))
+
 # Draw a marker at the origin so we can see where it is.
 def draw_origin_marker():
+    new_select_name("marker")
     glColor3f(1, 1, 1)
 
     glBegin(GL_POINTS)
@@ -254,8 +262,11 @@ def draw_pgram (p, e1, e2):
 # vectors from that corner along the three edges.
 # The edges must be specified right-handed for an outward-facing ppiped.
 def draw_ppiped (p, e1, e2, e3):
+    #glPushName(1)
     draw_pgram(p, e1, e2)
+    #glLoadName(2)
     draw_pgram(p, e2, e3)
+    #glLoadName(3)
     draw_pgram(p, e3, e1)
 
     p   = vec_add(p, vec_add(e1, vec_add(e2, e3)))
@@ -263,9 +274,13 @@ def draw_ppiped (p, e1, e2, e3):
     e2  = vec_neg(e2)
     e3  = vec_neg(e3)
 
+    #glLoadName(4)
     draw_pgram(p, e2, e1)
+    #glLoadName(5)
     draw_pgram(p, e3, e2)
+    #glLoadName(6)
     draw_pgram(p, e1, e3)
+    #glPopName()
 
 # Draw the floors out of World["floors"]. This breaks each rectangle into
 # two triangles but doesn't subdivide any further; this will probably need
@@ -281,6 +296,7 @@ def draw_floors ():
         (e1, e2)    = f["edges"]
         e3          = [0, 0, -FLOOR_THICKNESS]
         
+        new_select_name(colname)
         draw_ppiped(p, e1, e2, e3)
 
 def draw_world_lights ():
@@ -318,7 +334,8 @@ def display_set_viewport (w, h):
 
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-    gluPerspective(45.0, aspect, 0.1, 100.0)
+    #gluPerspective(45.0, aspect, 1.0, 20.0)
+    glOrtho(-10, 10, 0, 10, 0, 40)
 
     glMatrixMode(GL_MODELVIEW)
 
@@ -377,6 +394,34 @@ def render():
     render_clear()
     render_camera()
     glCallList(DL["world"])
+
+# Try a select buffer operation with the current view
+def render_try_select (mode):
+    glPushAttrib(GL_ENABLE_BIT)
+    if mode == "feedback":
+        glFeedbackBuffer(4096, GL_3D)
+        glRenderMode(GL_FEEDBACK)
+    else:
+        glSelectBuffer(4096)
+        glRenderMode(GL_SELECT)
+        glInitNames()
+        glPushName(1)
+    glDisable(GL_CULL_FACE)
+
+    render()
+    buf = glRenderMode(GL_RENDER)
+    glPopAttrib()
+
+    if len(buf) == 0:
+        print("No", mode, "records!")
+    for h in buf:
+        if mode == "feedback":
+            (typ, *vs) = h
+            print(typ, ",", [v.vertex[2] for v in vs])
+        else:
+            (mn, mx, nms) = h
+            print("min", mn, "max", mx, "names", nms,
+                Select[nms[0] - 1])
 
 # Options
 
