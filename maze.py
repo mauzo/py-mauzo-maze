@@ -294,7 +294,8 @@ def draw_world_lights ():
 # Start up pygame and open the window.
 def init_display():
     pygame.init()
-    pygame.display.set_mode(Display["winsize"], OPENGL|DOUBLEBUF)
+    pygame.display.set_mode(Display["winsize"],
+        OPENGL|DOUBLEBUF|RESIZABLE)
 
 # Set up the initial OpenGL state, including the projection matrix.
 def init_opengl():
@@ -310,8 +311,10 @@ def init_opengl():
 
     glPointSize(5)
 
-    winsize = Display["winsize"]
-    aspect  = winsize[0]/winsize[1]
+def display_set_viewport (w, h):
+    aspect  = w/h
+
+    glViewport(0, 0, w, h)
 
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
@@ -578,6 +581,11 @@ def handle_key(k, down):
     # pieces of the list separately, rather than passing the whole list.
     function(*function_args)
 
+# Handle a window resize event
+def handle_resize (w, h):
+    print("RESIZE:", w, "x", h)
+    display_set_viewport(w, h)
+
 # This is the main loop that runs the whole game. We wait for events
 # and handle them as we need to.
 def mainloop():
@@ -598,6 +606,9 @@ def mainloop():
 
             elif event.type == KEYUP:
                 handle_key(event.key, False)
+                
+            elif event.type == VIDEORESIZE:
+                handle_resize(event.w, event.h)
 
         # Draw the frame. We draw on the 'back of the page' and then
         # flip the page over so we don't see a half-drawn picture.        
