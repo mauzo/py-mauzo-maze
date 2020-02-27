@@ -67,6 +67,13 @@ def quat_rotate_about (by, v):
     c       = cos(angle)
     return [v[0]*s, v[1]*s, v[2]*s, c]
 
+# Make a quaternion to rotate from u to v
+def quat_rotate_from_to (u, v):
+    c   = sqrt(2.0 * (1.0 + vec_dot(u, v)))
+    w   = vec_mul(vec_cross(u, v), 1.0/c)
+    
+    return [*w, c/2.0]
+
 # Apply a quaternion rotation to a vector
 def quat_apply (q, v):
     x = q[3]*v[0] + q[1]*v[2] - q[2]*v[1]
