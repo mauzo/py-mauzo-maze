@@ -18,11 +18,13 @@ from mauzo.maze.vectors   import *
 # Information about the display.
 Display = {
     # The size of window we open.
-    "winsize":  (1024, 768),
+    "viewport": (1024, 768),
     # The framerate we are aiming for.
     "fps":      80,
     # The LHS of the miniview
-    "miniview": 0,
+    "mini_x":   0,
+    # The number of miniviews in use
+    "mini_n":   0,
 }
 
 # This defines what all the keys do. Each keycode maps to a 2-element tuple;
@@ -42,8 +44,7 @@ Key_Bindings = {
     K_SPACE:    (["player_jump", True],         None),
     K_F2:       (["toggle", "wireframe"],       None),
     K_F3:       (["toggle", "backface"],        None),
-    K_F4:       (["render_try_select", "select"],         None),
-    K_F6:       (["render_try_select", "feedback"],       None),
+    K_F4:       (["toggle", "miniview"],        None),
 }
 
 # This defines the world (the level layout).
@@ -142,6 +143,8 @@ Options = {
     "wireframe":    False,
     # Show back faces
     "backface":     False,
+    # Show miniviews
+    "miniview":     False,
 }
 
 # The speeds at which the player walks, jumps and falls.
@@ -312,7 +315,7 @@ def draw_world_lights ():
 # Start up pygame and open the window.
 def init_display():
     pygame.init()
-    pygame.display.set_mode(Display["winsize"],
+    pygame.display.set_mode(Display["viewport"],
         OPENGL|DOUBLEBUF|RESIZABLE)
 
 # Set up the initial OpenGL state, including the projection matrix.
@@ -329,12 +332,21 @@ def init_opengl():
 
     glPointSize(5)
 
-# Set up the viewport and projection after a window resize
-def display_set_viewport (full_w, h):
-    w       = full_w - 250
-    aspect  = w/h
+MINI_SIZE   = 200
+MINI_OFF    = 50
 
-    Display["miniview"] = w + 50
+# Set up the viewport and projection after a window resize
+def display_set_viewport ():
+    (w, h)  = Display["viewport"]
+
+    if (Options["miniview"]):
+        mini_x  = w - MINI_SIZE
+        w       = mini_x - MINI_OFF
+        Display["mini_x"] = mini_x
+    else:
+        Display["mini_x"] = 0
+
+    aspect  = w/h
 
     glViewport(0, 0, w, h)
 
@@ -345,11 +357,21 @@ def display_set_viewport (full_w, h):
 
     glMatrixMode(GL_MODELVIEW)
 
+# Reset to the first miniview
+def display_reset_miniview ():
+    Display["mini_n"] = 0
+
 # Push into the miniview. Leaves GL_PROJECTION selected and cleared.
 def display_push_miniview ():
-    x = Display["miniview"]
+    x   = Display["mini_x"]
+    n   = Display["mini_n"]
+
+    y   = n*(MINI_SIZE + MINI_OFF)
+
+    Display["mini_n"] = n + 1
+
     glPushAttrib(GL_VIEWPORT_BIT|GL_TRANSFORM_BIT|GL_ENABLE_BIT)
-    glViewport(x, 0, 200, 200)
+    glViewport(x, y, MINI_SIZE, MINI_SIZE)
     glMatrixMode(GL_PROJECTION)
     glPushMatrix()
     glLoadIdentity()
@@ -417,7 +439,6 @@ def render_miniview ():
     pos = Player["pos"]
 
     glMatrixMode(GL_MODELVIEW)
-    # We are happy with the default orientation (down -Z)
     glLoadIdentity()
     glTranslatef(-pos[0], -pos[1], -pos[2])
 
@@ -435,7 +456,9 @@ def render():
     render_camera()
     render_world()
 
-    render_miniview()
+    if (Options["miniview"]):
+        render_miniview()
+        render_miniview()
 
 # Try a select buffer operation with the current view
 def render_try_select (mode):
@@ -492,6 +515,9 @@ def option_backface (on):
         glMaterialfv(GL_BACK, GL_EMISSION, [0, 1, 1])
     else:
         glEnable(GL_CULL_FACE)
+
+def option_miniview (on):
+    display_set_viewport()
 
 # Camera
 
@@ -671,7 +697,8 @@ def handle_key(k, down):
 # Handle a window resize event
 def handle_resize (w, h):
     print("RESIZE:", w, "x", h)
-    display_set_viewport(w, h)
+    Display["viewport"] = (w, h)
+    display_set_viewport()
 
 # This is the main loop that runs the whole game. We wait for events
 # and handle them as we need to.
@@ -705,6 +732,9 @@ def mainloop():
         # Run the physics. Pass in the time taken since the last frame.
         player_physics(clock.get_time())
         camera_physics()
+
+        # Reset the miniview if necessary
+        display_reset_miniview()
 
         # Wait if necessary so that we don't draw more frames per second
         # than we want. Any more is just wasting processor time.
