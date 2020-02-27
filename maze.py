@@ -126,7 +126,7 @@ Camera = {
 # This dict has information about the player.
 Player = {
     # Our current position
-    "pos":      [-4, -8, 0],
+    "pos":      [-4, -8, -0.99],
     # Our current veolcity (our speed in the X, Y and Z directions)
     "vel":      [0, 0, 0],
     # Our current walk speed.
@@ -527,6 +527,7 @@ def camera_pan (v):
     Camera["pan"][1] += v[1] * Speed["pan"]
 
 def camera_init ():
+    camera_do_move()
     camera_update_walk_quat()
 
 def camera_update_walk_quat ():
@@ -560,14 +561,19 @@ def camera_do_pan ():
     camera_update_walk_quat()
 
 # Move the camera if we need to.
-def camera_physics ():
-    if (Player["moved"]):
-        # Find our position from the player position and our offset.
-        pos = vec_add(Player["pos"], Camera["offset"])
-        Camera["pos"] = pos
-    
-    camera_do_pan()
+def camera_do_move ():
+    if (not Player["moved"]):
+        return
 
+    # Find our position from the player position and our offset.
+    pos = vec_add(Player["pos"], Camera["offset"])
+    print("Camera position", pos)
+    Camera["pos"] = pos
+    
+# Update the camera
+def camera_physics ():
+    camera_do_move()
+    camera_do_pan()
 
 # Player
 
