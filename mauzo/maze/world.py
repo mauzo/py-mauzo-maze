@@ -21,6 +21,9 @@ World = {
         "Yellow":   (1, 1, 0),
     },
 
+    # The player's starting position
+    "start":      (-4, -8, -0.49),
+
     # A list of all the floors. Floors are horizontal rectangles. Each
     # floor has a dict with these keys:
     #   coords      A tuple of (x1, y1, x2, y2, z) defining the rectangle
@@ -132,3 +135,7 @@ def find_floor_below(v):
 # Check if the player has moved outside the world and died.
 def doomed (p):
     return p[2] < World["doom_z"]
+
+# Return our starting position
+def world_start_pos ():
+    return World["start"]

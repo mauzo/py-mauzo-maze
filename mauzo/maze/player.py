@@ -7,7 +7,7 @@ from    OpenGL.GLU      import *
 # This must appear before the imports below because camera.py uses it.
 Player = {
     # Our current position
-    "pos":      [-4, -8, -0.49],
+    "pos":      [0, 0, 0],
     # Our current veolcity (our speed in the X, Y and Z directions)
     "vel":      [0, 0, 0],
     # Our current walk speed.
@@ -19,7 +19,7 @@ Player = {
 from    .camera     import Camera
 from    .events     import event_post_quit
 from    .vectors    import *
-from    .world      import doomed, find_floor_below
+from    .world      import doomed, find_floor_below, world_start_pos
 
 # The speeds at which the player walks, jumps and falls.
 # These are not in sensible units at the moment.
@@ -32,10 +32,15 @@ Speed = {
 # This is a private variable to hold our display list number.
 _DL = None
 
-# Compile a display list.
 def init_player ():
     global _DL
 
+    # Find our starting position from the world definition. We need to
+    # change this from a tuple to a list since we need it to be
+    # modifiable.
+    Player["pos"] = [c for c in world_start_pos()]
+
+    # Compile a display list.
     _DL = glGenLists(1)
     glNewList(_DL, GL_COMPILE)
     draw_player()
