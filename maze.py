@@ -100,7 +100,7 @@ World = {
           "edges":      ((15, 0, 0), (0, 5, 0)),
           "colour":     "Grey",
           "win":        False,
-        }
+        },
     ],
 
     # We die if we fall this low.
@@ -594,10 +594,13 @@ def init_player ():
 
 # Draw the player as a wireframe sphere.
 def draw_player ():
-    glPushAttrib(GL_CURRENT_BIT)
+    glPushAttrib(GL_CURRENT_BIT|GL_ENABLE_BIT)
+    # We scale anamorphically, so we need to renormalise normals
+    glEnable(GL_NORMALIZE)
 
     q = gluNewQuadric()
     gluQuadricDrawStyle(q, GLU_LINE)
+    glColor3f(1.0, 1.0, 1.0)
     gluSphere(q, 0.5, 16, 16);
     gluDeleteQuadric(q)
 
@@ -605,8 +608,14 @@ def draw_player ():
 
 # Render the player
 def render_player ():
+    p   = Player["pos"]
+    v   = Player["vel"]
+
+    s   = [abs(v[0])*1.2 + 1, abs(v[1])*1.2 + 1, abs(v[2])*0.6 + 1]
+
     glPushMatrix()
-    glTranslate(*Player["pos"])
+    glTranslate(*p)
+    glScalef(*s)
     glCallLists(DL["player"])
     glPopMatrix()
 

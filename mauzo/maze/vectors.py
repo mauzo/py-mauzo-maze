@@ -36,6 +36,10 @@ def vec_subtract (a, b):
 def vec_mul (v, s):
     return [v[0]*s, v[1]*s, v[2]*s]
 
+# Apply an operation to each component of a vector
+def vec_map (v, f):
+    return [f(c) for c in v]
+
 # Find the length of a vector
 def vec_norm (v):
     return sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2])
