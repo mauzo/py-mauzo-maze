@@ -2,16 +2,16 @@
 # maze.py
 # Playing with OpenGL
 
-from math           import fmod
-import numpy        as np
 from OpenGL.GL      import *
 from OpenGL.GLU     import *
 import pygame
 from pygame.locals  import *
-from pygame.event   import Event
 
 # I have started moving pieces into their own files.
+from mauzo.maze.camera      import *
 from mauzo.maze.drawing     import *
+from mauzo.maze.events      import *
+from mauzo.maze.player      import *
 from mauzo.maze.vectors     import *
 from mauzo.maze.world       import *
 
@@ -49,36 +49,6 @@ Key_Bindings = {
     K_F4:       (["toggle", "miniview"],        None),
 }
 
-# This dict has information about the camera. The camera moves with the
-# player but has its own direction. Most of these values are just dummies
-# which will be set up by camera_init.
-Camera = {
-    # Where is the camera position, relative to the player position?
-    "offset":   [-6, 0, 2],
-    # The current position of the camera.
-    "pos":      [0, 0, 0],
-    # Does our position need updating?
-    "moved":    True,
-    # The current camera angle, horizontal and vertical.
-    "angle":    [70, 0],
-    # The current pan speeds
-    "pan":      [0, 0],
-    # The horizontal camera angle as a quaternion
-    "walk_quat": [0, 0, 0, 0],
-}
-    
-# This dict has information about the player.
-Player = {
-    # Our current position
-    "pos":      [-4, -8, -0.49],
-    # Our current veolcity (our speed in the X, Y and Z directions)
-    "vel":      [0, 0, 0],
-    # Our current walk speed.
-    "walk":     [0, 0, 0],
-    # True if we are currently jumping.
-    "jump":     False,
-}
-
 # This holds options which can be changed at runtime
 Options = {
     # Display in wireframe
@@ -87,15 +57,6 @@ Options = {
     "backface":     False,
     # Show miniviews
     "miniview":     False,
-}
-
-# The speeds at which the player walks, jumps and falls.
-# These are not in sensible units at the moment.
-Speed = {
-    "walk":     0.1,
-    "jump":     0.4,
-    "fall":     0.02,
-    "pan":      0.8,
 }
 
 # This holds display list numbers, to be used by the render functions.
@@ -183,34 +144,6 @@ def display_pop_miniview ():
 def render_clear():
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
 
-# Position the camera based on the player's current position. We put
-# the camera 1 unit above the player's position.
-def render_camera():
-    pos     = Camera["pos"]
-    angle   = Camera["angle"]
-    
-    # Clear the previous camera position
-    glLoadIdentity()
-    # Annoyingly, the camera starts pointing down (-Z).
-    # Rotate so we are pointing down +X with +Z upwards.
-    glRotatef(90, 0, 0, 1)
-    glRotatef(90, 0, 1, 0)
-
-    # Set the new camera position for this frame. Everything has to be
-    # done backwards because we are moving the world rather than moving
-    # the camera. This is why we rotate before we translate rather than
-    # the other way round.
-    
-    # Vertical rotation. We are pointing down +X so we would expect a
-    # CCW rotation about -Y to make +ve angles turn upwards, but as
-    # everthing is backwards we need to turn the other way.
-    glRotatef(angle[1], 0, 1, 0)
-    # Horizontal rotation. Again we rotate about -Z rather than +Z.
-    glRotatef(angle[0], 0, 0, -1)
-    # Move to the camera position. These need to be negative because we
-    # are moving the world rather than moving the camera.
-    glTranslatef(-pos[0], -pos[1], -pos[2])
-
 def render_miniview ():
     display_push_miniview()
     glOrtho(-0.5, 0.5, -0.5, 0.5, 0, 1)
@@ -296,201 +229,8 @@ def option_backface (on):
 def option_miniview (on):
     display_set_viewport()
 
-# Camera
-
-# Change the camera pan speed
-def camera_pan (v):
-    Camera["pan"][0] += v[0] * Speed["pan"]
-    Camera["pan"][1] += v[1] * Speed["pan"]
-
-def camera_init ():
-    camera_update_walk_quat()
-    camera_do_move()
-
-# Keep walk_quat up to date with the walk direction
-def camera_update_walk_quat ():
-    angle = Camera["angle"]
-    Camera["walk_quat"] = quat_rotate_about(angle[0], [0, 0, 1])
-    print("Camera angle", angle, "quat", Camera["walk_quat"])
-
-# Update the camera angle if we are panning.
-def camera_do_pan ():
-    pan     = Camera["pan"]
-    if (pan == [0, 0]):
-        return
-
-    angle   = Camera["angle"]
-
-    # This fmod() function divides by 360 and takes the remainder.
-    # This makes sure we are always between 0 and 360 degrees.
-    # We subtract pan[0] because angles are measured CCW but we want
-    # a +ve pan to turn us right. Otherwise it's confusing.
-    horiz = fmod(angle[0] - pan[0], 360)
-    if (horiz < 0):
-        horiz += 360
-    
-    vert = angle[1] + pan[1]
-    if (vert > 90):
-        vert = 90
-    if (vert < -90):
-        vert = -90
-
-    Camera["angle"]     = [horiz, vert]
-    Camera["moved"]     = True
-    camera_update_walk_quat()
-
-# Move the camera if we need to. We must have walk_quat up to date.
-def camera_do_move ():
-    if (not Camera["moved"]):
-        return
-
-    # Find our position from the player position and our offset.
-    off = quat_apply(Camera["walk_quat"], Camera["offset"])
-    pos = vec_add(Player["pos"], off)
-
-    print("Camera position", pos)
-    Camera["pos"]   = pos
-    Camera["moved"] = False
-    
-# Update the camera
-def camera_physics ():
-    camera_do_pan()
-    camera_do_move()
-
-# Player
-
-# Compile a display list.
-def init_player ():
-    dl = glGenLists(1)
-    glNewList(dl, GL_COMPILE)
-    draw_player()
-    glEndList()
-
-    DL["player"] = dl
-
-# Draw the player as a wireframe sphere.
-def draw_player ():
-    glPushAttrib(GL_CURRENT_BIT|GL_ENABLE_BIT)
-    # We scale anamorphically, so we need to renormalise normals
-    glEnable(GL_NORMALIZE)
-
-    q = gluNewQuadric()
-    gluQuadricDrawStyle(q, GLU_LINE)
-    glColor3f(1.0, 1.0, 1.0)
-    gluSphere(q, 0.5, 16, 16);
-    gluDeleteQuadric(q)
-
-    glPopAttrib()
-
-# Render the player
-def render_player ():
-    p   = Player["pos"]
-    v   = Player["vel"]
-
-    s   = [abs(v[0])*1.2 + 1, abs(v[1])*1.2 + 1, abs(v[2])*0.6 + 1]
-
-    glPushMatrix()
-    glTranslate(*p)
-    glScalef(*s)
-    glCallLists(DL["player"])
-    glPopMatrix()
-
-# The player has died...
-def player_die ():
-    print("AAAARGH!!!")
-    event_post_quit()
-
-# The player has won...
-def player_win ():
-    print("YaaaY!!!!")
-    event_post_quit()
-
-# Set how we're trying to walk. We will only move if we're on the
-# ground. Don't attempt to set a Z coordinate
-def player_walk (v):
-    Player["walk"] = vec_add(Player["walk"], vec_mul(v, Speed["walk"]))
-
-# Set the flag to show we're jumping. We will only jump if we're on the
-# ground.
-def player_jump (to):
-    Player["jump"] = to
-
-PLAYER_BUMP = 0.49
-
-def player_physics(ticks):
-    pos     = Player["pos"]
-    vel     = Player["vel"]
-    walk    = Player["walk"]
-    jump    = Player["jump"]
-
-    walk_q  = Camera["walk_quat"]
-
-    # Assume we are falling.
-    falling = True
-
-    # Find the floor below us. If there is a floor, and we are close
-    # enough to it, we are not falling.
-    floor = find_floor_below(pos)
-    if (floor):
-        floor_z = floor["pos"][2] + PLAYER_BUMP
-        if (pos[2] <= floor_z and vel[2] <= 0):
-            falling = False
-            if (floor["win"]):
-                player_win()
-        else:
-            print("Falling through floor", floor)
-
-    if (falling):
-        # If we are falling, increase our velocity in the downwards z direction
-        # by the fall speed (actually an acceleration). 
-        vel[2] -= Speed["fall"]
-    else:
-        # Otherwise, set our velocity to our walk vector rotated to the
-        # camera angle.
-        vel = quat_apply(walk_q, walk)
-        # Then, if we are jumping, set our z velocity to be the jump speed
-        # and turn off the jump (we only jump once).
-        if (jump):
-            vel[2] = Speed["jump"]
-            player_jump(False)
-
-    # Save our velocity for next time
-    Player["vel"] = vel
-
-    # If we aren't moving, there's nothing to do.
-    if (vel == [0, 0, 0]):
-        return
-
-    # Tell the camera we have moved.
-    Camera["moved"] = True
-
-    # Take the velocity vector we have calculated and add it to our position
-    # vector to give our new position.
-    pos = vec_add(pos, vel)    
-
-    # If we have fallen through the floor put us back on top of the floor
-    # so that we land on it.
-    if (floor and pos[2] < floor_z and vel[2] <= 0):
-        pos[2] = floor_z
-
-    print("Player move from", Player["pos"])
-    print("    to", pos)
-    print("    falling", falling, "floor", 
-        (floor["colour"] if floor else "<none>"))
-
-    # If we fall too far we die.
-    if (pos[2] < World["doom_z"]):
-        player_die()
-
-    # Save our new position.
-    Player["pos"] = pos
-
 # Events
 # These functions manage things that happen while the program is running.
-
-# Tell pygame we want to quit.
-def event_post_quit ():
-    pygame.event.post(Event(QUIT))
 
 # Handle a key-up or key-down event. k is the keycode, down is True or False.
 def handle_key(k, down):

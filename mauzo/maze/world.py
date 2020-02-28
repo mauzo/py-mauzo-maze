@@ -129,3 +129,6 @@ def find_floor_below(v):
         found = f
     return found
 
+# Check if the player has moved outside the world and died.
+def doomed (p):
+    return p[2] < World["doom_z"]
