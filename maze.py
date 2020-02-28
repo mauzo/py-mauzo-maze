@@ -112,9 +112,11 @@ World = {
 # which will be set up by camera_init.
 Camera = {
     # Where is the camera position, relative to the player position?
-    "offset":   [0, 0, 1],
+    "offset":   [-6, 0, 2],
     # The current position of the camera.
     "pos":      [0, 0, 0],
+    # Does our position need updating?
+    "moved":    True,
     # The current camera angle, horizontal and vertical.
     "angle":    [70, 0],
     # The current pan speeds
@@ -126,15 +128,13 @@ Camera = {
 # This dict has information about the player.
 Player = {
     # Our current position
-    "pos":      [-4, -8, -0.99],
+    "pos":      [-4, -8, -0.49],
     # Our current veolcity (our speed in the X, Y and Z directions)
     "vel":      [0, 0, 0],
     # Our current walk speed.
     "walk":     [0, 0, 0],
     # True if we are currently jumping.
     "jump":     False,
-    # Have we moved this frame?
-    "moved":    True,
 }
 
 # This holds options which can be changed at runtime
@@ -173,7 +173,7 @@ def find_floor_below(v):
 
         if v[0] < pos[0] or v[1] < pos[1]:
             continue
-        if v[0] > pos[0] + edg[0][0] or v[1] > pos[0]+edg[1][1]:
+        if v[0] > pos[0] + edg[0][0] or v[1] > pos[1]+edg[1][1]:
             continue
         if v[2] < pos[2]:
             continue
@@ -352,7 +352,7 @@ def display_set_viewport ():
 
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-    gluPerspective(45.0, aspect, 1.0, 20.0)
+    gluPerspective(45.0, aspect, 1.0, 40.0)
     #glOrtho(-10, 10, 0, 10, 0, 40)
 
     glMatrixMode(GL_MODELVIEW)
@@ -455,6 +455,7 @@ def render():
     render_clear()
     render_camera()
     render_world()
+    render_player()
 
     if (Options["miniview"]):
         render_miniview()
@@ -527,9 +528,10 @@ def camera_pan (v):
     Camera["pan"][1] += v[1] * Speed["pan"]
 
 def camera_init ():
-    camera_do_move()
     camera_update_walk_quat()
+    camera_do_move()
 
+# Keep walk_quat up to date with the walk direction
 def camera_update_walk_quat ():
     angle = Camera["angle"]
     Camera["walk_quat"] = quat_rotate_about(angle[0], [0, 0, 1])
@@ -558,28 +560,55 @@ def camera_do_pan ():
         vert = -90
 
     Camera["angle"]     = [horiz, vert]
+    Camera["moved"]     = True
     camera_update_walk_quat()
 
-# Move the camera if we need to.
+# Move the camera if we need to. We must have walk_quat up to date.
 def camera_do_move ():
-    if (not Player["moved"]):
+    if (not Camera["moved"]):
         return
 
     # Find our position from the player position and our offset.
-    pos = vec_add(Player["pos"], Camera["offset"])
+    off = quat_apply(Camera["walk_quat"], Camera["offset"])
+    pos = vec_add(Player["pos"], off)
+
     print("Camera position", pos)
-    Camera["pos"] = pos
+    Camera["pos"]   = pos
+    Camera["moved"] = False
     
 # Update the camera
 def camera_physics ():
-    camera_do_move()
     camera_do_pan()
+    camera_do_move()
 
 # Player
 
-# Nothing to do at the moment.
-def init_player():
-    pass
+# Compile a display list.
+def init_player ():
+    dl = glGenLists(1)
+    glNewList(dl, GL_COMPILE)
+    draw_player()
+    glEndList()
+
+    DL["player"] = dl
+
+# Draw the player as a wireframe sphere.
+def draw_player ():
+    glPushAttrib(GL_CURRENT_BIT)
+
+    q = gluNewQuadric()
+    gluQuadricDrawStyle(q, GLU_LINE)
+    gluSphere(q, 0.5, 16, 16);
+    gluDeleteQuadric(q)
+
+    glPopAttrib()
+
+# Render the player
+def render_player ():
+    glPushMatrix()
+    glTranslate(*Player["pos"])
+    glCallLists(DL["player"])
+    glPopMatrix()
 
 # The player has died...
 def player_die ():
@@ -601,6 +630,8 @@ def player_walk (v):
 def player_jump (to):
     Player["jump"] = to
 
+PLAYER_BUMP = 0.51
+
 def player_physics(ticks):
     pos     = Player["pos"]
     vel     = Player["vel"]
@@ -616,11 +647,13 @@ def player_physics(ticks):
     # enough to it, we are not falling.
     floor = find_floor_below(pos)
     if (floor):
-        floor_z = floor["pos"][2] + 0.01
+        floor_z = floor["pos"][2] + PLAYER_BUMP
         if (pos[2] <= floor_z):
             falling = False
             if (floor["win"]):
                 player_win()
+        else:
+            print("Falling through floor", floor)
 
     if (falling):
         # If we are falling, increase our velocity in the downwards z direction
@@ -639,13 +672,12 @@ def player_physics(ticks):
     # Save our velocity for next time
     Player["vel"] = vel
 
-    # If we aren't moving, tell the camera we haven't moved and return.
+    # If we aren't moving, there's nothing to do.
     if (vel == [0, 0, 0]):
-        Player["moved"] = False
         return
 
     # Tell the camera we have moved.
-    Player["moved"] = True
+    Camera["moved"] = True
 
     # Take the velocity vector we have calculated and add it to our position
     # vector to give our new position.
@@ -656,7 +688,10 @@ def player_physics(ticks):
     if (floor and pos[2] < floor_z):
         pos[2] = floor_z
 
-    print("Player move from", Player["pos"], "to", pos)
+    print("Player move from", Player["pos"])
+    print("    to", pos)
+    print("    falling", falling, "floor", 
+        (floor["colour"] if floor else "<none>"))
 
     # If we fall too far we die.
     if (pos[2] < World["doom_z"]):
