@@ -630,7 +630,7 @@ def player_walk (v):
 def player_jump (to):
     Player["jump"] = to
 
-PLAYER_BUMP = 0.51
+PLAYER_BUMP = 0.49
 
 def player_physics(ticks):
     pos     = Player["pos"]
@@ -648,7 +648,7 @@ def player_physics(ticks):
     floor = find_floor_below(pos)
     if (floor):
         floor_z = floor["pos"][2] + PLAYER_BUMP
-        if (pos[2] <= floor_z):
+        if (pos[2] <= floor_z and vel[2] <= 0):
             falling = False
             if (floor["win"]):
                 player_win()
@@ -685,7 +685,7 @@ def player_physics(ticks):
 
     # If we have fallen through the floor put us back on top of the floor
     # so that we land on it.
-    if (floor and pos[2] < floor_z):
+    if (floor and pos[2] < floor_z and vel[2] <= 0):
         pos[2] = floor_z
 
     print("Player move from", Player["pos"])
