@@ -9,14 +9,14 @@ from    OpenGL.GL   import *
 # which will be set up by camera_init.
 # This must appear before the imports below because player.py uses it.
 Camera = {
-    # Where is the camera position, relative to the player position?
-    "offset":   [-6, 0, 2],
-    # The current position of the camera.
-    "pos":      [0, 0, 0],
-    # Does our position need updating?
-    "moved":    True,
+    # How far away from the player are we?
+    "offset":   8,
+    ## The current position of the camera.
+    #"pos":      [0, 0, 0],
+    ## Does our position need updating?
+    #"moved":    True,
     # The current camera angle, horizontal and vertical.
-    "angle":    [70, 0],
+    "angle":    [70, -10],
     # The current pan speeds
     "pan":      [0, 0],
     # The horizontal camera angle as a quaternion
@@ -35,7 +35,7 @@ def camera_pan (v):
 
 def camera_init ():
     camera_update_walk_quat()
-    camera_do_move()
+    #camera_do_move()
 
 # Keep walk_quat up to date with the walk direction
 def camera_update_walk_quat ():
@@ -66,7 +66,7 @@ def camera_do_pan ():
         vert = -90
 
     Camera["angle"]     = [horiz, vert]
-    Camera["moved"]     = True
+    #Camera["moved"]     = True
     camera_update_walk_quat()
 
 # Move the camera if we need to. We must have walk_quat up to date.
@@ -85,12 +85,13 @@ def camera_do_move ():
 # Update the camera
 def camera_physics ():
     camera_do_pan()
-    camera_do_move()
+    #camera_do_move()
 
 # Position the camera based on the player's current position. We put
 # the camera 1 unit above the player's position.
 def render_camera():
-    pos     = Camera["pos"]
+    pos     = Player["pos"]
+    off     = Camera["offset"]
     angle   = Camera["angle"]
     
     # Clear the previous camera position
@@ -105,6 +106,8 @@ def render_camera():
     # the camera. This is why we rotate before we translate rather than
     # the other way round.
     
+    # Back off from the player position.
+    glTranslatef(off, 0, 0)
     # Vertical rotation. We are pointing down +X so we would expect a
     # CCW rotation about -Y to make +ve angles turn upwards, but as
     # everthing is backwards we need to turn the other way.

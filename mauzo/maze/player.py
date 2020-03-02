@@ -143,8 +143,8 @@ def player_physics(ticks):
     if (vel == [0, 0, 0]):
         return
 
-    # Tell the camera we have moved.
-    Camera["moved"] = True
+    ## Tell the camera we have moved.
+    #Camera["moved"] = True
 
     # Take the velocity vector we have calculated and add it to our position
     # vector to give our new position.
