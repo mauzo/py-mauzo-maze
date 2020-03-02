@@ -8,13 +8,9 @@ from    .       import options
 from    .       import player
 
 # This dict defines all the commands we can bind to keys.
-Commands = {
-    "jump":     player.player_jump,
-    "pan":      camera.camera_pan,
-    "quit":     events.event_post_quit,
-    "toggle":   options.toggle,
-    "walk":     player.player_walk,
-}
+# It is filled in by input_init because otherwise these functions might
+# not exist yet.
+Commands = {}
 
 # This defines what all the keys do. Each keycode maps to a 2-element tuple;
 # the first says what to do on keydown, the second what to do on keyup.
@@ -35,6 +31,17 @@ Key_Bindings = {
     K_F3:       (["toggle", "backface"],        None),
     K_F4:       (["toggle", "miniview"],        None),
 }
+
+def input_init ():
+    global Commands
+
+    Commands = {
+        "jump":     player.player_jump,
+        "pan":      camera.camera_pan,
+        "quit":     events.event_post_quit,
+        "toggle":   options.toggle,
+        "walk":     player.player_walk,
+    }
 
 def input_handle_key (k, down):
     # If the keycode is not in our dict, we have nothing to do.

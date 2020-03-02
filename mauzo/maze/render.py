@@ -5,9 +5,9 @@
 from    OpenGL.GL   import *
 
 from    .           import display
-from    .camera     import render_camera
+from    .           import camera
 from    .options    import Options
-from    .player     import Player, render_player
+from    .           import player
 from    .world      import render_world
 
 # Clear the screen to remove the previous frame.
@@ -19,7 +19,7 @@ def render_miniview ():
     display.display_push_miniview()
     glOrtho(-0.5, 0.5, -0.5, 0.5, 0, 1)
 
-    pos = Player["pos"]
+    pos = player.pos()
 
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
@@ -33,9 +33,9 @@ def render_miniview ():
 # camera, and then call the display list to draw the world.
 def render():
     render_clear()
-    render_camera()
+    camera.render_camera()
     render_world()
-    render_player()
+    player.render_player()
 
     if (Options["miniview"]):
         render_miniview()

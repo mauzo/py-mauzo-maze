@@ -93,6 +93,10 @@ def player_walk (v):
 def player_jump (to):
     Player["jump"] = to
 
+# Return our current position
+def pos ():
+    return Player["pos"]
+
 PLAYER_BUMP = 0.49
 
 def player_physics(ticks):
