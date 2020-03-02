@@ -67,6 +67,14 @@ World = {
         },
     ],
 
+    # A list of the walls. Walls are parallelograms.
+    "walls": [
+        {   "pos":      (-10, -10, -1),
+            "edges":    ((0, 0, 5), (10, 0, 0)),
+            "colour":   "Blue",
+        },
+    ],
+
     # We die if we fall this low.
     "doom_z":   -20,
 }
@@ -81,6 +89,7 @@ def init_world():
     #draw_cube_10()
     draw_world_lights()
     draw_floors()
+    draw_walls()
     draw_origin_marker()
     glEndList()
 
@@ -110,6 +119,18 @@ def draw_floors ():
         
         new_select_name(colname)
         draw_ppiped(p, e1, e2, e3)
+
+def draw_walls ():
+    colours = World["colours"]
+    for w in World["walls"]:
+        c = w["colour"]
+        glColor3f(*colours[c])
+
+        p   = w["pos"]
+        es  = w["edges"]
+
+        new_select_name("wall-" + c)
+        draw_pgram(p, *es)
 
 # Find the floor below a given position.
 # v is the point in space we want to start from.
