@@ -12,6 +12,7 @@ from mauzo.maze.camera      import *
 from mauzo.maze.display     import *
 from mauzo.maze.drawing     import *
 from mauzo.maze.events      import *
+from mauzo.maze.input       import *
 from mauzo.maze.options     import *
 from mauzo.maze.player      import *
 from mauzo.maze.render      import *
@@ -20,56 +21,12 @@ from mauzo.maze.world       import *
 
 # Data
 
-# This defines what all the keys do. Each keycode maps to a 2-element tuple;
-# the first says what to do on keydown, the second what to do on keyup.
-# The names are looked up as functions in the current module.
-Key_Bindings = {
-    K_ESCAPE:   (["event_post_quit"],           None),
-    K_q:        (["event_post_quit"],           None),
-    K_i:        (["camera_pan", [0, 1]],        ["camera_pan", [0, -1]]),
-    K_k:        (["camera_pan", [0, -1]],       ["camera_pan", [0, 1]]),
-    K_j:        (["camera_pan", [-1, 0]],       ["camera_pan", [1, 0]]),
-    K_l:        (["camera_pan", [1, 0]],        ["camera_pan", [-1, 0]]),
-    K_w:        (["player_walk", [1, 0, 0]],    ["player_walk", [-1, 0, 0]]),
-    K_s:        (["player_walk", [-1, 0, 0]],   ["player_walk", [1, 0, 0]]),
-    K_a:        (["player_walk", [0, 1, 0]],    ["player_walk", [0, -1, 0]]),
-    K_d:        (["player_walk", [0, -1, 0]],   ["player_walk", [0, 1, 0]]),
-    K_SPACE:    (["player_jump", True],         None),
-    K_F2:       (["toggle", "wireframe"],       None),
-    K_F3:       (["toggle", "backface"],        None),
-    K_F4:       (["toggle", "miniview"],        None),
-}
-
 # Events
 # These functions manage things that happen while the program is running.
 
 # Handle a key-up or key-down event. k is the keycode, down is True or False.
 def handle_key(k, down):
-    # If the keycode is not in our dict, we have nothing to do.
-    if (k not in Key_Bindings):
-        return
-
-    # Find the entry for the keycode, and choose the first part for keydown
-    # and the second for keyup. If we have None then there is nothing to do.
-    bindings = Key_Bindings[k]
-    if (down):
-        binding = bindings[0]
-    else:
-        binding = bindings[1]
-
-    if (binding is None):
-        return
-
-    # The first entry in the list is the function name, the rest are the
-    # arguments for the function.
-    function_name   = binding[0]
-    function_args   = binding[1:]
-
-    # Find the function by looking up in the globals() dict.
-    function        = globals()[function_name]
-    # Call the function, passing the arguments. The * passes the
-    # pieces of the list separately, rather than passing the whole list.
-    function(*function_args)
+    input_handle_key(k, down)
 
 # Handle a window resize event
 def handle_resize (w, h):
