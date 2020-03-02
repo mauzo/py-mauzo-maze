@@ -25,8 +25,8 @@ from    .world      import doomed, find_floor_below, world_start_pos
 # These are not in sensible units at the moment.
 Speed = {
     "walk":     0.1,
-    "jump":     0.4,
-    "fall":     0.02,
+    "jump":     0.1,
+    "fall":     0.002,
 }
 
 # This is a private variable to hold our display list number.

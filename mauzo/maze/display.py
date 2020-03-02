@@ -90,14 +90,9 @@ def display_push_miniview ():
 
     glPushAttrib(GL_VIEWPORT_BIT|GL_TRANSFORM_BIT|GL_ENABLE_BIT)
     glViewport(x, y, MINI_SIZE, MINI_SIZE)
-    glMatrixMode(GL_PROJECTION)
-    glPushMatrix()
-    glLoadIdentity()
 
 # Pop from the miniview. Make sure to balance calls to glPush/PopAttrib
 # before calling this.
 def display_pop_miniview ():
-    glMatrixMode(GL_PROJECTION)
-    glPopMatrix()
     glPopAttrib()
 
