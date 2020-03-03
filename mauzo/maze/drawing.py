@@ -53,6 +53,50 @@ def new_select_name (n):
     Select.append(n)
     glLoadName(len(Select))
 
+def select_name (n):
+    return Select[n - 1]
+
+# Set up for drawing in white with no lights or depth testing.
+def _white_no_lights ():
+    glPushAttrib(GL_CURRENT_BIT|GL_ENABLE_BIT)
+    #glDisable(GL_DEPTH_TEST)
+    glDisable(GL_LIGHTING)
+    glColor3f(1.0, 1.0, 1.0)
+
+# Draw a list of points, white, with no lighting or depth
+def draw_points (points):
+    _white_no_lights()
+    glBegin(GL_POINTS)
+    for p in points:
+        glVertex3f(*p)
+    glEnd()
+    glPopAttrib()
+
+# Draw a wireframe box. The z values are inverted, since this is for
+# drawing ortho frames.
+def draw_ortho_box (x1, x2 , y1, y2, z1, z2):
+    seq = [(x1, y1), (x2, y1), (x2, y2), (x1, y2)]
+    (xm, ym, zm) = ((x1 + x2)/2, (y1 + y2)/2, (z1 + z2)/2)
+    _white_no_lights()
+    glBegin(GL_LINE_LOOP)
+    for p in seq:
+        glVertex3f(*p, -z1)
+    glEnd()
+    glBegin(GL_LINE_LOOP)
+    for p in seq:
+        glVertex3f(*p, -z2)
+    glEnd()
+    glBegin(GL_LINES)
+    for p in seq:
+        glVertex3f(*p, -z1)
+        glVertex3f(*p, -z2)
+    glVertex3f(xm, ym, -z1)
+    glVertex3f(xm, ym, -z2)
+    glVertex3f(x1, ym, -zm)
+    glVertex3f(x2, ym, -zm)
+    glEnd()
+    glPopAttrib()
+
 # Draw a marker at the origin so we can see where it is.
 def draw_origin_marker():
     new_select_name("marker")
