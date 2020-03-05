@@ -7,17 +7,8 @@ from OpenGL.GLU     import *
 import pygame
 from pygame.locals  import *
 
-# I have started moving pieces into their own files.
-from mauzo.maze.camera      import *
-from mauzo.maze.display     import *
-from mauzo.maze.drawing     import *
-from mauzo.maze.events      import *
-from mauzo.maze.input       import *
-from mauzo.maze.options     import *
-from mauzo.maze.player      import *
-from mauzo.maze.render      import *
-from mauzo.maze.vectors     import *
-from mauzo.maze.world       import *
+from mauzo.maze.all import *
+
 
 # Data
 
