@@ -2,6 +2,9 @@
 # maze.py
 # Playing with OpenGL
 
+import OpenGL
+OpenGL.ERROR_CHECKING = False
+
 from OpenGL.GL      import *
 from OpenGL.GLU     import *
 import pygame
