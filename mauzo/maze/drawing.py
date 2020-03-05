@@ -47,15 +47,6 @@ def draw_cube_10():
     glVertex3f(-10, 10, -10)
     glEnd()
 
-# This function allocates names to use in selection mode.
-Select = ["dummy"]
-def new_select_name (n):
-    Select.append(n)
-    glLoadName(len(Select))
-
-def select_name (n):
-    return Select[n - 1]
-
 # Draw a list of points, white, with no lighting or depth
 def draw_points (points):
     glPushAttrib(GL_CURRENT_BIT|GL_ENABLE_BIT)
@@ -70,7 +61,6 @@ def draw_points (points):
 
 # Draw a marker at the origin so we can see where it is.
 def draw_origin_marker():
-    new_select_name("marker")
     glColor3f(1, 1, 1)
 
     glBegin(GL_POINTS)

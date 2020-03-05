@@ -117,7 +117,6 @@ def draw_floors ():
         (e1, e2)    = f["edges"]
         e3          = [0, 0, -FLOOR_THICKNESS]
         
-        new_select_name(colname)
         draw_ppiped(p, e1, e2, e3)
 
 def draw_walls ():
@@ -129,7 +128,6 @@ def draw_walls ():
         p   = w["pos"]
         es  = w["edges"]
 
-        new_select_name("wall-" + c)
         draw_pgram(p, *es)
 
 # Find the floor below a given position.

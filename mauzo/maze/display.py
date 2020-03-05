@@ -67,7 +67,6 @@ def display_reset_viewport ():
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
     gluPerspective(45.0, aspect, 1.0, 40.0)
-    #glOrtho(-10, 10, 0, 10, 0, 40)
 
     glMatrixMode(GL_MODELVIEW)
 
@@ -79,7 +78,7 @@ def display_flip ():
 def display_reset_miniview ():
     Display["mini_n"] = 0
 
-# Push into the miniview. Leaves GL_PROJECTION selected and cleared.
+# Push into the miniview.
 def display_push_miniview ():
     x   = Display["mini_x"]
     n   = Display["mini_n"]
