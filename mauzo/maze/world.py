@@ -26,7 +26,8 @@ World = {
 
     # A list of all the floors. Floors are horizontal rectangles. Each
     # floor has a dict with these keys:
-    #   coords      A tuple of (x1, y1, x2, y2, z) defining the rectangle
+    #   pos         The coordinates of one corner
+    #   edges       The vectors along the two edges, X first, then Y.
     #   colour      A tuple of (red, green, blue)
     #   win         True if this is a winning platform, False otherwise
     "floors": [
@@ -67,11 +68,37 @@ World = {
         },
     ],
 
-    # A list of the walls. Walls are parallelograms.
+    # A list of the walls. Walls are parallelograms. The edges must be
+    # given in anticlockwise order, looking at the side of the wall you
+    # can see.
     "walls": [
         {   "pos":      (-10, -10, -1),
-            "edges":    ((0, 0, 5), (10, 0, 0)),
+            "edges":    ((0, 0, 5), (20, 0, 0)),
             "colour":   "Blue",
+        },
+        {   "pos":      (-10, -10, -1),
+            "edges":    ((0, 20, 0), (0, 0, 5)),
+            "colour":   "Blue",
+        },
+        {   "pos":      (10, -10, -1),
+            "edges":    ((0, 0, 5), (0, 20, 0)),
+            "colour":   "Blue",
+        },
+        {   "pos":      (-10, 10, -1),
+            "edges":    ((0, 5, 0), (0, 0, 5)),
+            "colour":   "Red",
+        },
+        {   "pos":      (-10, 15, -1),
+            "edges":    ((10, 0, 0), (0, 0, 5)),
+            "colour":   "Red",
+        },
+        {   "pos":      (10, 10, -1),
+            "edges":    ((0, 0, 5), (0, 5, 0)),
+            "colour":   "Green",
+        },
+        {   "pos":      (0, 15, -1),
+            "edges":    ((10, 0, 0), (0, 0, 5)),
+            "colour":   "Green",
         },
     ],
 
