@@ -41,7 +41,7 @@ def camera_init ():
 def camera_update_walk_quat ():
     angle = Camera["angle"]
     Camera["walk_quat"] = quat_rotate_about(angle[0], [0, 0, 1])
-    print("Camera angle", angle, "quat", Camera["walk_quat"])
+    #print("Camera angle", angle, "quat", Camera["walk_quat"])
 
 # Update the camera angle if we are panning.
 def camera_do_pan ():

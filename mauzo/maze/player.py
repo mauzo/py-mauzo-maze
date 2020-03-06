@@ -119,8 +119,8 @@ def player_physics(ticks):
             falling = False
             if (floor["win"]):
                 player_win()
-        else:
-            print("Falling through floor", floor)
+        #else:
+            #("Falling through floor", floor)
 
     if (falling):
         # If we are falling, increase our velocity in the downwards z direction
@@ -155,10 +155,10 @@ def player_physics(ticks):
     if (floor and pos[2] < floor_z and vel[2] <= 0):
         pos[2] = floor_z
 
-    print("Player move from", Player["pos"])
-    print("    to", pos)
-    print("    falling", falling, "floor", 
-        (floor["colour"] if floor else "<none>"))
+    #print("Player move from", Player["pos"])
+    #print("    to", pos)
+    #print("    falling", falling, "floor", 
+        #(floor["colour"] if floor else "<none>"))
 
     # If we fall too far we die.
     if (doomed(pos)):
