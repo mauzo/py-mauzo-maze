@@ -12,9 +12,6 @@ from pygame.locals  import *
 
 from mauzo.maze.all import *
 
-
-# Data
-
 # Main
 
 def main():
@@ -25,11 +22,13 @@ def main():
     # runs even if there's an error. Otherwise the window doesn't go away.
     try:
         # Run the other initialisation
-        init_opengl()
+        gl.init()
+        text.init()
         input_init()
         init_world()
         init_player()
         camera_init()
+        render.init()
 
         # Go into the main loop, which doesn't return until we quit the game.
         mainloop()

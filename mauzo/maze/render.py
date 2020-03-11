@@ -7,16 +7,30 @@ from    OpenGL.GLU  import *
 
 from    .           import camera
 from    .           import player
+from    .           import text
 from    .world      import render_world
 
+Font = None
+
+def init ():
+    global Font
+    Font = text.GLFont("Stencil", 100)
+
 # Clear the screen to remove the previous frame.
-def render_clear():
+def clear():
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+
+def overlay ():
+    text.push_gl_state()
+    glColor4f(1, 1, 0, 0.8)
+    Font.show("Hello world!", 0, 0)
+    text.pop_gl_state()
 
 # This is called to render every frame. We clear the window, position the
 # camera, and then call the display list to draw the world.
 def render():
-    render_clear()
+    clear()
     camera.render_camera()
     render_world()
     player.render_player()
+    overlay()
