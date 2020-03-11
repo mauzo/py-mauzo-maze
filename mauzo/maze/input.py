@@ -2,8 +2,6 @@
 
 from    pygame.locals   import *
 
-from    .       import camera
-from    .       import app 
 from    .       import options
 from    .       import player
 
@@ -33,13 +31,13 @@ Key_Bindings = {
     K_F4:       (["toggle", "40fps"],           None),
 }
 
-def input_init ():
+def input_init (app):
     global Commands
 
     Commands = {
         "jump":     player.player_jump,
-        "pan":      camera.camera_pan,
-        "quit":     app.event_post_quit,
+        "pan":      app.camera.pan,
+        "quit":     app.post_quit,
         "toggle":   options.toggle,
         "walk":     player.player_walk,
     }

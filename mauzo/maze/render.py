@@ -5,17 +5,24 @@
 from    OpenGL.GL   import *
 from    OpenGL.GLU  import *
 
-from    .           import camera
 from    .           import gl
 from    .           import player
 from    .           import text
 from    .world      import render_world
 
 class Renderer:
-    __slots__ = ["app", "font"]
+    __slots__ = [
+        # The app we are running
+        "app",
+        # The camera, so we can point in the right direction
+        "camera",
+        # The font to use for the text
+        "font",
+    ]
 
     def __init__ (self, app):
         self.app    = app
+        self.camera = app.camera
 
         gl.init()
         text.init()
@@ -36,7 +43,7 @@ class Renderer:
     # camera, and then call the display list to draw the world.
     def render (self):
         self.clear()
-        camera.render_camera()
+        self.camera.render()
         render_world()
         player.render_player()
         self.overlay()

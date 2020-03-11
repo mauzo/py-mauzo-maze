@@ -3,23 +3,24 @@
 from    OpenGL.GL       import *
 from    OpenGL.GLU      import *
 
+from    .vectors    import *
+from    .world      import doomed, find_floor_below, world_start_pos
+
 # This dict has information about the player.
-# This must appear before the imports below because camera.py uses it.
 Player = {
+    # A ref to our app
+    "app":      None,
     # Our current position
     "pos":      [0, 0, 0],
     # Our current veolcity (our speed in the X, Y and Z directions)
     "vel":      [0, 0, 0],
     # Our current walk speed.
     "walk":     [0, 0, 0],
+    # Our current facing direction (a quaternion)
+    "face":     [0, 0, 0, 0],
     # True if we are currently jumping.
     "jump":     False,
 }
-
-from    .           import app
-from    .camera     import Camera
-from    .vectors    import *
-from    .world      import doomed, find_floor_below, world_start_pos
 
 # The speeds at which the player walks, jumps and falls.
 # These numbers don't make sense to me; possibly I'm expecting the
@@ -35,8 +36,11 @@ Speed = {
 # This is a private variable to hold our display list number.
 _DL = None
 
-def init_player ():
+def init_player (app):
     global _DL
+
+    # Save the app for later
+    Player["app"]   = app
 
     # Find our starting position from the world definition. We need to
     # change this from a tuple to a list since we need it to be
@@ -79,12 +83,12 @@ def render_player ():
 # The player has died...
 def player_die ():
     print("AAAARGH!!!")
-    app.event_post_quit()
+    Player["app"].post_quit()
 
 # The player has won...
 def player_win ():
     print("YaaaY!!!!")
-    app.event_post_quit()
+    Player["app"].post_quit()
 
 # Set how we're trying to walk. We will only move if we're on the
 # ground. Don't attempt to set a Z coordinate
@@ -109,8 +113,6 @@ def player_physics(dt):
     walk    = Player["walk"]
     jump    = Player["jump"]
 
-    walk_q  = Camera["walk_quat"]
-
     # Assume we are falling.
     falling     = True
 
@@ -132,8 +134,9 @@ def player_physics(dt):
         vel[2] -= dt * Speed["fall"]
     else:
         # Otherwise, set our velocity to our walk vector rotated to the
-        # camera angle.
-        vel = quat_apply(walk_q, walk)
+        # direction we are facing.
+        face    = Player["face"]
+        vel     = quat_apply(face, walk)
         # Then, if we are jumping, set our z velocity to be the jump speed
         # and turn off the jump (we only jump once).
         if (jump):

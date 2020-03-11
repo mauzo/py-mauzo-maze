@@ -16,8 +16,24 @@ from . import world
 _APP = None
 
 class MazeApp:
-    __slots__ = ["clock", "fps", "handlers", "render", "run_physics"]
+    # This defines the attributes this object can have.
+    __slots__ = [
+        # An object representing the camera
+        "camera",
+        # A clock to keep track of the framerate
+        "clock",
+        # A number saying what framerate we are aiming for
+        "fps",
+        # A dict saying how to handle different types of event
+        "handlers", 
+        # An object that knows how to draw a frame
+        "render",
+        # True if we should run the physics, False if we are paused
+        "run_physics",
+    ]
 
+    # This is called automatically when we create a new object, to set
+    # things up.
     def __init__ (self):
         # This dict maps an event type to a function for handling that event.
         # The lambdas are little functions defined on the spot. 
@@ -40,14 +56,16 @@ class MazeApp:
         # Open the window and setup pygame
         display.init_display()
 
-        # Create a rendering object
+        # Run the other initialisation
+        world.init_world()
+        player.init_player(self)
+        
+        # Create objects representing other parts of the system
+        self.camera         = camera.Camera(self)
         self.render         = render.Renderer(self)
 
-        # Run the other initialisation
-        input.input_init()
-        world.init_world()
-        player.init_player()
-        camera.camera_init()
+        # This must be last as it needs to get at camera and player
+        input.input_init(self)
 
     def quit (self):
         pygame.quit()
@@ -105,8 +123,10 @@ class MazeApp:
         # Run the physics. Pass in the time taken since the last frame.
         dt = self.clock.get_time() / 1000
         player.player_physics(dt)
-        camera.camera_physics(dt)
+        self.camera.physics(dt)
 
+    def post_quit (self):
+        pygame.event.post(Event(QUIT))
 
 def get_app ():
     global _APP
