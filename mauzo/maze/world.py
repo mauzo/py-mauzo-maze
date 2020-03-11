@@ -71,6 +71,11 @@ World = {
           "colour":     "Grey",
           "win":        False,
         },
+        { "pos":        (-13, -13, -5),
+          "edges":      ((10, 0, 0), (0, 15, 0)),
+          "colour":     "Red",
+          "win":        False,
+        },
     ],
 
     # A list of the walls. Walls are parallelograms. The edges must be
