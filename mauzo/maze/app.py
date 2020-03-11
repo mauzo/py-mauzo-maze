@@ -26,6 +26,8 @@ class MazeApp:
         "fps",
         # A dict saying how to handle different types of event
         "handlers", 
+        # The player object
+        "player",
         # An object that knows how to draw a frame
         "render",
         # True if we should run the physics, False if we are paused
@@ -50,6 +52,11 @@ class MazeApp:
         # Set up a clock to keep track of the framerate.
         self.clock          = pygame.time.Clock()
 
+        # Create objects representing other parts of the system
+        self.player         = player.Player(self)
+        self.camera         = camera.Camera(self, self.player)
+        self.render         = render.Renderer(self)
+
     # This has to be separate from __init__ so it can be called at the
     # right time.
     def init (self):
@@ -58,11 +65,9 @@ class MazeApp:
 
         # Run the other initialisation
         world.init_world()
-        player.init_player(self)
-        
-        # Create objects representing other parts of the system
-        self.camera         = camera.Camera(self)
-        self.render         = render.Renderer(self)
+        self.player.init()
+        self.camera.init()
+        self.render.init()
 
         # This must be last as it needs to get at camera and player
         input.input_init(self)
@@ -122,11 +127,21 @@ class MazeApp:
     def physics (self):
         # Run the physics. Pass in the time taken since the last frame.
         dt = self.clock.get_time() / 1000
-        player.player_physics(dt)
+        self.player.physics(dt)
         self.camera.physics(dt)
 
     def post_quit (self):
         pygame.event.post(Event(QUIT))
+
+    # The player has died...
+    def die (self):
+        print("AAAARGH!!!")
+        self.post_quit()
+
+    # The player has won...
+    def win (self):
+        print("YaaaY!!!!")
+        self.post_quit()
 
 def get_app ():
     global _APP

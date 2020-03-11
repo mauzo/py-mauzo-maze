@@ -35,11 +35,11 @@ def input_init (app):
     global Commands
 
     Commands = {
-        "jump":     player.player_jump,
+        "jump":     app.player.set_jump,
         "pan":      app.camera.pan,
         "quit":     app.post_quit,
         "toggle":   options.toggle,
-        "walk":     player.player_walk,
+        "walk":     app.player.set_walk,
     }
 
 def input_handle_key (k, down):

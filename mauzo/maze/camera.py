@@ -23,14 +23,18 @@ class Camera:
         "angle",
         # The current pan speeds
         "panning",
+        # The player object
+        "player",
     ]
 
     # This is called automatically to set up the object
-    def __init__ (self, app):
+    def __init__ (self, app, player):
         self.offset     = 8
         self.angle      = [70, -10]
         self.panning    = [0, 0]
+        self.player     = player
 
+    def init (self):
         # Make sure the player is facing the right way
         self.update_player_face()
 
@@ -41,7 +45,7 @@ class Camera:
 
     # Keep player up to date with the walk direction
     def update_player_face (self):
-        Player["face"] = quat_rotate_about(self.angle[0], [0, 0, 1])
+        self.player.face = quat_rotate_about(self.angle[0], [0, 0, 1])
 
     # Update the camera angle if we are panning.
     def do_pan (self, dt):
@@ -77,7 +81,7 @@ class Camera:
     # Position the camera based on the player's current position. We put
     # the camera 1 unit above the player's position.
     def render (self):
-        pos     = Player["pos"]
+        pos     = self.player.pos
         angle   = self.angle
         
         # Clear the previous camera position

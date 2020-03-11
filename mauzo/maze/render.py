@@ -6,7 +6,6 @@ from    OpenGL.GL   import *
 from    OpenGL.GLU  import *
 
 from    .           import gl
-from    .           import player
 from    .           import text
 from    .world      import render_world
 
@@ -14,16 +13,14 @@ class Renderer:
     __slots__ = [
         # The app we are running
         "app",
-        # The camera, so we can point in the right direction
-        "camera",
         # The font to use for the text
         "font",
     ]
 
     def __init__ (self, app):
         self.app    = app
-        self.camera = app.camera
 
+    def init (self):
         gl.init()
         text.init()
         self.font   = text.GLFont("Stencil", 100)
@@ -42,8 +39,9 @@ class Renderer:
     # This is called to render every frame. We clear the window, position the
     # camera, and then call the display list to draw the world.
     def render (self):
+        app = self.app
         self.clear()
-        self.camera.render()
+        app.camera.render()
         render_world()
-        player.render_player()
+        app.player.render()
         self.overlay()
