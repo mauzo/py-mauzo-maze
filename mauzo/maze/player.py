@@ -16,8 +16,8 @@ Player = {
     "jump":     False,
 }
 
+from    .           import app
 from    .camera     import Camera
-from    .app        import event_post_quit
 from    .vectors    import *
 from    .world      import doomed, find_floor_below, world_start_pos
 
@@ -79,12 +79,12 @@ def render_player ():
 # The player has died...
 def player_die ():
     print("AAAARGH!!!")
-    event_post_quit()
+    app.event_post_quit()
 
 # The player has won...
 def player_win ():
     print("YaaaY!!!!")
-    event_post_quit()
+    app.event_post_quit()
 
 # Set how we're trying to walk. We will only move if we're on the
 # ground. Don't attempt to set a Z coordinate

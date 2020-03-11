@@ -25,9 +25,6 @@ def init_display():
     pygame.display.set_mode(Display["viewport"],
         OPENGL|DOUBLEBUF|RESIZABLE)
 
-def display_quit ():
-    pygame.display.quit()
-
 def display_set_viewport (w, h):
     Display["viewport"] = (w, h)
     display_reset_viewport()

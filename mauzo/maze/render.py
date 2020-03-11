@@ -6,6 +6,7 @@ from    OpenGL.GL   import *
 from    OpenGL.GLU  import *
 
 from    .           import camera
+from    .           import gl
 from    .           import player
 from    .           import text
 from    .world      import render_world
@@ -16,7 +17,8 @@ class Renderer:
     def __init__ (self, app):
         self.app    = app
 
-    def init (self):
+        gl.init()
+        text.init()
         self.font   = text.GLFont("Stencil", 100)
 
     # Clear the screen to remove the previous frame.
