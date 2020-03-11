@@ -3,7 +3,7 @@
 from    pygame.locals   import *
 
 from    .       import camera
-from    .       import events
+from    .       import app 
 from    .       import options
 from    .       import player
 
@@ -26,6 +26,7 @@ Key_Bindings = {
     K_s:        (["walk", [-1, 0, 0]],          ["walk", [1, 0, 0]]),
     K_a:        (["walk", [0, 1, 0]],           ["walk", [0, -1, 0]]),
     K_d:        (["walk", [0, -1, 0]],          ["walk", [0, 1, 0]]),
+    K_p:        (["toggle", "pause"],           None),
     K_SPACE:    (["jump", True],                None),
     K_F2:       (["toggle", "wireframe"],       None),
     K_F3:       (["toggle", "backface"],        None),
@@ -38,7 +39,7 @@ def input_init ():
     Commands = {
         "jump":     player.player_jump,
         "pan":      camera.camera_pan,
-        "quit":     events.event_post_quit,
+        "quit":     app.event_post_quit,
         "toggle":   options.toggle,
         "walk":     player.player_walk,
     }

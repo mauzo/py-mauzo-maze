@@ -2,19 +2,22 @@
 
 from    OpenGL.GL       import *
 
+from    .   import app
 from    .   import display
 
 # This holds options which can be changed at runtime.
 # This must come before the imports below as .display uses it.
 Options = {
-    # Display in wireframe
-    "wireframe":    False,
+    # Toggle fps
+    "40fps":        False,
     # Show back faces
     "backface":     False,
     # Show miniviews
     "miniview":     False,
-    # Toggle fps
-    "40fps":        False,
+    # Paused
+    "pause":        False,
+    # Display in wireframe
+    "wireframe":    False,
 }
 
 # Toggle an option
@@ -34,6 +37,16 @@ def option_wireframe (on):
     else:
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
+# XXX hack We should not be poking inside App like this. Options needs
+# to be an object too, but then so does everything else...
+def option_40fps (on):
+    a = app.get_app()
+    if on:
+        a.fps = 40
+    else:
+        a.fps = 80
+    print("FPS now", a.fps)
+
 def option_backface (on):
     if (on):
         glDisable(GL_CULL_FACE)
@@ -46,9 +59,5 @@ def option_backface (on):
 def option_miniview (on):
     display.display_reset_viewport()
 
-def option_40fps (on):
-    if on:
-        display.Display["fps"] = 40
-    else:
-        display.Display["fps"] = 80
-    print("FPS now", display.Display["fps"])
+def option_pause (on):
+    app.get_app().run_physics = not on

@@ -15,6 +15,8 @@ from mauzo.maze.all import *
 # Main
 
 def main():
+    my_app = app.init()
+
     # Open the window and setup pygame
     init_display()
 
@@ -31,7 +33,7 @@ def main():
         render.init()
 
         # Go into the main loop, which doesn't return until we quit the game.
-        mainloop()
+        my_app.run()
     finally:
         display_quit()
 

@@ -17,7 +17,7 @@ Player = {
 }
 
 from    .camera     import Camera
-from    .events     import event_post_quit
+from    .app        import event_post_quit
 from    .vectors    import *
 from    .world      import doomed, find_floor_below, world_start_pos
 
