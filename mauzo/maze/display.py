@@ -28,20 +28,6 @@ def init_display():
 def display_quit ():
     pygame.display.quit()
 
-# Set up the initial OpenGL state, including the projection matrix.
-def init_opengl():
-    glEnable(GL_DEPTH_TEST)
-    glEnable(GL_LINE_SMOOTH)
-    glEnable(GL_POINT_SMOOTH)
-    glEnable(GL_LIGHTING)
-    glEnable(GL_COLOR_MATERIAL)
-    glEnable(GL_LIGHT0)
-    glEnable(GL_CULL_FACE)
-
-    glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE)
-
-    glPointSize(5)
-
 def display_set_viewport (w, h):
     Display["viewport"] = (w, h)
     display_reset_viewport()
