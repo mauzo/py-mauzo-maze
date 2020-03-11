@@ -3,6 +3,10 @@ from    OpenGL.GL           import *
 import  pygame
 from    pygame.locals       import *
 import  pygame.freetype
+import  signal
+
+def sigint (x, y):
+    raise KeyboardInterrupt()
 
 def eloop ():
     pygame.event.get()
@@ -16,11 +20,16 @@ def clear ():
     glClear(GL_COLOR_BUFFER_BIT)
     flip()
 
+WINSIZE = (0, 400, 0, 100)
+
 def init_display ():
     pygame.display.init()
     pygame.freetype.init()
 
-    pygame.display.set_mode((200, 200), OPENGL|DOUBLEBUF)
+    signal.signal(signal.SIGINT, sigint)
+
+    size = (WINSIZE[1] - WINSIZE[0], WINSIZE[3] - WINSIZE[2])
+    pygame.display.set_mode(size, OPENGL|DOUBLEBUF)
     eloop()
 
 def init_gl ():
@@ -31,6 +40,9 @@ def init_gl ():
     # blending
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    glEnable(GL_POINT_SMOOTH)
+    glEnable(GL_LINE_SMOOTH)
+    glPointSize(5)
 
     # pixel transfer
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
@@ -38,16 +50,23 @@ def init_gl ():
     # textures
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE)
 
+    # projection
+    glMatrixMode(GL_PROJECTION)
+    glLoadIdentity()
+    glOrtho(*WINSIZE, -1, 1)
+    glMatrixMode(GL_MODELVIEW)
+    glLoadIdentity()
+
 def square (l, t, r, b):
     glBegin(GL_TRIANGLE_FAN)
     glTexCoord2f(l, t)
-    glVertex3f(-0.5, 0.5, -0.5)
+    glVertex2f(-50, 50)
     glTexCoord2f(l, b)
-    glVertex3f(-0.5, -0.5, -0.5)
+    glVertex2f(-50, -50)
     glTexCoord2f(r, b)
-    glVertex3f(0.5, -0.5, -0.5)
+    glVertex2f(50, -50)
     glTexCoord2f(r, t)
-    glVertex3f(0.5, 0.5, -0.5)
+    glVertex2f(50, 50)
     glEnd()
 
 _tex_clamp = {
@@ -92,12 +111,35 @@ class Glyph:
             self.texture = new_texture(clamp=True, linear=True)
             load_texture(GL_ALPHA, *size, buf)
 
-class GLFont:
-    __slots__ = ["characters"]
+    def advance (self, x, y):
+        m = self.metrics
+        return (x + m[4], y + m[5])
 
-    def __init__ (self, font_name):
+    def show (self, x, y):
+        m = self.metrics
+
+        glEnable(GL_TEXTURE_2D)
+        glBindTexture(GL_TEXTURE_2D, self.texture)
+        glBegin(GL_TRIANGLE_FAN)
+        glTexCoord2f(0, 0)
+        glVertex2f(x + m[0], y + m[3])
+        glTexCoord2f(0, 1)
+        glVertex2f(x + m[0], y + m[2])
+        glTexCoord2f(1, 1)
+        glVertex2f(x + m[1], y + m[2])
+        glTexCoord2f(1, 0)
+        glVertex2f(x + m[1], y + m[3])
+        glEnd()
+        glDisable(GL_TEXTURE_2D)
+
+        return (x + m[4], y + m[5])
+
+class GLFont:
+    __slots__ = ["height", "characters"]
+
+    def __init__ (self, font_name, height):
         # XXX We probably don't want to use system fonts.
-        font    = pygame.freetype.SysFont(font_name, 100)
+        font    = pygame.freetype.SysFont(font_name, height)
         
         chars = {}
         # XXX This is the usable range of ASCII, which will do for now.
@@ -105,7 +147,25 @@ class GLFont:
             c = chr(i)
             chars[c] = Glyph(font, c)
 
+        self.height     = height
         self.characters = chars
+
+    def advance (self, msg):
+        chars   = self.characters
+        (x, y)  = (0, 0)
+
+        for c in msg:
+            (x, y) = chars[c].advance(x, y)
+
+        return (x, y)
+
+    def show (self, msg, x, y):
+        chars   = self.characters
+
+        for c in msg:
+            (x, y) = chars[c].show(x, y)
+
+        return (x, y)
 
 init_display()
 init_gl()
