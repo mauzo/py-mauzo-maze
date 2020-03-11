@@ -22,7 +22,7 @@ def clear():
 
 def overlay ():
     text.push_gl_state()
-    glColor4f(1, 1, 0, 0.4)
+    glColor4f(1, 1, 0, 0.8)
     Font.show("Hello world!", 0, 0)
     text.pop_gl_state()
 

@@ -21,10 +21,11 @@ def push_gl_state ():
     glPushMatrix()
     glLoadIdentity()
 
-    glPushAttrib(GL_ENABLE_BIT)
+    glPushAttrib(GL_ENABLE_BIT|GL_TEXTURE_BIT)
     glDisable(GL_LIGHTING)
     glDisable(GL_DEPTH_TEST)
     glDisable(GL_CULL_FACE)
+    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_BLEND)
 
 # Pop the state pushed above.
 def pop_gl_state ():
