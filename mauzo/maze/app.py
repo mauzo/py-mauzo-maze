@@ -105,7 +105,7 @@ class MazeApp:
         # Run the physics. Pass in the time taken since the last frame.
         dt = self.clock.get_time() / 1000
         player.player_physics(dt)
-        camera.camera_physics()
+        camera.camera_physics(dt)
 
 
 def get_app ():

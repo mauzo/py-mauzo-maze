@@ -26,7 +26,8 @@ Camera = {
 from    .player     import Player
 from    .vectors    import *
 
-CAMERA_PAN  = 0.8
+# This is the speed the camera pans at, in degrees/second.
+CAMERA_PAN  = 60
 
 # Change the camera pan speed
 def camera_pan (v):
@@ -44,48 +45,36 @@ def camera_update_walk_quat ():
     #print("Camera angle", angle, "quat", Camera["walk_quat"])
 
 # Update the camera angle if we are panning.
-def camera_do_pan ():
+def camera_do_pan (dt):
     pan     = Camera["pan"]
     if (pan == [0, 0]):
         return
 
+    # Multiply the pan speed by the time step so we always pan at the
+    # same speed.
+    delta   = [x * dt for x in pan]
     angle   = Camera["angle"]
 
     # This fmod() function divides by 360 and takes the remainder.
     # This makes sure we are always between 0 and 360 degrees.
-    # We subtract pan[0] because angles are measured CCW but we want
+    # We subtract delta[0] because angles are measured CCW but we want
     # a +ve pan to turn us right. Otherwise it's confusing.
-    horiz = fmod(angle[0] - pan[0], 360)
+    horiz = fmod(angle[0] - delta[0], 360)
     if (horiz < 0):
         horiz += 360
     
-    vert = angle[1] + pan[1]
+    vert = angle[1] + delta[1]
     if (vert > 90):
         vert = 90
     if (vert < -90):
         vert = -90
 
     Camera["angle"]     = [horiz, vert]
-    #Camera["moved"]     = True
     camera_update_walk_quat()
 
-# Move the camera if we need to. We must have walk_quat up to date.
-def camera_do_move ():
-    if (not Camera["moved"]):
-        return
-
-    # Find our position from the player position and our offset.
-    off = quat_apply(Camera["walk_quat"], Camera["offset"])
-    pos = vec_add(Player["pos"], off)
-
-    print("Camera position", pos)
-    Camera["pos"]   = pos
-    Camera["moved"] = False
-    
 # Update the camera
-def camera_physics ():
-    camera_do_pan()
-    #camera_do_move()
+def camera_physics (dt):
+    camera_do_pan(dt)
 
 # Position the camera based on the player's current position. We put
 # the camera 1 unit above the player's position.
