@@ -7,6 +7,7 @@ from    pygame.locals       import *
 from . import camera
 from . import display
 from . import input
+from . import options
 from . import player
 from . import render
 
@@ -14,7 +15,7 @@ from . import render
 _APP = None
 
 class MazeApp:
-    __slots__ = ["clock", "fps", "handlers", "run_physics"]
+    __slots__ = ["clock", "fps", "handlers", "render", "run_physics"]
 
     def __init__ (self):
         # This dict maps an event type to a function for handling that event.
@@ -27,12 +28,15 @@ class MazeApp:
 
         # We are not paused to start with
         self.run_physics    = True
-
         # We start at 80 fps
         self.fps            = 80
-
         # Set up a clock to keep track of the framerate.
-        self.clock          = pygame.time.Clock()    
+        self.clock          = pygame.time.Clock()
+        # Create a rendering object
+        self.render         = render.Renderer(self)
+
+    def option (s, o):
+        return options.Options[o]
 
     # This is the main loop that runs the whole game. We wait for events
     # and handle them as we need to.
@@ -52,7 +56,7 @@ class MazeApp:
 
             # Draw the frame. We draw on the 'back of the page' and then
             # flip the page over so we don't see a half-drawn picture.        
-            render.render()
+            self.render.render()
             display.display_flip()
 
             if self.run_physics:

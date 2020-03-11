@@ -6,33 +6,35 @@ from    OpenGL.GL   import *
 from    OpenGL.GLU  import *
 
 from    .           import camera
-from    .           import options
 from    .           import player
 from    .           import text
 from    .world      import render_world
 
-Font = None
+class Renderer:
+    __slots__ = ["app", "font"]
 
-def init ():
-    global Font
-    Font = text.GLFont("Stencil", 100)
+    def __init__ (self, app):
+        self.app    = app
 
-# Clear the screen to remove the previous frame.
-def clear():
-    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+    def init (self):
+        self.font   = text.GLFont("Stencil", 100)
 
-def overlay ():
-    if options.Options["pause"]:
-        text.push_gl_state()
-        glColor4f(1, 0.5, 0, 0.8)
-        Font.show("PAUSED", 0, 0)
-        text.pop_gl_state()
+    # Clear the screen to remove the previous frame.
+    def clear (x):
+        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
 
-# This is called to render every frame. We clear the window, position the
-# camera, and then call the display list to draw the world.
-def render():
-    clear()
-    camera.render_camera()
-    render_world()
-    player.render_player()
-    overlay()
+    def overlay (self):
+        if self.app.option("pause"):
+            text.push_gl_state()
+            glColor4f(1, 0.5, 0, 0.8)
+            self.font.show("PAUSED", 0, 0)
+            text.pop_gl_state()
+
+    # This is called to render every frame. We clear the window, position the
+    # camera, and then call the display list to draw the world.
+    def render (self):
+        self.clear()
+        camera.render_camera()
+        render_world()
+        player.render_player()
+        self.overlay()

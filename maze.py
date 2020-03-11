@@ -30,7 +30,7 @@ def main():
         init_world()
         init_player()
         camera_init()
-        render.init()
+        my_app.render.init()
 
         # Go into the main loop, which doesn't return until we quit the game.
         my_app.run()
