@@ -17,11 +17,11 @@ class Player:
         # Our current veolcity (our speed in the X, Y and Z directions)
         "vel",
         # Our current walk speed.
-        "walk",
+        "walking",
         # Our current facing direction (a quaternion)
-        "face",
+        "facing",
         # True if we are currently jumping.
-        "jump",
+        "jumping",
     ]
 
     def __init__ (self, app):
@@ -32,11 +32,11 @@ class Player:
         # modifiable.
         self.pos    = [c for c in world_start_pos()]
 
-        self.vel    = [0, 0, 0]
-        self.walk   = [0, 0, 0]
+        self.vel        = [0, 0, 0]
+        self.walking    = [0, 0, 0]
         # This will be updated by the camera
-        self.face   = [0, 0, 0, 0]
-        self.jump   = False
+        self.facing     = [0, 0, 0, 0]
+        self.jumping    = False
 
     def init (self):
         # Compile a display list.
@@ -83,15 +83,20 @@ class Player:
         glCallLists(self.DL)
         glPopMatrix()
 
+    # Set our facing direction
+    def face (self, angle):
+        self.facing = quat_rotate_about(angle, [0, 0, 1])
+
     # Set how we're trying to walk. We will only move if we're on the
     # ground. Don't attempt to set a Z coordinate
-    def set_walk (self, v):
-        self.walk = vec_add(self.walk, vec_mul(v, self.speed["walk"]))
+    def walk (self, v):
+        self.walking = vec_add(self.walking, 
+            vec_mul(v, self.speed["walk"]))
 
     # Set the flag to show we're jumping. We will only jump if we're on the
     # ground.
-    def set_jump (self, to):
-        self.jump = to
+    def jump (self):
+        self.jumping = True
 
     bump = 0.49
 
@@ -116,18 +121,18 @@ class Player:
                 #("Falling through floor", floor)
 
         if (falling):
-            # If we are falling, increase our velocity in the downwards z direction
-            # by the fall speed (actually an acceleration). 
+            # If we are falling, increase our velocity in the downwards
+            # z direction by the fall speed (actually an acceleration). 
             vel[2] -= dt * self.speed["fall"]
         else:
             # Otherwise, set our velocity to our walk vector rotated to the
             # direction we are facing.
-            vel     = quat_apply(self.face, self.walk)
+            vel     = quat_apply(self.facing, self.walking)
             # Then, if we are jumping, set our z velocity to be the jump speed
             # and turn off the jump (we only jump once).
-            if (self.jump):
+            if (self.jumping):
                 vel[2] = self.speed["jump"]
-                self.set_jump(False)
+                self.jumping = False
 
         # Save our velocity for next time
         self.vel = vel

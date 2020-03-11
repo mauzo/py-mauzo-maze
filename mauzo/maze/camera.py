@@ -45,7 +45,7 @@ class Camera:
 
     # Keep player up to date with the walk direction
     def update_player_face (self):
-        self.player.face = quat_rotate_about(self.angle[0], [0, 0, 1])
+        self.player.face(self.angle[0])
 
     # Update the camera angle if we are panning.
     def do_pan (self, dt):

@@ -25,7 +25,7 @@ Key_Bindings = {
     K_a:        (["walk", [0, 1, 0]],           ["walk", [0, -1, 0]]),
     K_d:        (["walk", [0, -1, 0]],          ["walk", [0, 1, 0]]),
     K_p:        (["toggle", "pause"],           None),
-    K_SPACE:    (["jump", True],                None),
+    K_SPACE:    (["jump"],                      None),
     K_F2:       (["toggle", "wireframe"],       None),
     K_F3:       (["toggle", "backface"],        None),
     K_F4:       (["toggle", "40fps"],           None),
@@ -35,11 +35,11 @@ def input_init (app):
     global Commands
 
     Commands = {
-        "jump":     app.player.set_jump,
+        "jump":     app.player.jump,
         "pan":      app.camera.pan,
         "quit":     app.post_quit,
         "toggle":   options.toggle,
-        "walk":     app.player.set_walk,
+        "walk":     app.player.walk,
     }
 
 def input_handle_key (k, down):
