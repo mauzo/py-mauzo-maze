@@ -22,11 +22,14 @@ from    .vectors    import *
 from    .world      import doomed, find_floor_below, world_start_pos
 
 # The speeds at which the player walks, jumps and falls.
-# These are not in sensible units at the moment.
+# These numbers don't make sense to me; possibly I'm expecting the
+# player to jump unrealistically high. If I don't make the jump speed
+# high enough the player hardly gets off the ground, but then gravity
+# has to be really high or we hang in the air for ages.
 Speed = {
-    "walk":     0.1,
-    "jump":     0.1,
-    "fall":     0.002,
+    "walk":     8.0,        # m/s
+    "jump":     8.0,        # m/s
+    "fall":     16.0,       # m/s^2
 }
 
 # This is a private variable to hold our display list number.
@@ -65,7 +68,7 @@ def render_player ():
     p   = Player["pos"]
     v   = Player["vel"]
 
-    s   = [abs(v[0])*1.2 + 1, abs(v[1])*1.2 + 1, abs(v[2])*0.6 + 1]
+    s   = [abs(v[0])*0.015 + 1, abs(v[1])*0.015 + 1, abs(v[2])*0.0075 + 1]
 
     glPushMatrix()
     glTranslate(*p)
@@ -99,7 +102,8 @@ def pos ():
 
 PLAYER_BUMP = 0.49
 
-def player_physics(ticks):
+# Run the player physics. dt the time since the last frame, in seconds.
+def player_physics(dt):
     pos     = Player["pos"]
     vel     = Player["vel"]
     walk    = Player["walk"]
@@ -108,7 +112,7 @@ def player_physics(ticks):
     walk_q  = Camera["walk_quat"]
 
     # Assume we are falling.
-    falling = True
+    falling     = True
 
     # Find the floor below us. If there is a floor, and we are close
     # enough to it, we are not falling.
@@ -125,7 +129,7 @@ def player_physics(ticks):
     if (falling):
         # If we are falling, increase our velocity in the downwards z direction
         # by the fall speed (actually an acceleration). 
-        vel[2] -= Speed["fall"]
+        vel[2] -= dt * Speed["fall"]
     else:
         # Otherwise, set our velocity to our walk vector rotated to the
         # camera angle.
@@ -143,12 +147,11 @@ def player_physics(ticks):
     if (vel == [0, 0, 0]):
         return
 
-    ## Tell the camera we have moved.
-    #Camera["moved"] = True
-
     # Take the velocity vector we have calculated and add it to our position
-    # vector to give our new position.
-    pos = vec_add(pos, vel)    
+    # vector to give our new position. Multiply the velocity by the time
+    # taken to render the last frame so our speed is independant of the
+    # FPS.
+    pos = vec_add(pos, vec_mul(vel, dt))
 
     # If we have fallen through the floor put us back on top of the floor
     # so that we land on it.

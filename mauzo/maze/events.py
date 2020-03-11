@@ -23,7 +23,6 @@ Handlers = {
 def mainloop():
     # Set up a clock to keep track of the framerate.
     clock   = pygame.time.Clock()    
-    fps     = display.Display["fps"]
     
     while True:
         # Check for events and deal with them.
@@ -44,12 +43,13 @@ def mainloop():
         display.display_flip()
 
         # Run the physics. Pass in the time taken since the last frame.
-        player.player_physics(clock.get_time())
+        dt = clock.get_time() / 1000
+        player.player_physics(dt)
         camera.camera_physics()
 
         # Wait if necessary so that we don't draw more frames per second
         # than we want. Any more is just wasting processor time.
-        clock.tick(fps)
+        clock.tick(display.Display["fps"])
 
 # Tell pygame we want to quit.
 def event_post_quit ():

@@ -29,6 +29,7 @@ Key_Bindings = {
     K_SPACE:    (["jump", True],                None),
     K_F2:       (["toggle", "wireframe"],       None),
     K_F3:       (["toggle", "backface"],        None),
+    K_F4:       (["toggle", "40fps"],           None),
 }
 
 def input_init ():

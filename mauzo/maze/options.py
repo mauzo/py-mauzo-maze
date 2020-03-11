@@ -13,6 +13,8 @@ Options = {
     "backface":     False,
     # Show miniviews
     "miniview":     False,
+    # Toggle fps
+    "40fps":        False,
 }
 
 # Toggle an option
@@ -44,3 +46,9 @@ def option_backface (on):
 def option_miniview (on):
     display.display_reset_viewport()
 
+def option_40fps (on):
+    if on:
+        display.Display["fps"] = 40
+    else:
+        display.Display["fps"] = 80
+    print("FPS now", display.Display["fps"])
