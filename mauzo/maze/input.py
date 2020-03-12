@@ -1,67 +1,99 @@
 # input.py - Handle user input
 
-from    pygame.locals   import *
+import  pygame.locals
 
-# This dict defines all the commands we can bind to keys.
-# It is filled in by input_init because otherwise these functions might
-# not exist yet.
-Commands = {}
+# For now we have a static list of keybindings. Later we want to move
+# this into a file.
+_KEYS = [
+    ("ESCAPE",   ["quit"],                      None),
+    ("q",        ["quit"],                      None),
+    ("i",        ["pan", [0, 1]],               ["pan", [0, -1]]),
+    ("k",        ["pan", [0, -1]],              ["pan", [0, 1]]),
+    ("j",        ["pan", [-1, 0]],              ["pan", [1, 0]]),
+    ("l",        ["pan", [1, 0]],               ["pan", [-1, 0]]),
+    ("w",        ["walk", [1, 0, 0]],           ["walk", [-1, 0, 0]]),
+    ("s",        ["walk", [-1, 0, 0]],          ["walk", [1, 0, 0]]),
+    ("a",        ["walk", [0, 1, 0]],           ["walk", [0, -1, 0]]),
+    ("d",        ["walk", [0, -1, 0]],          ["walk", [0, 1, 0]]),
+    ("p",        ["toggle", "pause"],           None),
+    ("SPACE",    ["jump"],                      None),
+    ("F2",       ["toggle", "wireframe"],       None),
+    ("F3",       ["toggle", "backface"],        None),
+    ("F4",       ["toggle", "40fps"],           None),
+]
 
-# This defines what all the keys do. Each keycode maps to a 2-element tuple;
-# the first says what to do on keydown, the second what to do on keyup.
-# The names are looked up as functions in Commands.
-Key_Bindings = {
-    K_ESCAPE:   (["quit"],                      None),
-    K_q:        (["quit"],                      None),
-    K_i:        (["pan", [0, 1]],               ["pan", [0, -1]]),
-    K_k:        (["pan", [0, -1]],              ["pan", [0, 1]]),
-    K_j:        (["pan", [-1, 0]],              ["pan", [1, 0]]),
-    K_l:        (["pan", [1, 0]],               ["pan", [-1, 0]]),
-    K_w:        (["walk", [1, 0, 0]],           ["walk", [-1, 0, 0]]),
-    K_s:        (["walk", [-1, 0, 0]],          ["walk", [1, 0, 0]]),
-    K_a:        (["walk", [0, 1, 0]],           ["walk", [0, -1, 0]]),
-    K_d:        (["walk", [0, -1, 0]],          ["walk", [0, 1, 0]]),
-    K_p:        (["toggle", "pause"],           None),
-    K_SPACE:    (["jump"],                      None),
-    K_F2:       (["toggle", "wireframe"],       None),
-    K_F3:       (["toggle", "backface"],        None),
-    K_F4:       (["toggle", "40fps"],           None),
-}
+# Turn a key name (like those above) into the number codes used by
+# pygame. Pygame doesn't give us a function to do this, so we have to
+# poke about a bit.
+def key_code (name):
+    symbol = "K_" + name
+    return pygame.locals.__dict__[symbol]
 
-def input_init (app):
-    global Commands
+# This class handles all the input. Currently this is only keyboard
+# input, so it looks up the key and decides what to do.
+class InputHandler:
+    __slots__ = [
+        # Our app
+        "app",
+        # The dict of commands we understand
+        "commands",
+        # Our current keybindings
+        "keys",
+    ]
 
-    Commands = {
-        "jump":     app.player.jump,
-        "pan":      app.camera.pan,
-        "quit":     app.post_quit,
-        "toggle":   app.options.toggle,
-        "walk":     app.player.walk,
-    }
+    def __init__ (self, app):
+        self.app = app
+        self.__init_commands()
+        self.__init_keys()
 
-def input_handle_key (k, down):
-    # If the keycode is not in our dict, we have nothing to do.
-    if (k not in Key_Bindings):
-        return
+    # This sets up .commands, which maps command names to the functions
+    # we should call. For now this is a static dict.
+    def __init_commands (self):
+        app = self.app
+        self.commands = {
+            "jump":     app.player.jump,
+            "pan":      app.camera.pan,
+            "quit":     app.post_quit,
+            "toggle":   app.options.toggle,
+            "walk":     app.player.walk,
+        }
 
-    # Find the entry for the keycode, and choose the first part for keydown
-    # and the second for keyup. If we have None then there is nothing to do.
-    bindings = Key_Bindings[k]
-    if (down):
-        binding = bindings[0]
-    else:
-        binding = bindings[1]
+    # This sets up .keys, which is a dict defining what the keys do.
+    # Each keycode maps to a 2-element tuple; the first says what to do
+    # on keydown, the second what to do on keyup. The names are looked
+    # up as functions in .commands.
+    # For now we build this from a static list. Later we want to read it
+    # from a file.
+    def __init_keys (self):
+        self.keys = {}
+        for b in _KEYS:
+            k = key_code(b[0])
+            self.keys[k] = (b[1], b[2])
 
-    if (binding is None):
-        return
+    def handle_key (self, k, down):
+        # If the keycode is not in our dict, we have nothing to do.
+        if (k not in self.keys):
+            return
 
-    # The first entry in the list is the command name, the rest are the
-    # arguments for the command.
-    name    = binding[0]
-    args    = binding[1:]
+        # Find the entry for the keycode, and choose the first part for
+        # keydown and the second for keyup. If we have None then there
+        # is nothing to do.
+        bindings = self.keys[k]
+        if (down):
+            binding = bindings[0]
+        else:
+            binding = bindings[1]
 
-    # Find the function by looking up in the Commands dict.
-    function    = Commands[name]
-    # Call the function, passing the arguments. The * passes the
-    # pieces of the list separately, rather than passing the whole list.
-    function(*args)
+        if (binding is None):
+            return
+
+        # The first entry in the list is the command name, the rest are the
+        # arguments for the command.
+        name    = binding[0]
+        args    = binding[1:]
+
+        # Find the function by looking up in the Commands dict.
+        function    = self.commands[name]
+        # Call the function, passing the arguments. The * passes the
+        # pieces of the list separately, rather than passing the whole list.
+        function(*args)

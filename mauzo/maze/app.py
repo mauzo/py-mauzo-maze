@@ -26,6 +26,8 @@ class MazeApp:
         "fps",
         # A dict saying how to handle different types of event
         "handlers", 
+        # An object to handle input
+        "input",
         # Options the user can change
         "options",
         # The player object
@@ -42,8 +44,8 @@ class MazeApp:
         # This dict maps an event type to a function for handling that event.
         # The lambdas are little functions defined on the spot. 
         self.handlers = {
-            KEYDOWN:        lambda e: input.input_handle_key(e.key, True),
-            KEYUP:          lambda e: input.input_handle_key(e.key, False),
+            KEYDOWN:        lambda e: self.input.handle_key(e.key, True),
+            KEYUP:          lambda e: self.input.handle_key(e.key, False),
             VIDEORESIZE:    lambda e: display.display_set_viewport(e.w, e.h),
         }
 
@@ -60,6 +62,9 @@ class MazeApp:
         self.camera         = camera.Camera(self, self.player)
         self.render         = render.Renderer(self)
 
+        # This must be last as it needs to get at the others (for now)
+        self.input          = input.InputHandler(self)
+
     # This has to be separate from __init__ so it can be called at the
     # right time.
     def init (self):
@@ -71,9 +76,6 @@ class MazeApp:
         self.player.init()
         self.camera.init()
         self.render.init()
-
-        # This must be last as it needs to get at camera and player
-        input.input_init(self)
 
     def quit (self):
         pygame.quit()
