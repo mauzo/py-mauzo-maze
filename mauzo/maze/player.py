@@ -22,6 +22,8 @@ class Player:
         "facing",
         # True if we are currently jumping.
         "jumping",
+        # The time we were last stopped.
+        "stopped",
     ]
 
     def __init__ (self, app):
@@ -37,6 +39,7 @@ class Player:
         # This will be updated by the camera
         self.facing     = [0, 0, 0, 0]
         self.jumping    = False
+        self.stopped    = 0
 
     def init (self):
         # Compile a display list.
@@ -104,6 +107,7 @@ class Player:
     def physics(self, dt):
         pos     = self.pos
         vel     = self.vel
+        now     = self.app.now()
 
         # Assume we are falling.
         falling     = True
@@ -124,6 +128,11 @@ class Player:
             # If we are falling, increase our velocity in the downwards
             # z direction by the fall speed (actually an acceleration). 
             vel[2] -= dt * self.speed["fall"]
+            # If we have only just moved, remove our sideways velocity
+            # so we fall straight down.
+            if now - self.stopped < 200:
+                vel[0] = 0
+                vel[1] = 0
         else:
             # Otherwise, set our velocity to our walk vector rotated to the
             # direction we are facing.
@@ -137,8 +146,9 @@ class Player:
         # Save our velocity for next time
         self.vel = vel
 
-        # If we aren't moving, there's nothing to do.
+        # If we aren't moving, record that we stopped and return.
         if (vel == [0, 0, 0]):
+            self.stopped = now
             return
 
         # Take the velocity vector we have calculated and add it to our position

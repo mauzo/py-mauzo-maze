@@ -129,6 +129,10 @@ class MazeApp:
         self.render.render()
         display.display_flip()
 
+    # Return the time now, in milliseconds.
+    def now (self):
+        return pygame.time.get_ticks()
+
     def physics (self):
         # Run the physics. Pass in the time taken since the last frame.
         dt = self.clock.get_time() / 1000
