@@ -22,7 +22,7 @@ World = {
     },
 
     # The player's starting position
-    "start":      (-4, -8, -0.49),
+    "start":      (-2, -2, -0.49),
 
     # A list of all the floors. Floors are horizontal rectangles. Each
     # floor has a dict with these keys:
@@ -48,7 +48,7 @@ World = {
         },
         { "pos":        (-7, 0, 1),
           "edges":      ((3, 0, 0), (0, 5, 0)),
-          "colour":     "Blue",
+          "colour":     "Green",
           "win":        False,
         },
         { "pos":        (0, 0, 2),
@@ -73,42 +73,56 @@ World = {
         },
         { "pos":        (-13, -13, -5),
           "edges":      ((10, 0, 0), (0, 15, 0)),
-          "colour":     "Red",
+          "colour":     "Pink",
           "win":        False,
         },
+        { "pos":        (1, -13, -3),
+          "edges":      ((8, 0, 0), (0, 2, 0)),
+          "colour":     "Blue",
+          "win":        False,
+        },
+        { "pos":        (8, -14, -3),
+          "edges":      ((1, 0, 0), (0, 1, 0)),
+          "colour":     "Blue",
+          "win":        False,
+        }
     ],
 
     # A list of the walls. Walls are parallelograms. The edges must be
     # given in anticlockwise order, looking at the side of the wall you
     # can see.
     "walls": [
-        {   "pos":      (-10, -10, -1),
-            "edges":    ((0, 0, 5), (20, 0, 0)),
-            "colour":   "Blue",
+        {   "pos":      (-9, -10, -1),
+            "edges":    ((0, 0, 2), (17, 0, 0)),
+            "colour":   ("Blue", "Yellow"),
+        },
+        {   "pos":      (9, -10, -1),
+            "edges":    ((0, 0, 5), (1, 0, 0)),
+            "colour":   ("Blue", "Yellow"),
         },
         {   "pos":      (-10, -10, -1),
             "edges":    ((0, 20, 0), (0, 0, 5)),
-            "colour":   "Blue",
+            "colour":   ("Blue", None),
         },
         {   "pos":      (10, -10, -1),
             "edges":    ((0, 0, 5), (0, 20, 0)),
-            "colour":   "Blue",
+            "colour":   ("Blue", None),
         },
         {   "pos":      (-10, 10, -1),
             "edges":    ((0, 5, 0), (0, 0, 5)),
-            "colour":   "Red",
+            "colour":   ("Red", None),
         },
         {   "pos":      (-10, 15, -1),
             "edges":    ((10, 0, 0), (0, 0, 5)),
-            "colour":   "Red",
+            "colour":   ("Red", None),
         },
         {   "pos":      (10, 10, -1),
             "edges":    ((0, 0, 5), (0, 5, 0)),
-            "colour":   "Green",
+            "colour":   ("Green", None),
         },
         {   "pos":      (0, 15, -1),
             "edges":    ((10, 0, 0), (0, 0, 5)),
-            "colour":   "Green",
+            "colour":   ("Green", None),
         },
     ],
 
@@ -159,13 +173,16 @@ def draw_floors ():
 def draw_walls ():
     colours = World["colours"]
     for w in World["walls"]:
-        c = w["colour"]
-        glColor3f(*colours[c])
-
         p   = w["pos"]
         es  = w["edges"]
+        c   = w["colour"]
 
-        draw_pgram(p, *es)
+        if c[0] is not None:
+            glColor3f(*colours[c[0]])
+            draw_pgram(p, es[0], es[1])
+        if c[1] is not None:
+            glColor3f(*colours[c[1]])
+            draw_pgram(p, es[1], es[0])
 
 # Find the floor below a given position.
 # v is the point in space we want to start from.
