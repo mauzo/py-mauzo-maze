@@ -26,6 +26,8 @@ class MazeApp:
         "fps",
         # A dict saying how to handle different types of event
         "handlers", 
+        # Options the user can change
+        "options",
         # The player object
         "player",
         # An object that knows how to draw a frame
@@ -53,6 +55,7 @@ class MazeApp:
         self.clock          = pygame.time.Clock()
 
         # Create objects representing other parts of the system
+        self.options        = options.Options(self)
         self.player         = player.Player(self)
         self.camera         = camera.Camera(self, self.player)
         self.render         = render.Renderer(self)
@@ -76,7 +79,7 @@ class MazeApp:
         pygame.quit()
 
     def option (s, o):
-        return options.Options[o]
+        return s.options.get(o)
 
     # This is the main loop that runs the whole game. We wait for events
     # and handle them as we need to.

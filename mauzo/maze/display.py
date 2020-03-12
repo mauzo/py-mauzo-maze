@@ -5,7 +5,7 @@ from    OpenGL.GLU      import *
 import  pygame
 from    pygame.locals   import *
 
-from    .       import options
+from    .       import app
 
 # Information about the display.
 Display = {
@@ -36,7 +36,7 @@ MINI_OFF    = 50
 def display_reset_viewport ():
     (w, h)  = Display["viewport"]
 
-    if (options.Options["miniview"]):
+    if (app.get_app().option("miniview")):
         mini_x  = w - MINI_SIZE
         w       = mini_x - MINI_OFF
         Display["mini_x"] = mini_x

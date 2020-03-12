@@ -2,9 +2,6 @@
 
 from    pygame.locals   import *
 
-from    .       import options
-from    .       import player
-
 # This dict defines all the commands we can bind to keys.
 # It is filled in by input_init because otherwise these functions might
 # not exist yet.
@@ -38,7 +35,7 @@ def input_init (app):
         "jump":     app.player.jump,
         "pan":      app.camera.pan,
         "quit":     app.post_quit,
-        "toggle":   options.toggle,
+        "toggle":   app.options.toggle,
         "walk":     app.player.walk,
     }
 
