@@ -112,11 +112,16 @@ _shader_types = {
 }
 
 class Shader:
-    __slots__ = ["id", "objs"]
+    __slots__ = ["id", "objs", "attribs", "uniforms"]
 
     def __init__ (self):
         self.id     = glCreateProgram()
-        self.objs   = []
+        self._clear()
+
+    def _clear (self):
+        self.objs       = []
+        self.attribs    = {}
+        self.uniforms   = {}
 
     def add_shader (self, typ, src):
         sh = glCreateShader(_shader_types[typ])
@@ -139,13 +144,27 @@ class Shader:
 
         for o in self.objs:
             glDeleteShader(o)
-        self.objs = []
+
+        self._clear()
 
     def use (self):
         glUseProgram(self.id)
 
+    def _cached (self, cache, att, lookup):
+        if att in cache:
+            return cache[att]
+
+        loc = lookup(self.id, att)
+        if loc < 0:
+            raise RuntimeError("Unknown attrib/uniform " + att)
+        cache[att] = loc
+        return loc
+
     def get_attrib (self, att):
-        return glGetAttribLocation(self.id, att)
+        return self._cached(self.attribs, att, glGetAttribLocation)
+
+    def get_uniform (self, uni):
+        return self._cached(self.uniforms, uni, glGetUniformLocation)
 
 # VBOs
 
@@ -183,7 +202,14 @@ class Buffer:
 # VAOs
 
 class VAO:
-    __slots__ = ["id", "shader", "vbo", "ebo", "primitives"]
+    __slots__ = [
+        "id",           # our VAO id
+        "shader",       # our shader (a Shader)
+        "vbo",          # our VBO (a Buffer)
+        "ebo",          # our EBO (a Buffer)
+        "primitives",   # the list of primitives we render
+        "uniforms",     # uniforms to set before we render
+    ]
 
     def __init__ (self, shader):
         self.id         = glGenVertexArrays(1)
@@ -191,6 +217,7 @@ class VAO:
         self.vbo        = None
         self.ebo        = None
         self.primitives = []
+        self.uniforms   = []
 
         print("Created VAO", self.id)
 
@@ -215,13 +242,15 @@ class VAO:
     def add_vbo (self, vbo):
         self.vbo    = vbo
 
-    def setup_attrib (self, att, size, stride, offset):
+    def setup_attrib (self, att, length, stride, offset):
         ix = self.shader.get_attrib(att)
 
         self.bind()
         self.vbo.bind()
-        glVertexAttribPointer(ix, size, GL_FLOAT, GL_FALSE,
-            stride*sizeof(GLfloat), c_void_p(offset))
+
+        sz = sizeof(GLfloat)
+        glVertexAttribPointer(ix, length, GL_FLOAT, GL_FALSE,
+            stride*sz, c_void_p(offset*sz))
         glEnableVertexAttribArray(ix)
 
     def add_ebo (self, ebo):
@@ -232,10 +261,32 @@ class VAO:
     def add_primitive (self, mode, off, n):
         self.primitives.append((mode, off, n))
 
+    def _set_uniform (self, name, setter, value):
+        unis    = self.uniforms
+        loc     = self.shader.get_uniform(name)
+
+        for u in unis:
+            if u[0] == loc:
+                u[1] = setter
+                u[2] = value
+                return
+        unis.append([loc, setter, value])
+
+    def set_uniform4f (self, name, value):
+        self._set_uniform(name, glUniform4fv, value)
+
+    def set_uniform3f (self, name, value):
+        self._set_uniform(name, glUniform3fv, value)
+
+    def set_uniform1f (self, name, value):
+        self._set_uniform(name, glUniform1f, value)
+
     def render (self):
         self.shader.use()
-        self.bind()
+        for u in self.uniforms:
+            u[1](u[0], u[2])
 
+        self.bind()
         for p in self.primitives:
             (mode, off, n) = p
             if self.ebo is None:
