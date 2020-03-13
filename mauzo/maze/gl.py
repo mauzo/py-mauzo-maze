@@ -1,5 +1,6 @@
 # gl.py - Functions to simplify the GL interfaces.
 
+from    ctypes          import c_void_p, sizeof
 from    OpenGL.GL       import *
 import  PIL.Image
 
@@ -102,4 +103,143 @@ class Texture:
         img = PIL.Image.open(f)
         img = img.transpose(PIL.Image.FLIP_TOP_BOTTOM)
         self.load(fmt, img.width, img.height, img.tobytes())
+
+# Shader programs
+
+_shader_types = {
+    "vertex":   GL_VERTEX_SHADER,
+    "fragment": GL_FRAGMENT_SHADER,
+}
+
+class Shader:
+    __slots__ = ["id", "objs"]
+
+    def __init__ (self):
+        self.id     = glCreateProgram()
+        self.objs   = []
+
+    def add_shader (self, typ, src):
+        sh = glCreateShader(_shader_types[typ])
+        glShaderSource(sh, src)
+        glCompileShader(sh)
+
+        if not glGetShaderiv(sh, GL_COMPILE_STATUS):
+            log = glGetShaderInfoLog(sh)
+            raise RuntimeError("Shader compilation failed: " + log.decode())
+
+        glAttachShader(self.id, sh)
+        self.objs.append(sh)
+
+    def link (self):
+        glLinkProgram(self.id)
+
+        if not glGetProgramiv(self.id, GL_LINK_STATUS):
+            log = glGetShaderInfoLog(self.id)
+            raise RuntimeError("Shader link failed: " + log.decode())
+
+        for o in self.objs:
+            glDeleteShader(o)
+        self.objs = []
+
+    def use (self):
+        glUseProgram(self.id)
+
+    def get_attrib (self, att):
+        return glGetAttribLocation(self.id, att)
+
+# VBOs
+
+_buftypes = {
+    "vbo":  GL_ARRAY_BUFFER,
+    "ebo":  GL_ELEMENT_ARRAY_BUFFER,
+}
+
+class Buffer:
+    __slots__ = ["targ", "id", "usage"]
+
+    def __init__ (self, typ, data=None):
+        self.targ   = _buftypes[typ]
+        self.id     = glGenBuffers(1)
+
+        print("Created", typ, "buffer", self.id)
+
+        if data is not None:
+            self.load(data)
+
+    def delete (self):
+        print("Deleting buffer", self.id)
+        glDeleteBuffers(1, [self.id])
+
+    def bind (self):
+        glBindBuffer(self.targ, self.id)
+
+    def unbind (self):
+        glBindBuffer(self.targ, 0)
+
+    def load (self, data):
+        self.bind()
+        glBufferData(self.targ, data, GL_STATIC_DRAW)
+
+# VAOs
+
+class VAO:
+    __slots__ = ["id", "shader", "vbo", "ebo", "primitives"]
+
+    def __init__ (self, shader):
+        self.id         = glGenVertexArrays(1)
+        self.shader     = shader
+        self.vbo        = None
+        self.ebo        = None
+        self.primitives = []
+
+        print("Created VAO", self.id)
+
+    def delete (self):
+        print("Deleting VAO", self.id)
+        glDeleteVertexArrays(1, [self.id])
+        if self.vbo is not None:
+            self.vbo.delete()
+        if self.ebo is not None:
+            self.ebo.delete()
+
+    def bind (self):
+        glBindVertexArray(self.id)
+
+    def unbind (self):
+        glBindVertexArray(0)
+        if self.vbo is not None:
+            self.vbo.unbind()
+        if self.ebo is not None:
+            self.ebo.unbind()
+
+    def add_vbo (self, vbo):
+        self.vbo    = vbo
+
+    def setup_attrib (self, att, size, stride, offset):
+        ix = self.shader.get_attrib(att)
+
+        self.bind()
+        self.vbo.bind()
+        glVertexAttribPointer(ix, size, GL_FLOAT, GL_FALSE,
+            stride*sizeof(GLfloat), c_void_p(offset))
+        glEnableVertexAttribArray(ix)
+
+    def add_ebo (self, ebo):
+        self.ebo    = ebo
+        self.bind()
+        ebo.bind()
+
+    def add_primitive (self, mode, off, n):
+        self.primitives.append((mode, off, n))
+
+    def render (self):
+        self.shader.use()
+        self.bind()
+
+        for p in self.primitives:
+            (mode, off, n) = p
+            if self.ebo is None:
+                glDrawArrays(mode, off, n)
+            else:
+                glDrawElements(mode, n, GL_UNSIGNED_INT, c_void_p(off))
 
