@@ -46,8 +46,9 @@ class Glyph:
         if size == (0, 0):
             self.texture = None
         else:
-            self.texture = gl.new_texture(clamp=True, linear=True)
-            gl.load_texture(GL_ALPHA, *size, buf)
+            tex = gl.Texture(wrap="clamp", linear=True)
+            tex.load(GL_ALPHA, *size, buf)
+            self.texture = tex
 
     def advance (self, x, y):
         m = self.metrics
@@ -57,8 +58,9 @@ class Glyph:
         m = self.metrics
 
         if self.texture:
-            glEnable(GL_TEXTURE_2D)
-            glBindTexture(GL_TEXTURE_2D, self.texture)
+            tex = self.texture
+            tex.bind()
+            tex.enable()
             glBegin(GL_TRIANGLE_FAN)
             glTexCoord2f(0, 0)
             glVertex2f(x + m[0], y + m[3])
@@ -69,7 +71,7 @@ class Glyph:
             glTexCoord2f(1, 0)
             glVertex2f(x + m[1], y + m[3])
             glEnd()
-            glDisable(GL_TEXTURE_2D)
+            tex.disable()
 
         return (x + m[4], y + m[5])
 

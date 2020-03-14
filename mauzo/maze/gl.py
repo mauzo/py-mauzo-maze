@@ -1,6 +1,7 @@
 # gl.py - Functions to simplify the GL interfaces.
 
 from    OpenGL.GL       import *
+import  PIL.Image
 
 # Set up the initial OpenGL state.
 def init ():
@@ -27,38 +28,78 @@ def init ():
     # textures
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE)
 
-# Used by new_texture below.
-_tex_clamp = {
-    True:       GL_CLAMP,
-    False:      GL_REPEAT,
+# Clear the buffers
+def clear ():
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+
+# Used by Texture below.
+_tex_wrap = {
+    False:      GL_CLAMP,
+    True:       GL_REPEAT,
+    "clamp":    GL_CLAMP,
+    "repeat":   GL_REPEAT,
     "border":   GL_CLAMP_TO_BORDER,
     "edge":     GL_CLAMP_TO_EDGE,
 }
 
-# Create a new texture. Accepts keyword arguments:
-#   linear  True|False      Linear or nearest filtering
-#   clamp   as above        Texture wrapping behaviour
-# Leaves the new texture bound, and returns the ID.
-def new_texture (**kwargs):
-    tex = glGenTextures(1)
+# This object represents a GL texture
+class Texture:
+    __slots__ = [
+        # Our texture ID
+        "id",
+        # Our texture target
+        "target",
+    ]
 
-    filt    = GL_LINEAR
-    if "linear" in kwargs:
-        filt = (GL_LINEAR if kwargs["linear"] else GL_NEAREST)
+    # Create a new texture. Accepts keyword arguments:
+    #   target                  Defaults to GL_TEXTURE_2D
+    #   linear  True|False      Linear or nearest filtering
+    #   clamp   as above        Texture wrapping behaviour
+    # Leaves the new texture bound, and returns the ID.
+    def __init__ (self, **kwargs):
+        self.id = glGenTextures(1)
 
-    wrap    = GL_REPEAT
-    if "clamp" in kwargs:
-        wrap = _tex_clamp[kwargs["clamp"]]
+        self.target = GL_TEXTURE_2D
+        if "target" in kwargs:
+            self.target = kwargs["target"]
 
-    glBindTexture(GL_TEXTURE_2D, tex)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filt)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filt)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap)
-    return tex
+        if "linear" in kwargs:
+            self.set_linear(kwargs["linear"])
+        else:
+            self.set_linear(True)
 
-# Load an image into a texture. The texture must already be bound.
-def load_texture (fmt, w, h, array):
-    glTexImage2D(GL_TEXTURE_2D, 0, fmt, w, h, 0, fmt, GL_UNSIGNED_BYTE,
-        array)
+        if "wrap" in kwargs:
+            self.set_wrap(kwargs["wrap"])
+
+    def set_linear (self, lin):
+        filt = (GL_LINEAR if lin else GL_NEAREST)
+        self.bind()
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filt)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filt)
+
+    def set_wrap (self, to):
+        wrap = _tex_wrap[to]
+        self.bind()
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap)
+
+    def bind (self):
+        glBindTexture(self.target, self.id)
+
+    def enable (self):
+        glEnable(self.target)
+
+    def disable (self):
+        glDisable(self.target)
+
+    # Load an image into a texture.
+    def load (self, fmt, w, h, array):
+        self.bind()
+        glTexImage2D(self.target, 0, fmt, w, h, 0, fmt, GL_UNSIGNED_BYTE,
+            array)
+
+    def load_file (self, fmt, f):
+        img = PIL.Image.open(f)
+        img = img.transpose(PIL.Image.FLIP_TOP_BOTTOM)
+        self.load(fmt, img.width, img.height, img.tobytes())
 

@@ -25,10 +25,6 @@ class Renderer:
         text.init()
         self.font   = text.GLFont("Stencil", 100)
 
-    # Clear the screen to remove the previous frame.
-    def clear (x):
-        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
-
     def overlay (self):
         if self.app.option("pause"):
             text.push_gl_state()
@@ -40,7 +36,7 @@ class Renderer:
     # camera, and then call the display list to draw the world.
     def render (self):
         app = self.app
-        self.clear()
+        gl.clear()
         app.camera.render()
         render_world()
         app.player.render()

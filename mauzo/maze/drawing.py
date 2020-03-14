@@ -47,6 +47,18 @@ def draw_cube_10():
     glVertex3f(-10, 10, -10)
     glEnd()
 
+def draw_tex_square (vlb, vtr, tlb=(0,0), ttr=(1,1)):
+    glBegin(GL_QUADS)
+    glTexCoord2f(tlb[0], tlb[1])
+    glVertex2f(vlb[0], vlb[1])
+    glTexCoord2f(ttr[0], tlb[1])
+    glVertex2f(vtr[0], vlb[1])
+    glTexCoord2f(ttr[0], ttr[1])
+    glVertex2f(vtr[0], vtr[1])
+    glTexCoord2f(tlb[0], ttr[1])
+    glVertex2f(vlb[0], vtr[1])
+    glEnd()
+
 # Draw a list of points, white, with no lighting or depth
 def draw_points (points):
     glPushAttrib(GL_CURRENT_BIT|GL_ENABLE_BIT)
