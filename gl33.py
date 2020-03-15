@@ -24,8 +24,7 @@ def sigint (x, y):
 def init ():
     signal.signal(signal.SIGINT, sigint)
     pygame.init()
-    pygame.display.set_mode(WINSIZE, OPENGL|DOUBLEBUF)
-    pygame.mouse.set_visible(False)
+    pygame.display.set_mode(WINSIZE, OPENGL|DOUBLEBUF|RESIZABLE)
 
     # depth
     glEnable(GL_DEPTH_TEST)
@@ -37,6 +36,13 @@ def init ():
 
 def run (app):
     clock   = pygame.time.Clock()
+    mouseok = False
+
+    def set_mouseok (b):
+        nonlocal mouseok # grr stupid language
+        mouseok = b
+        pygame.mouse.set_visible(not b)
+        pygame.event.set_grab(b)
 
     while True:
         es = pygame.event.get()
@@ -44,10 +50,10 @@ def run (app):
             if e.type == QUIT:
                 return
             if e.type == KEYDOWN and e.key == K_ESCAPE:
-                pygame.event.set_grab(False)
+                set_mouseok(False)
             if e.type == MOUSEBUTTONDOWN:
-                pygame.event.set_grab(True)
-            if e.type == MOUSEMOTION:
+                set_mouseok(True)
+            if e.type == MOUSEMOTION and mouseok:
                 app.mouse(e)
             if e.type == VIDEORESIZE:
                 glViewport(0, 0, e.w, e.h)
