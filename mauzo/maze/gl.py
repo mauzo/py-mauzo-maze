@@ -1,6 +1,7 @@
 # gl.py - Functions to simplify the GL interfaces.
 
 from    ctypes          import c_void_p, sizeof
+import  glm
 from    OpenGL.GL       import *
 import  PIL.Image
 
@@ -166,8 +167,11 @@ class Shader:
     def get_attrib (self, att):
         return self._cached(self.attribs, att, glGetAttribLocation)
 
+    def _get_uniform_loc (self, name):
+        return self._cached(self.uniforms, name, glGetUniformLocation)
+
     def _set_uniform (self, name, setter, value):
-        loc = self._cached(self.uniforms, name, glGetUniformLocation)
+        loc = self._get_uniform_loc(name)
         self.use()
         setter(loc, value)
 
@@ -182,6 +186,11 @@ class Shader:
 
     def set_uniform1i (self, name, value):
         self._set_uniform(name, glUniform1i, value)
+
+    def set_uniform_matrix4 (self, name, mat):
+        loc = self._get_uniform_loc(name)
+        self.use()
+        glUniformMatrix4fv(loc, 1, GL_FALSE, glm.value_ptr(mat))
 
 # VBOs
 
@@ -286,14 +295,15 @@ class VAO:
         self.textures.append(tex)
         return n
 
-    def render (self):
-        self.shader.use()
-
+    def use (self):
         for i in range(len(self.textures)):
             glActiveTexture(GL_TEXTURE0 + i)
             self.textures[i].bind()
 
+        self.shader.use()
         self.bind()
+
+    def render (self):
         for p in self.primitives:
             (mode, off, n) = p
             if self.ebo is None:
