@@ -72,6 +72,9 @@ class Texture:
         if "wrap" in kwargs:
             self.set_wrap(kwargs["wrap"])
 
+    def delete (self):
+        glDeleteTextures(1, [self.id])
+
     def set_linear (self, lin):
         filt = (GL_LINEAR if lin else GL_NEAREST)
         self.bind()
@@ -163,8 +166,22 @@ class Shader:
     def get_attrib (self, att):
         return self._cached(self.attribs, att, glGetAttribLocation)
 
-    def get_uniform (self, uni):
-        return self._cached(self.uniforms, uni, glGetUniformLocation)
+    def _set_uniform (self, name, setter, value):
+        loc = self._cached(self.uniforms, name, glGetUniformLocation)
+        self.use()
+        setter(loc, value)
+
+    def set_uniform4f (self, name, value):
+        self._set_uniform(name, glUniform4fv, value)
+
+    def set_uniform3f (self, name, value):
+        self._set_uniform(name, glUniform3fv, value)
+
+    def set_uniform1f (self, name, value):
+        self._set_uniform(name, glUniform1f, value)
+
+    def set_uniform1i (self, name, value):
+        self._set_uniform(name, glUniform1i, value)
 
 # VBOs
 
@@ -208,7 +225,7 @@ class VAO:
         "vbo",          # our VBO (a Buffer)
         "ebo",          # our EBO (a Buffer)
         "primitives",   # the list of primitives we render
-        "uniforms",     # uniforms to set before we render
+        "textures",     # textures to bind before we render
     ]
 
     def __init__ (self, shader):
@@ -217,7 +234,7 @@ class VAO:
         self.vbo        = None
         self.ebo        = None
         self.primitives = []
-        self.uniforms   = []
+        self.textures   = []
 
         print("Created VAO", self.id)
 
@@ -261,30 +278,20 @@ class VAO:
     def add_primitive (self, mode, off, n):
         self.primitives.append((mode, off, n))
 
-    def _set_uniform (self, name, setter, value):
-        unis    = self.uniforms
-        loc     = self.shader.get_uniform(name)
+    def set_texture (self, n, tex):
+        self.textures[n] = tex
 
-        for u in unis:
-            if u[0] == loc:
-                u[1] = setter
-                u[2] = value
-                return
-        unis.append([loc, setter, value])
-
-    def set_uniform4f (self, name, value):
-        self._set_uniform(name, glUniform4fv, value)
-
-    def set_uniform3f (self, name, value):
-        self._set_uniform(name, glUniform3fv, value)
-
-    def set_uniform1f (self, name, value):
-        self._set_uniform(name, glUniform1f, value)
+    def add_texture (self, tex):
+        n = len(self.textures)
+        self.textures.append(tex)
+        return n
 
     def render (self):
         self.shader.use()
-        for u in self.uniforms:
-            u[1](u[0], u[2])
+
+        for i in range(len(self.textures)):
+            glActiveTexture(GL_TEXTURE0 + i)
+            self.textures[i].bind()
 
         self.bind()
         for p in self.primitives:

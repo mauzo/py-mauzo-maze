@@ -1,9 +1,11 @@
-import  pygame
-from    pygame.locals   import *
 import  math
 import  numpy           as np
 import  signal
 
+import  pygame
+from    pygame.locals   import *
+
+import  glm
 # Do this last, since pygame.locals conflicts
 from    OpenGL.GL       import *
 
@@ -22,7 +24,13 @@ def init ():
     pygame.init()
     pygame.display.set_mode(WINSIZE, OPENGL|DOUBLEBUF)
 
-def run (x):
+    # blending
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    # Pixel transfer
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+
+def run (args):
     clock = pygame.time.Clock()
     while True:
         es = pygame.event.get()
@@ -30,14 +38,15 @@ def run (x):
             if e.type == QUIT:
                 return
 
-        update(x)
-        render(x)
+        update(*args)
+        render(*args)
         clock.tick(80)
 
 vertices = np.array([
-    [[-0.5, -0.5, 0],   [1, 0, 0]],
-    [[0.5, -0.5, 0],    [0, 1, 0]],
-    [[0, 0.5, 0],       [0, 0, 1]],
+    [0.5, 0.5, 0,     1, 0, 0,      1, 1],
+    [0.5, -0.5, 0,    0, 1, 0,      1, 0],
+    [-0.5, -0.5, 0,   0, 0, 1,      0, 0],
+    [-0.5, 0.5, 0,    1, 1, 0,      0, 1],
 ], dtype=GLfloat)
 
 indices = np.array([
@@ -60,30 +69,42 @@ def make_shader ():
 def setup ():
     glClearColor(0.2, 0.3, 0.3, 1.0)
 
+    cont    = gl.Texture(linear=False)
+    cont.load_file(GL_RGB, "tex/container.jpg")
+    face    = gl.Texture(linear=False)
+    face.load_file(GL_RGBA, "tex/face.png")
+
     prg     = make_shader()
     vbo     = gl.Buffer("vbo", vertices)
-    #ebo     = gl.Buffer("ebo", indices)
+    ebo     = gl.Buffer("ebo", indices)
     vao     = gl.VAO(prg)
 
     vao.add_vbo(vbo)
-    vao.setup_attrib("b_pos",   3, 6, 0)
-    #vao.setup_attrib("b_color", 3, 6, 3)
-    #vao.add_ebo(ebo)
-    vao.add_primitive(GL_TRIANGLES, 0, 3)
+    vao.setup_attrib("b_pos",   3, 8, 0)
+    #vao.setup_attrib("b_color", 3, 8, 3)
+    vao.setup_attrib("b_tex",   2, 8, 6)
+
+    t = vao.add_texture(cont)
+    prg.set_uniform1i("u_basetex", t)
+    t = vao.add_texture(face)
+    prg.set_uniform1i("u_overlaytex", t)
+    
+    vao.add_ebo(ebo)
+    vao.add_primitive(GL_TRIANGLES, 0, 6)
     vao.unbind()
 
-    return vao
+    return (vao,)
 
 def render (vao):
-    glClear(GL_COLOR_BUFFER_BIT)
+    gl.clear()
     vao.render()
     flip()
 
 def update (vao):
     now     = pygame.time.get_ticks()/1000
-    off     = math.sin(now) * 0.5
-    vao.set_uniform1f("u_offset", off)
+    #off     = math.sin(now) * 0.5
+    #vao.set_uniform1i("u_texture", int(now)%2)
 
 init()
-vao = setup()
-run(vao)
+args = setup()
+run(args)
