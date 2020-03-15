@@ -10,7 +10,8 @@ from    glm             import vec3, vec4, mat4, radians
 # Do this last, since pygame.locals conflicts
 from    OpenGL.GL       import *
 
-import  mauzo.maze.gl   as gl
+import  mauzo.maze.gl               as gl
+import  mauzo.learnopengl.camera    as logcam
 
 WINSIZE = (500, 500)
 
@@ -24,6 +25,7 @@ def init ():
     signal.signal(signal.SIGINT, sigint)
     pygame.init()
     pygame.display.set_mode(WINSIZE, OPENGL|DOUBLEBUF)
+    pygame.mouse.set_visible(False)
 
     # depth
     glEnable(GL_DEPTH_TEST)
@@ -33,27 +35,29 @@ def init ():
     # Pixel transfer
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
 
-def run (args):
-    clock = pygame.time.Clock()
+def run (app):
+    clock   = pygame.time.Clock()
+
     while True:
         es = pygame.event.get()
         for e in es:
             if e.type == QUIT:
                 return
-            #if e.type == KEYDOWN:
-            #    handle_key(e.key, True)
-            #if e.type == KEYUP:
-            #    handle_key(e.key, False)
+            if e.type == KEYDOWN and e.key == K_ESCAPE:
+                pygame.event.set_grab(False)
+            if e.type == MOUSEBUTTONDOWN:
+                pygame.event.set_grab(True)
+            if e.type == MOUSEMOTION:
+                app.mouse(e)
+            if e.type == VIDEORESIZE:
+                glViewport(0, 0, e.w, e.h)
+                app.resize(e.w, e.h)
 
-        update(clock.get_time()/1000, *args)
-        render(*args)
+        dt = clock.get_time() / 1000
+
+        app.update(dt)
+        app.render()
         clock.tick(80)
-
-cameraPos   = vec3(0, 0, 3)
-cameraFront = vec3(0, 0, -1)
-cameraUp    = vec3(0, 1, 0)
-
-CAMERA_SPEED = 0.05
 
 vertices = np.array([
     # vertex                texture
@@ -130,77 +134,88 @@ def make_shader ():
 
     return prg
 
-def setup ():
-    glClearColor(0.2, 0.3, 0.3, 1.0)
+class App:
+    def __init__ (self):
+        self.resize(WINSIZE[0], WINSIZE[1])
 
-    cont    = gl.Texture(linear=False)
-    cont.load_file(GL_RGB, "tex/container.jpg")
-    face    = gl.Texture(linear=False)
-    face.load_file(GL_RGBA, "tex/face.png")
+    def setup (self):
+        glClearColor(0.2, 0.3, 0.3, 1.0)
 
-    prg     = make_shader()
-    vbo     = gl.Buffer("vbo", vertices)
-    #ebo     = gl.Buffer("ebo", indices)
-    vao     = gl.VAO(prg)
+        cont    = gl.Texture(linear=False)
+        cont.load_file(GL_RGB, "tex/container.jpg")
+        face    = gl.Texture(linear=False)
+        face.load_file(GL_RGBA, "tex/face.png")
 
-    vao.add_vbo(vbo)
-    vao.setup_attrib("b_pos",   3, 5, 0)
-    vao.setup_attrib("b_tex",   2, 5, 3)
+        prg     = make_shader()
+        vbo     = gl.Buffer("vbo", vertices)
+        #ebo     = gl.Buffer("ebo", indices)
+        vao     = gl.VAO(prg)
 
-    t = vao.add_texture(cont)
-    prg.set_uniform1i("u_basetex", t)
-    t = vao.add_texture(face)
-    prg.set_uniform1i("u_overlaytex", t)
-    
-    #vao.add_ebo(ebo)
-    vao.add_primitive(GL_TRIANGLES, 0, 36)
-    vao.unbind()
+        vao.add_vbo(vbo)
+        vao.setup_attrib("b_pos",   3, 5, 0)
+        vao.setup_attrib("b_tex",   2, 5, 3)
 
-    return (vao,)
+        t = vao.add_texture(cont)
+        prg.set_uniform1i("u_basetex", t)
+        t = vao.add_texture(face)
+        prg.set_uniform1i("u_overlaytex", t)
+        
+        #vao.add_ebo(ebo)
+        vao.add_primitive(GL_TRIANGLES, 0, 36)
+        vao.unbind()
 
-def render (vao):
-    now     = pygame.time.get_ticks()/1000
+        self.vao    = vao
+        self.camera = logcam.Camera()
 
-    prg     = vao.shader
+    def resize (self, w, h):
+        self.width  = w
+        self.height = h
+        self.aspect = w/h
 
-    aspect  = WINSIZE[0]/WINSIZE[1]
-    proj    = glm.perspective(radians(45), aspect, 0.1, 100)
-    prg.set_uniform_matrix4("u_proj", proj)
+    def mouse (self, e):
+        self.camera.process_mouse(e.rel[0], -e.rel[1])
 
-    view    = glm.lookAt(cameraPos, cameraPos + cameraFront, cameraUp)
-    prg.set_uniform_matrix4("u_view", view)
+    def update (self, dt):
+        camera  = self.camera
+        keys    = pygame.key.get_pressed()
 
-    vao.use()
+        if keys[K_w]:
+            camera.process_keyboard(logcam.FORWARD, dt)
+        if keys[K_s]:
+            camera.process_keyboard(logcam.BACKWARD, dt)
+        if keys[K_a]:
+            camera.process_keyboard(logcam.LEFT, dt)
+        if keys[K_d]:
+            camera.process_keyboard(logcam.RIGHT, dt)
 
-    gl.clear()
-    for i in range(len(cube_positions)):
-        model   = mat4(1)
-        model   = glm.translate(model, cube_positions[i])
-        angle   = 20 * i
-        if i % 3 == 0:
-            angle += now * 50
-        model   = glm.rotate(model, radians(angle), vec3(1, 0.3, 0.5))
-        prg.set_uniform_matrix4("u_model", model)
-        vao.render()
-    flip()
+    def render (self):
+        now     = pygame.time.get_ticks()/1000
 
-def update (dt, vao):
-    global cameraPos, cameraFront, cameraUp
+        camera  = self.camera
+        vao     = self.vao
+        prg     = vao.shader
 
-    cameraSpeed = 2.5 * dt
-    keys        = pygame.key.get_pressed()
+        proj    = glm.perspective(radians(camera.zoom), self.aspect, 0.1, 100)
+        prg.set_uniform_matrix4("u_proj", proj)
 
-    if keys[K_w]:
-        cameraPos += cameraSpeed * cameraFront
-    if keys[K_s]:
-        cameraPos -= cameraSpeed * cameraFront
-    if keys[K_a]:
-        right = glm.normalize(glm.cross(cameraFront, cameraUp))
-        cameraPos -= right * cameraSpeed
-    if keys[K_d]:
-        right = glm.normalize(glm.cross(cameraFront, cameraUp))
-        cameraPos += right * cameraSpeed
+        view    = camera.get_view_matrix()
+        prg.set_uniform_matrix4("u_view", view)
+
+        vao.use()
+
+        gl.clear()
+        for i in range(len(cube_positions)):
+            model   = mat4(1)
+            model   = glm.translate(model, cube_positions[i])
+            angle   = 20 * i
+            if i % 3 == 0:
+                angle += now * 50
+            model   = glm.rotate(model, radians(angle), vec3(1, 0.3, 0.5))
+            prg.set_uniform_matrix4("u_model", model)
+            vao.render()
+        flip()
 
 init()
-args = setup()
-run(args)
+app = App()
+app.setup()
+run(app)
