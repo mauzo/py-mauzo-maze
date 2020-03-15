@@ -241,6 +241,7 @@ class App:
         self.lightcube.render()
 
         self.box.set_matrix("u_model", mat4(1))
+        self.box.shader.set_uniform3v("u_view_pos", camera.position)
         self.box.use()
         self.box.render()
 
