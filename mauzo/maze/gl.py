@@ -231,7 +231,6 @@ class VAO:
     __slots__ = [
         "id",           # our VAO id
         "shader",       # our shader (a Shader)
-        "vbo",          # our VBO (a Buffer)
         "ebo",          # our EBO (a Buffer)
         "primitives",   # the list of primitives we render
         "textures",     # textures to bind before we render
@@ -240,7 +239,6 @@ class VAO:
     def __init__ (self, shader):
         self.id         = glGenVertexArrays(1)
         self.shader     = shader
-        self.vbo        = None
         self.ebo        = None
         self.primitives = []
         self.textures   = []
@@ -250,8 +248,6 @@ class VAO:
     def delete (self):
         print("Deleting VAO", self.id)
         glDeleteVertexArrays(1, [self.id])
-        if self.vbo is not None:
-            self.vbo.delete()
         if self.ebo is not None:
             self.ebo.delete()
 
@@ -260,19 +256,13 @@ class VAO:
 
     def unbind (self):
         glBindVertexArray(0)
-        if self.vbo is not None:
-            self.vbo.unbind()
         if self.ebo is not None:
             self.ebo.unbind()
-
-    def add_vbo (self, vbo):
-        self.vbo    = vbo
 
     def setup_attrib (self, att, length, stride, offset):
         ix = self.shader.get_attrib(att)
 
         self.bind()
-        self.vbo.bind()
 
         sz = sizeof(GLfloat)
         glVertexAttribPointer(ix, length, GL_FLOAT, GL_FALSE,

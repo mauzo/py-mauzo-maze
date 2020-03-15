@@ -157,9 +157,10 @@ class App:
         #ebo     = gl.Buffer("ebo", indices)
         vao     = gl.VAO(prg)
 
-        vao.add_vbo(vbo)
+        vbo.bind()
         vao.setup_attrib("b_pos",   3, 5, 0)
         vao.setup_attrib("b_tex",   2, 5, 3)
+        vbo.unbind()
 
         t = vao.add_texture(cont)
         prg.set_uniform1i("u_basetex", t)
