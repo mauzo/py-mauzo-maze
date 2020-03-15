@@ -170,22 +170,25 @@ class Shader:
     def _get_uniform_loc (self, name):
         return self._cached(self.uniforms, name, glGetUniformLocation)
 
-    def _set_uniform (self, name, setter, value):
+    def set_uniform4f (self, name, value):
         loc = self._get_uniform_loc(name)
         self.use()
-        setter(loc, value)
-
-    def set_uniform4f (self, name, value):
-        self._set_uniform(name, glUniform4fv, value)
+        glUniform4fv(loc, 1, value)
 
     def set_uniform3f (self, name, value):
-        self._set_uniform(name, glUniform3fv, value)
+        loc = self._get_uniform_loc(name)
+        self.use()
+        glUniform3fv(loc, 1, value)
 
     def set_uniform1f (self, name, value):
-        self._set_uniform(name, glUniform1f, value)
+        loc = self._get_uniform_loc(name)
+        self.use()
+        glUniform1f(loc, value)
 
     def set_uniform1i (self, name, value):
-        self._set_uniform(name, glUniform1i, value)
+        loc = self._get_uniform_loc(name)
+        self.use()
+        glUniform1i(loc, value)
 
     def set_uniform_matrix4 (self, name, mat):
         loc = self._get_uniform_loc(name)

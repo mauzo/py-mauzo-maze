@@ -132,10 +132,10 @@ def read_glsl(name):
     with open("glsl/" + name + ".glsl", "rb") as f:
         return f.read()
 
-def make_shader ():
+def make_shader (vertex="vertex", fragment="frag"):
     prg = gl.Shader()
-    prg.add_shader("vertex", read_glsl("vertex"))
-    prg.add_shader("fragment", read_glsl("frag"))
+    prg.add_shader("vertex", read_glsl(vertex))
+    prg.add_shader("fragment", read_glsl(fragment))
     prg.link()
 
     return prg
@@ -144,35 +144,57 @@ class App:
     def __init__ (self):
         self.resize(WINSIZE[0], WINSIZE[1])
 
-    def setup (self):
-        glClearColor(0.2, 0.3, 0.3, 1.0)
-
+    def setup_textures (self):
         cont    = gl.Texture(linear=False)
         cont.load_file(GL_RGB, "tex/container.jpg")
         face    = gl.Texture(linear=False)
         face.load_file(GL_RGBA, "tex/face.png")
 
-        prg     = make_shader()
-        vbo     = gl.Buffer("vbo", vertices)
-        #ebo     = gl.Buffer("ebo", indices)
-        vao     = gl.VAO(prg)
-
-        vbo.bind()
-        vao.setup_attrib("b_pos",   3, 5, 0)
-        vao.setup_attrib("b_tex",   2, 5, 3)
-        vbo.unbind()
+        vao = self.box
+        prg = vao.shader
 
         t = vao.add_texture(cont)
         prg.set_uniform1i("u_basetex", t)
         t = vao.add_texture(face)
         prg.set_uniform1i("u_overlaytex", t)
         
-        #vao.add_ebo(ebo)
+    def setup_box_vao (self):
+        prg     = make_shader("v-box", "f-box")
+        vao     = gl.VAO(prg)
+
+        vao.setup_attrib("b_pos",   3, 5, 0)
+        #vao.setup_attrib("b_tex",   2, 5, 3)
         vao.add_primitive(GL_TRIANGLES, 0, 36)
         vao.unbind()
 
-        self.vao    = vao
-        self.camera = logcam.Camera()
+        prg.set_uniform3f("u_obj_color",    (1.0, 0.5, 0.31))
+        prg.set_uniform3f("u_light_color",  (1.0, 1.0, 1.0))
+
+        self.box = vao
+        #self.setup_textures()
+
+    def setup_lightcube_vao (self):
+        prg     = make_shader("v-light", "f-light")
+        vao     = gl.VAO(prg)
+
+        vao.setup_attrib("b_pos",   3, 5, 0)
+        vao.add_primitive(GL_TRIANGLES, 0, 36)
+        vao.unbind()
+
+        self.lightcube = vao
+
+    def setup (self):
+        glClearColor(0, 0, 0, 1.0)
+
+        vbo     = gl.Buffer("vbo", vertices)
+
+        vbo.bind()
+        self.setup_box_vao()
+        self.setup_lightcube_vao()
+        vbo.unbind()
+
+        self.camera     = logcam.Camera(vec3(1, 0, 6))
+        self.light_pos  = vec3(1.2, 1.0, 2.0)
 
     def resize (self, w, h):
         self.width  = w
@@ -199,27 +221,27 @@ class App:
         now     = pygame.time.get_ticks()/1000
 
         camera  = self.camera
-        vao     = self.vao
-        prg     = vao.shader
 
         proj    = glm.perspective(radians(camera.zoom), self.aspect, 0.1, 100)
-        prg.set_uniform_matrix4("u_proj", proj)
-
         view    = camera.get_view_matrix()
-        prg.set_uniform_matrix4("u_view", view)
 
-        vao.use()
+        for vao in self.box, self.lightcube:
+            vao.shader.set_uniform_matrix4("u_proj", proj)
+            vao.shader.set_uniform_matrix4("u_view", view)
 
         gl.clear()
-        for i in range(len(cube_positions)):
-            model   = mat4(1)
-            model   = glm.translate(model, cube_positions[i])
-            angle   = 20 * i
-            if i % 3 == 0:
-                angle += now * 50
-            model   = glm.rotate(model, radians(angle), vec3(1, 0.3, 0.5))
-            prg.set_uniform_matrix4("u_model", model)
-            vao.render()
+
+        model   = mat4(1)
+        model   = glm.translate(model, self.light_pos)
+        model   = glm.scale(model, vec3(0.2))
+        self.lightcube.shader.set_uniform_matrix4("u_model", model)
+        self.lightcube.use()
+        self.lightcube.render()
+
+        self.box.shader.set_uniform_matrix4("u_model", mat4(1))
+        self.box.use()
+        self.box.render()
+
         flip()
 
 init()
