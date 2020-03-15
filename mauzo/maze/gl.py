@@ -288,6 +288,9 @@ class VAO:
         self.textures.append(tex)
         return n
 
+    def set_matrix (self, name, matrix):
+        self.shader.set_uniform_matrix4(name, matrix)
+
     def use (self):
         for i in range(len(self.textures)):
             glActiveTexture(GL_TEXTURE0 + i)

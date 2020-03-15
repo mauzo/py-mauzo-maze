@@ -226,19 +226,19 @@ class App:
         view    = camera.get_view_matrix()
 
         for vao in self.box, self.lightcube:
-            vao.shader.set_uniform_matrix4("u_proj", proj)
-            vao.shader.set_uniform_matrix4("u_view", view)
+            vao.set_matrix("u_proj", proj)
+            vao.set_matrix("u_view", view)
 
         gl.clear()
 
         model   = mat4(1)
         model   = glm.translate(model, self.light_pos)
         model   = glm.scale(model, vec3(0.2))
-        self.lightcube.shader.set_uniform_matrix4("u_model", model)
+        self.lightcube.set_matrix("u_model", model)
         self.lightcube.use()
         self.lightcube.render()
 
-        self.box.shader.set_uniform_matrix4("u_model", mat4(1))
+        self.box.set_matrix("u_model", mat4(1))
         self.box.use()
         self.box.render()
 
