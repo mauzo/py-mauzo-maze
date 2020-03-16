@@ -7,10 +7,15 @@ struct Material {
 };
 
 struct Light {
-    vec3    direction;
+    vec3    position;
+
     vec3    ambient;
     vec3    diffuse;
     vec3    specular;
+
+    float   constant;
+    float   linear;
+    float   quadratic;
 };
 
 in      vec3    v_pos;
@@ -27,7 +32,13 @@ uniform vec3        u_view_pos;
 void main ()
 {
     vec3    norm        = normalize(u_normal_matrix * v_normal);
-    vec3    light_dir   = normalize(-u_light.direction);
+    vec3    light_off   = u_light.position - v_pos;
+    vec3    light_dir   = normalize(light_off);
+    float   distance    = length(light_off);
+
+    float   attenuation = 1.0 / (u_light.constant +
+        u_light.linear * distance +
+        u_light.quadratic * (distance * distance));
 
     vec3    color       = texture(u_material.diffuse, v_tex).rgb;
     float   hilite      = texture(u_material.specular, v_tex).a;
@@ -43,6 +54,6 @@ void main ()
     float   spec        = pow(spec_base, u_material.shininess);
     vec3    specular    = u_light.specular * spec * hilite;
 
-    vec3    result  = ambient + diffuse + specular;
+    vec3    result  = (ambient + diffuse + specular) * attenuation;
     f_color         = vec4(result, 1.0);
 }
