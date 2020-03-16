@@ -4,10 +4,12 @@ import  glm
 from    glm     import vec3, radians
 from    math    import cos, sin
 
-FORWARD     = 1
-BACKWARD    = 2
-LEFT        = 3
-RIGHT       = 4
+FORWARD     = 0
+BACKWARD    = 1
+LEFT        = 2
+RIGHT       = 3
+UP          = 4
+DOWN        = 5
 
 class Camera:
     __slots__ = [
@@ -38,15 +40,13 @@ class Camera:
 
     def process_keyboard (self, direction, dt):
         velocity    = self.speed * dt
+        movement    = [
+            self.front, -self.front,
+            -self.right, self.right,
+            self.up, -self.up,
+        ][direction]
 
-        if direction == FORWARD:
-            self.position += self.front * velocity
-        elif direction == BACKWARD:
-            self.position -= self.front * velocity
-        elif direction == LEFT:
-            self.position -= self.right * velocity
-        elif direction == RIGHT:
-            self.position += self.right * velocity
+        self.position += movement * velocity
 
     def process_mouse (self, xoffset, yoffset, constrain_pitch=True):
         xoffset *= self.sensitivity

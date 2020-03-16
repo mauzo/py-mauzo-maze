@@ -1,4 +1,4 @@
-import  math
+from    math            import sin, cos
 import  numpy           as np
 import  signal
 
@@ -169,7 +169,6 @@ class App:
 
         prg.set_uniform3f("u_obj_color",    1.0, 0.5, 0.31)
         prg.set_uniform3f("u_light_color",  1.0, 1.0, 1.0)
-        prg.set_uniform3v("u_light_pos",    self.light_pos)
 
         self.box = vao
         #self.setup_textures()
@@ -209,18 +208,25 @@ class App:
     def update (self, dt):
         camera  = self.camera
         keys    = pygame.key.get_pressed()
+        now     = pygame.time.get_ticks()/1000
 
-        if keys[K_w]:
-            camera.process_keyboard(logcam.FORWARD, dt)
-        if keys[K_s]:
+        self.light_pos  = vec3(1 + sin(now) * 2, sin(now/2), 2)
+        self.box.shader.set_uniform3v("u_light_pos", self.light_pos)
+
+        if keys[K_q]:
             camera.process_keyboard(logcam.BACKWARD, dt)
+        if keys[K_e]:
+            camera.process_keyboard(logcam.FORWARD, dt)
+        if keys[K_w]:
+            camera.process_keyboard(logcam.UP, dt)
+        if keys[K_s]:
+            camera.process_keyboard(logcam.DOWN, dt)
         if keys[K_a]:
             camera.process_keyboard(logcam.LEFT, dt)
         if keys[K_d]:
             camera.process_keyboard(logcam.RIGHT, dt)
 
     def render (self):
-        now     = pygame.time.get_ticks()/1000
 
         camera  = self.camera
 
