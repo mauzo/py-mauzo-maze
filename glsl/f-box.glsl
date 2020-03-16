@@ -3,6 +3,7 @@
 struct Material {
     sampler2D   diffuse;
     sampler2D   specular;
+    sampler2D   emission;
     float       shininess;
 };
 
@@ -22,6 +23,7 @@ out     vec4    f_color;
 uniform Light       u_light;
 uniform Material    u_material;
 uniform vec3        u_view_pos;
+uniform float       u_now;
 
 void main ()
 {
@@ -41,6 +43,10 @@ void main ()
     float   spec        = pow(spec_base, u_material.shininess);
     vec3    specular    = u_light.specular * spec * hilite;
 
-    vec3    result  = ambient + diffuse + specular;
+    vec2    emis_tex    = v_tex + vec2(0, u_now/4);
+    vec3    emis        = texture(u_material.emission, emis_tex).rgb;
+    vec3    emission    = emis * float(hilite == 0);
+
+    vec3    result  = ambient + diffuse + specular + emission;
     f_color         = vec4(result, 1.0);
 }

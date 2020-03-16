@@ -158,11 +158,15 @@ class App:
         rgb.load_file(GL_RGB, "tex/container2rgb.tiff")
         spec    = gl.Texture()
         spec.load_file(GL_ALPHA, "tex/container2s.tiff")
+        emis    = gl.Texture()
+        emis.load_file(GL_RGB, "tex/matrix.jpg")
 
         t = vao.add_texture(rgb)
         prg.set_uniform1i("u_material.diffuse", t)
         t = vao.add_texture(spec)
         prg.set_uniform1i("u_material.specular", t)
+        t = vao.add_texture(emis)
+        prg.set_uniform1i("u_material.emission", t)
         prg.set_uniform1f("u_material.shininess",   32.0)
 
         prg.set_uniform3f("u_light.ambient",        0.2, 0.2, 0.2)
@@ -214,6 +218,8 @@ class App:
 
         self.light_pos  = vec3(1 + sin(now) * 2, sin(now/2), 2)
         prg.set_uniform3v("u_light.position", self.light_pos)
+
+        prg.set_uniform1f("u_now", now)
 
 #        color   = vec3(sin(now * 2), sin(now * 0.7), sin(now * 1.3))
 #        prg.set_uniform3v("u_light.ambient",    color * 0.5)
