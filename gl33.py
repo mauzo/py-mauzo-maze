@@ -158,17 +158,14 @@ class App:
         rgb.load_file(GL_RGB, "tex/container2rgb.tiff")
         spec    = gl.Texture()
         spec.load_file(GL_ALPHA, "tex/container2s.tiff")
-        emis    = gl.Texture()
-        emis.load_file(GL_RGB, "tex/matrix.jpg")
 
         t = vao.add_texture(rgb)
         prg.set_uniform1i("u_material.diffuse", t)
         t = vao.add_texture(spec)
         prg.set_uniform1i("u_material.specular", t)
-        t = vao.add_texture(emis)
-        prg.set_uniform1i("u_material.emission", t)
         prg.set_uniform1f("u_material.shininess",   32.0)
 
+        prg.set_uniform3f("u_light.direction",      -0.2, -1, -0.3)
         prg.set_uniform3f("u_light.ambient",        0.2, 0.2, 0.2)
         prg.set_uniform3f("u_light.diffuse",        0.7, 0.7, 0.7)
         prg.set_uniform3f("u_light.specular",       1.0, 1.0, 1.0)
@@ -192,8 +189,6 @@ class App:
 
         vbo     = gl.Buffer("vbo", vertices)
 
-        self.light_pos  = vec3(1.2, 1.0, 2.0)
-
         vbo.bind()
         self.setup_box_vao()
         self.setup_lightcube_vao()
@@ -216,15 +211,7 @@ class App:
 
         prg     = self.box.shader
 
-        self.light_pos  = vec3(1 + sin(now) * 2, sin(now/2), 2)
-        prg.set_uniform3v("u_light.position", self.light_pos)
-
-        prg.set_uniform1f("u_now", now)
-
-#        color   = vec3(sin(now * 2), sin(now * 0.7), sin(now * 1.3))
-#        prg.set_uniform3v("u_light.ambient",    color * 0.5)
-#        prg.set_uniform3v("u_light.diffuse",    color * 0.2)
-#        self.lightcube.shader.set_uniform3v("u_color", color)
+        #self.light_pos  = vec3(1 + sin(now) * 2, sin(now/2), 2)
 
         if keys[K_q]:
             camera.process_keyboard(logcam.BACKWARD, dt)
@@ -252,20 +239,26 @@ class App:
 
         gl.clear()
 
-        model   = mat4(1)
-        model   = glm.translate(model, self.light_pos)
-        model   = glm.scale(model, vec3(0.2))
-        self.lightcube.set_matrix4("u_model", model)
-        self.lightcube.use()
-        self.lightcube.render()
+#        model   = mat4(1)
+#        model   = glm.translate(model, self.light_pos)
+#        model   = glm.scale(model, vec3(0.2))
+#        self.lightcube.set_matrix4("u_model", model)
+#        self.lightcube.use()
+#        self.lightcube.render()
 
-        model   = mat4(1)
-        normal  = gl.make_normal_matrix(model)
-        self.box.set_matrix4("u_model",              model)
-        #self.box.set_matrix3("u_normal_matrix",      normal)
-        self.box.shader.set_uniform3v("u_view_pos", camera.position)
-        self.box.use()
-        self.box.render()
+        box     = self.box
+        prg     = box.shader
+        box.use()
+        for i in range(len(cube_positions)):
+            model   = mat4(1)
+            model   = glm.translate(model, cube_positions[i])
+            model   = glm.rotate(model, radians(20*i), vec3(1, 0.3, 0.5))
+            normal  = gl.make_normal_matrix(model)
+
+            prg.set_matrix4("u_model",          model)
+            prg.set_matrix3("u_normal_matrix",  normal)
+            prg.set_uniform3v("u_view_pos",     camera.position)
+            box.render()
 
         flip()
 
