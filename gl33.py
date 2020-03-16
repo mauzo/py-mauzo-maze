@@ -177,17 +177,19 @@ class App:
 
         self.box = vao
 
-    def setup_lightcube_vao (self):
-        prg     = make_shader("v-light", "f-light")
-        vao     = gl.VAO(prg)
+    def setup_lightcube_vao (self, slc):
+        prg     = slc.build_shader(["v-light"], ["f-light"])
+        vao     = gl.VAO(None)
 
-        prg.set_uniform3f("u_color", 1, 1, 1)
+        prg.use()
+        prg.u_color(vec3(1, 1, 1))
 
-        vao.setup_attrib("b_pos",   3, 8, 0)
+        vao.add_attrib(prg.b_pos, 3, 8, 0)
         vao.add_primitive(GL_TRIANGLES, 0, 36)
         vao.unbind()
 
-        self.lightcube = vao
+        self.lightcube      = vao
+        self.lamp_shader    = prg
 
     def setup (self):
         glClearColor(0, 0, 0, 1.0)
@@ -195,11 +197,14 @@ class App:
         self.light_pos  = vec3(1.2, 1, 2)
 
         vbo     = gl.Buffer("vbo", vertices)
+        slc     = gl.ShaderCompiler()
 
         vbo.bind()
         self.setup_box_vao()
-        self.setup_lightcube_vao()
+        self.setup_lightcube_vao(slc)
         vbo.unbind()
+
+        slc.delete()
 
         self.camera     = logcam.Camera(vec3(1, 0, 6))
 
@@ -242,16 +247,19 @@ class App:
         proj    = glm.perspective(radians(camera.zoom), self.aspect, 0.1, 100)
         view    = camera.get_view_matrix()
 
-        for vao in self.box, self.lightcube:
-            vao.set_matrix4("u_proj", proj)
-            vao.set_matrix4("u_view", view)
+        self.box.set_matrix4("u_proj", proj)
+        self.box.set_matrix4("u_view", view)
+
+        self.lamp_shader.u_proj(proj)
+        self.lamp_shader.u_view(view)
 
         gl.clear()
 
         model   = mat4(1)
         model   = glm.translate(model, self.light_pos)
         model   = glm.scale(model, vec3(0.2))
-        self.lightcube.set_matrix4("u_model", model)
+        self.lamp_shader.u_model(model)
+        self.lamp_shader.use()
         self.lightcube.use()
         self.lightcube.render()
 

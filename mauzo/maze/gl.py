@@ -4,6 +4,7 @@ from    ctypes          import c_void_p, sizeof
 import  glm
 from    OpenGL.GL       import *
 import  PIL.Image
+import  types
 
 # Set up the initial OpenGL state.
 def init ():
@@ -117,6 +118,128 @@ _shader_types = {
     "vertex":   GL_VERTEX_SHADER,
     "fragment": GL_FRAGMENT_SHADER,
 }
+
+class ShaderProg:
+    __slots__   = ["id"]
+
+    def __init__ (self, prg):
+        self.id = prg
+
+    def use (self):
+        glUseProgram(self.id)
+
+    def delete (self):
+        glDeleteProgram(self.id)
+
+class ShaderCompiler:
+    __slots__ = ["objs"]
+
+    def __init__ (self):
+        self.objs   = {}
+
+    def delete (self):
+        for i in self.objs:
+            glDeleteShader(self.objs[i])
+
+    def compile_str (self, typ, name, src):
+        sh = glCreateShader(_shader_types[typ])
+        glShaderSource(sh, src)
+        glCompileShader(sh)
+
+        if not glGetShaderiv(sh, GL_COMPILE_STATUS):
+            log = glGetShaderInfoLog(sh)
+            raise RuntimeError("Shader compilation failed: " + log.decode())
+
+        self.objs[name] = sh
+        return sh
+
+    def compile_file (self, typ, name, fname):
+        # XXX search path etc.
+        with open(fname, "rb") as f:
+            src = f.read()
+        return self.compile_str(typ, name, src)
+
+    def find_shader (self, typ, name):
+        if name in self.objs:
+            return self.objs[name]
+        return self.compile_file(typ, name, "glsl/" + name + ".glsl")
+
+    def link (self, shs):
+        prg = glCreateProgram()
+        for sh in shs:
+            glAttachShader(prg, sh)
+
+        glLinkProgram(prg)
+
+        if not glGetProgramiv(prg, GL_LINK_STATUS):
+            log = glGetProgramInfoLog(prg)
+            raise RuntimeError("Shader link failed: " + log.decode())
+
+        return prg
+
+    def _build_att_method (self, ns, prg, i):
+        info    = glGetActiveAttrib(prg, i)
+        att     = info[0].decode()
+        loc     = glGetAttribLocation(prg, att)
+
+        ns[att] = loc
+
+        print("Added attrib", att)
+
+    def _build_uni_method (self, ns, prg, i):
+        info    = glGetActiveUniform(prg, i)
+        att     = info[0].decode()
+        typ     = info[2]
+        loc     = glGetUniformLocation(prg, att)
+
+        typn    = None
+
+        if typ == GL_FLOAT:
+            ns[att] = lambda s, v: glUniform1f(loc, v)
+            typn = "float"
+        elif typ == GL_FLOAT_VEC3:
+            ns[att] = lambda s, v: glUniform3fv(loc, 1, glm.value_ptr(v))
+            typn = "vec3"
+        elif typ == GL_FLOAT_VEC4:
+            ns[att] = lambda s, v: glUniform4fv(loc, 1, glm.value_ptr(v))
+            typn = "vec4"
+        elif typ == GL_SAMPLER_2D:
+            ns[att] = lambda s, v: glUniform1i(loc, v)
+            typn = "sampler2D"
+        elif typ == GL_FLOAT_MAT3:
+            ns[att] = lambda s, v: \
+                glUniformMatrix3fv(loc, 1, GL_FALSE, glm.value_ptr(v))
+            typn = "mat3"
+        elif typ == GL_FLOAT_MAT4:
+            ns[att] = lambda s, v: \
+                glUniformMatrix4fv(loc, 1, GL_FALSE, glm.value_ptr(v))
+            typn = "mat4"
+        else:
+            raise RuntimeError("Unhandled uniform" + att)
+
+        print("Added uniform", typn, att)
+
+    def _build_shader_class (self, ns, prg):
+        n_att   = glGetProgramiv(prg, GL_ACTIVE_ATTRIBUTES)
+        n_uni   = glGetProgramiv(prg, GL_ACTIVE_UNIFORMS)
+
+        for i in range(n_att):
+            self._build_att_method(ns, prg, i)
+        for i in range(n_uni):
+            self._build_uni_method(ns, prg, i)
+
+    def build_shader_obj (self, prg):
+        C = types.new_class("ShaderProgX", 
+            bases=(ShaderProg,),
+            exec_body=lambda ns: self._build_shader_class(ns, prg))
+        return C(prg)
+
+    def build_shader (self, vxs, frs):
+        objs    = [self.find_shader("vertex", i) for i in vxs]
+        objs    += [self.find_shader("fragment", i) for i in frs]
+        prg     = self.link(objs)
+        print("Building for", vxs, frs)
+        return self.build_shader_obj(prg)
 
 class Shader:
     __slots__ = ["id", "objs", "attribs", "uniforms"]
@@ -251,7 +374,7 @@ class Buffer:
 class VAO:
     __slots__ = [
         "id",           # our VAO id
-        "shader",       # our shader (a Shader)
+        "shader",       # Our shader program
         "ebo",          # our EBO (a Buffer)
         "primitives",   # the list of primitives we render
         "textures",     # textures to bind before we render
@@ -281,10 +404,11 @@ class VAO:
             self.ebo.unbind()
 
     def setup_attrib (self, att, length, stride, offset):
-        ix = self.shader.get_attrib(att)
-
+        ix  = self.shader.get_attrib(att)
         self.bind()
+        self.add_attrib(ix, length, stride, offset)
 
+    def add_attrib (self, ix, length, stride, offset):
         sz = sizeof(GLfloat)
         glVertexAttribPointer(ix, length, GL_FLOAT, GL_FALSE,
             stride*sz, c_void_p(offset*sz))
@@ -317,7 +441,8 @@ class VAO:
             glActiveTexture(GL_TEXTURE0 + i)
             self.textures[i].bind()
 
-        self.shader.use()
+        if self.shader is not None:
+            self.shader.use()
         self.bind()
 
     def render (self):
