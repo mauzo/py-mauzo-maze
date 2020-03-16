@@ -167,8 +167,13 @@ class App:
         vao.add_primitive(GL_TRIANGLES, 0, 36)
         vao.unbind()
 
-        prg.set_uniform3f("u_obj_color",    1.0, 0.5, 0.31)
-        prg.set_uniform3f("u_light_color",  1.0, 1.0, 1.0)
+        prg.set_uniform3f("u_material.ambient",     1.0, 0.5, 0.31)
+        prg.set_uniform3f("u_material.diffuse",     1.0, 0.5, 0.31)
+        prg.set_uniform3f("u_material.specular",    0.5, 0.5, 0.5)
+        prg.set_uniform1f("u_material.shininess",   32.0)
+        prg.set_uniform3f("u_light.ambient",        0.2, 0.2, 0.2)
+        prg.set_uniform3f("u_light.diffuse",        0.5, 0.5, 0.5)
+        prg.set_uniform3f("u_light.specular",       1.0, 1.0, 1.0)
 
         self.box = vao
         #self.setup_textures()
@@ -176,6 +181,8 @@ class App:
     def setup_lightcube_vao (self):
         prg     = make_shader("v-light", "f-light")
         vao     = gl.VAO(prg)
+
+        prg.set_uniform3f("u_color", 1, 1, 1)
 
         vao.setup_attrib("b_pos",   3, 6, 0)
         vao.add_primitive(GL_TRIANGLES, 0, 36)
@@ -210,8 +217,15 @@ class App:
         keys    = pygame.key.get_pressed()
         now     = pygame.time.get_ticks()/1000
 
+        prg     = self.box.shader
+
         self.light_pos  = vec3(1 + sin(now) * 2, sin(now/2), 2)
-        self.box.shader.set_uniform3v("u_light_pos", self.light_pos)
+        prg.set_uniform3v("u_light.position", self.light_pos)
+
+#        color   = vec3(sin(now * 2), sin(now * 0.7), sin(now * 1.3))
+#        prg.set_uniform3v("u_light.ambient",    color * 0.5)
+#        prg.set_uniform3v("u_light.diffuse",    color * 0.2)
+#        self.lightcube.shader.set_uniform3v("u_color", color)
 
         if keys[K_q]:
             camera.process_keyboard(logcam.BACKWARD, dt)
@@ -234,19 +248,22 @@ class App:
         view    = camera.get_view_matrix()
 
         for vao in self.box, self.lightcube:
-            vao.set_matrix("u_proj", proj)
-            vao.set_matrix("u_view", view)
+            vao.set_matrix4("u_proj", proj)
+            vao.set_matrix4("u_view", view)
 
         gl.clear()
 
         model   = mat4(1)
         model   = glm.translate(model, self.light_pos)
         model   = glm.scale(model, vec3(0.2))
-        self.lightcube.set_matrix("u_model", model)
+        self.lightcube.set_matrix4("u_model", model)
         self.lightcube.use()
         self.lightcube.render()
 
-        self.box.set_matrix("u_model", mat4(1))
+        model   = mat4(1)
+        normal  = gl.make_normal_matrix(model)
+        self.box.set_matrix4("u_model",              model)
+        #self.box.set_matrix3("u_normal_matrix",      normal)
         self.box.shader.set_uniform3v("u_view_pos", camera.position)
         self.box.use()
         self.box.render()

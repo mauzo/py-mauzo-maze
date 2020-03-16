@@ -34,6 +34,9 @@ def init ():
 def clear ():
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
 
+def make_normal_matrix (model):
+    return glm.transpose(glm.inverse(glm.mat3(model)))
+
 # Used by Texture below.
 _tex_wrap = {
     False:      GL_CLAMP,
@@ -143,7 +146,7 @@ class Shader:
         glLinkProgram(self.id)
 
         if not glGetProgramiv(self.id, GL_LINK_STATUS):
-            log = glGetShaderInfoLog(self.id)
+            log = glGetProgramInfoLog(self.id)
             raise RuntimeError("Shader link failed: " + log.decode())
 
         for o in self.objs:
@@ -200,7 +203,12 @@ class Shader:
         self.use()
         glUniform1i(loc, value)
 
-    def set_uniform_matrix4 (self, name, mat):
+    def set_matrix3 (self, name, mat):
+        loc = self._get_uniform_loc(name)
+        self.use()
+        glUniformMatrix3fv(loc, 1, GL_FALSE, glm.value_ptr(mat))
+
+    def set_matrix4 (self, name, mat):
         loc = self._get_uniform_loc(name)
         self.use()
         glUniformMatrix4fv(loc, 1, GL_FALSE, glm.value_ptr(mat))
@@ -298,8 +306,11 @@ class VAO:
         self.textures.append(tex)
         return n
 
-    def set_matrix (self, name, matrix):
-        self.shader.set_uniform_matrix4(name, matrix)
+    def set_matrix3 (self, name, matrix):
+        self.shader.set_matrix3(name, matrix)
+
+    def set_matrix4 (self, name, matrix):
+        self.shader.set_matrix4(name, matrix)
 
     def use (self):
         for i in range(len(self.textures)):
