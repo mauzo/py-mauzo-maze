@@ -165,13 +165,10 @@ class App:
         prg.set_uniform1i("u_material.specular", t)
         prg.set_uniform1f("u_material.shininess",   32.0)
 
-        prg.set_uniform3v("u_light.position",      self.light_pos)
         prg.set_uniform3f("u_light.ambient",        0.2, 0.2, 0.2)
         prg.set_uniform3f("u_light.diffuse",        0.7, 0.7, 0.7)
         prg.set_uniform3f("u_light.specular",       1.0, 1.0, 1.0)
-        prg.set_uniform1f("u_light.constant",       1.0)
-        prg.set_uniform1f("u_light.linear",         0.09)
-        prg.set_uniform1f("u_light.quadratic",      0.032)
+        prg.set_uniform1f("u_light.cutoff",         cos(radians(12.5)))
 
         self.box = vao
 
@@ -215,6 +212,8 @@ class App:
         now     = pygame.time.get_ticks()/1000
 
         prg     = self.box.shader
+        prg.set_uniform3v("u_light.position",   camera.position)
+        prg.set_uniform3v("u_light.direction",  camera.front)
 
         #self.light_pos  = vec3(1 + sin(now) * 2, sin(now/2), 2)
 
