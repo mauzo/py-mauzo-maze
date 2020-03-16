@@ -25,8 +25,8 @@ uniform vec3        u_view_pos;
 
 void main ()
 {
-    vec3    color       = vec3(texture(u_material.diffuse, v_tex));
-    vec3    hilite      = vec3(texture(u_material.specular, v_tex));
+    vec3    color       = texture(u_material.diffuse, v_tex).rgb;
+    float   hilite      = texture(u_material.specular, v_tex).a;
 
     vec3    ambient     = u_light.ambient * color;
 

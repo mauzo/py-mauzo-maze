@@ -154,12 +154,12 @@ class App:
         vao.add_primitive(GL_TRIANGLES, 0, 36)
         vao.unbind()
 
-        cont    = gl.Texture()
-        cont.load_file(GL_RGBA, "tex/container2.png")
+        rgb     = gl.Texture()
+        rgb.load_file(GL_RGB, "tex/container2rgb.tiff")
         spec    = gl.Texture()
-        spec.load_file(GL_RGBA, "tex/container2_specular.png")
+        spec.load_file(GL_ALPHA, "tex/container2s.tiff")
 
-        t = vao.add_texture(cont)
+        t = vao.add_texture(rgb)
         prg.set_uniform1i("u_material.diffuse", t)
         t = vao.add_texture(spec)
         prg.set_uniform1i("u_material.specular", t)
