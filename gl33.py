@@ -165,10 +165,15 @@ class App:
         prg.set_uniform1i("u_material.specular", t)
         prg.set_uniform1f("u_material.shininess",   32.0)
 
-        prg.set_uniform3f("u_light.ambient",        0.2, 0.2, 0.2)
-        prg.set_uniform3f("u_light.diffuse",        0.7, 0.7, 0.7)
-        prg.set_uniform3f("u_light.specular",       1.0, 1.0, 1.0)
-        prg.set_uniform1f("u_light.cutoff",         cos(radians(12.5)))
+        prg.set_uniform3f("u_light.ambient",    0.2, 0.2, 0.2)
+        prg.set_uniform3f("u_light.diffuse",    0.7, 0.7, 0.7)
+        prg.set_uniform3f("u_light.specular",   1.0, 1.0, 1.0)
+        cutoff      = cos(radians(17.5))
+        softness    = cos(radians(12.5)) - cutoff
+        prg.set_uniform1f("u_light.cutoff",     cutoff)
+        prg.set_uniform1f("u_light.softness",   softness)
+        prg.set_uniform1f("u_light.linear",     0.045)
+        prg.set_uniform1f("u_light.quadratic",  0.0075)
 
         self.box = vao
 
