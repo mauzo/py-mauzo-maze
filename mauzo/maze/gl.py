@@ -5,6 +5,7 @@ import  glm
 from    OpenGL.GL       import *
 import  PIL.Image
 import  types
+import  warnings
 
 # Set up the initial OpenGL state.
 def init ():
@@ -180,44 +181,73 @@ class ShaderCompiler:
     def _build_att_method (self, ns, prg, i):
         info    = glGetActiveAttrib(prg, i)
         att     = info[0].decode()
+        if att[0:3] == "gl_":
+            return
+
         loc     = glGetAttribLocation(prg, att)
+        if loc == -1:
+            warnings.warn("Could not find attrib location for " + att)
+            return
 
         ns[att] = loc
 
         print("Added attrib", att)
 
+    def _find_uni_loc (self, prg, att):
+        loc     = glGetUniformLocation(prg, att)
+        if loc == -1:
+            warnings.warn("Could not find uniform location for " + att)
+            return
+        return loc
+
     def _build_uni_method (self, ns, prg, i):
         info    = glGetActiveUniform(prg, i)
         att     = info[0].decode()
-        typ     = info[2]
-        loc     = glGetUniformLocation(prg, att)
+        if att[0:3] == "gl_":
+            return
 
+        typ     = info[2]
+
+        meth    = att.replace(".", "_")
+        meth    = meth.replace("[", "").replace("]", "")
+
+        if info[1] == 1:
+            self._build_uni_lambda(ns, meth, prg, att, typ)
+        else:
+            att     = att[0:-3]
+            meth    = meth[0:-1]
+            for i in range(info[1]):
+                self._build_uni_lambda(ns, meth + str(i),
+                    prg, att + "[" + str(i) + "]", typ)
+
+    def _build_uni_lambda (self, ns, meth, prg, att, typ):
+        loc     = glGetUniformLocation(prg, att)
         typn    = None
 
         if typ == GL_FLOAT:
-            ns[att] = lambda s, v: glUniform1f(loc, v)
+            ns[meth] = lambda s, v: glUniform1f(loc, v)
             typn = "float"
         elif typ == GL_FLOAT_VEC3:
-            ns[att] = lambda s, v: glUniform3fv(loc, 1, glm.value_ptr(v))
+            ns[meth] = lambda s, v: glUniform3fv(loc, 1, glm.value_ptr(v))
             typn = "vec3"
         elif typ == GL_FLOAT_VEC4:
-            ns[att] = lambda s, v: glUniform4fv(loc, 1, glm.value_ptr(v))
+            ns[meth] = lambda s, v: glUniform4fv(loc, 1, glm.value_ptr(v))
             typn = "vec4"
         elif typ == GL_SAMPLER_2D:
-            ns[att] = lambda s, v: glUniform1i(loc, v)
+            ns[meth] = lambda s, v: glUniform1i(loc, v)
             typn = "sampler2D"
         elif typ == GL_FLOAT_MAT3:
-            ns[att] = lambda s, v: \
+            ns[meth] = lambda s, v: \
                 glUniformMatrix3fv(loc, 1, GL_FALSE, glm.value_ptr(v))
             typn = "mat3"
         elif typ == GL_FLOAT_MAT4:
-            ns[att] = lambda s, v: \
+            ns[meth] = lambda s, v: \
                 glUniformMatrix4fv(loc, 1, GL_FALSE, glm.value_ptr(v))
             typn = "mat4"
         else:
             raise RuntimeError("Unhandled uniform" + att)
 
-        print("Added uniform", typn, att)
+        print("Added uniform", typn, att, "as", meth)
 
     def _build_shader_class (self, ns, prg):
         n_att   = glGetProgramiv(prg, GL_ACTIVE_ATTRIBUTES)
