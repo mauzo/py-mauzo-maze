@@ -1,4 +1,5 @@
 #version 330 core
+// vi:set syn=c:
 
 struct Material {
     sampler2D   diffuse;
@@ -115,17 +116,19 @@ light_positional (PointLight light, LightParams p)
     return (l.ambient + l.diffuse + l.specular) * attenuation;
 }
 
-//vec3
-//light_spot (SpotLight light, LightParams p)
-//{
-    // XXX incomplete
-    // spot
-    //float   theta       = dot(light_dir, normalize(-u_light.direction));
-    //float   spot_cone   = (theta - u_light.cutoff) / u_light.softness;
-    //float   spot        = clamp(spot_cone, 0, 1);
+vec3
+light_spot (SpotLight light, LightParams p)
+{
+    vec3        light_dir   = normalize(light.position - p.position);
+    LightColor  l           = light_basic(light.color, p, light_dir);
 
-    //return vec3(1.0);
-//}
+    // spot cone
+    float   theta       = dot(light_dir, normalize(-light.direction));
+    float   spot_cone   = (theta - light.cutoff) / light.softness;
+    float   spot        = clamp(spot_cone, 0, 1);
+
+    return l.ambient + (l.diffuse + l.specular) * spot;
+}
 
 void 
 main ()
@@ -145,6 +148,8 @@ main ()
     int i;
     for (i = 0; i < POINT_LIGHTS; i++)
         result      += light_positional(u_light[i], p);
+
+    result  += light_spot(u_spot, p);
 
     f_color         = vec4(result, 1.0);
 }

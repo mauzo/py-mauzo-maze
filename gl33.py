@@ -206,12 +206,15 @@ class App:
         prg.u_light3_linear(0.09)
         prg.u_light3_quadratic(0.032)
 
-#        cutoff      = cos(radians(17.5))
-#        softness    = cos(radians(12.5)) - cutoff
-#        prg.u_light_cutoff(cutoff)
-#        prg.u_light_softness(softness)
-#        prg.u_light_linear(0.045)
-#        prg.u_light_quadratic(0.0075)
+        cutoff      = cos(radians(12.5))
+        softness    = cos(radians(10.5)) - cutoff
+        prg.u_spot_cutoff(cutoff)
+        prg.u_spot_softness(softness)
+        prg.u_spot_color_ambient(vec3(0.05, 0.05, 0.05))
+        prg.u_spot_color_diffuse(vec3(0.9, 0.6, 0.6))
+        prg.u_spot_color_specular(vec3(1.0, 0.4, 1.0))
+        #prg.u_spot_linear(0.045)
+        #prg.u_spot_quadratic(0.0075)
 
         self.box = vao
 
@@ -259,10 +262,10 @@ class App:
         keys    = pygame.key.get_pressed()
         now     = pygame.time.get_ticks()/1000
 
-        #prg     = self.box.shader
-        #prg.use()
-        #prg.u_light_position(camera.position)
-        #prg.u_light_direction(camera.front)
+        prg     = self.box.shader
+        prg.use()
+        prg.u_spot_position(camera.position)
+        prg.u_spot_direction(camera.front)
 
         #self.light_pos  = vec3(1 + sin(now) * 2, sin(now/2), 2)
 
