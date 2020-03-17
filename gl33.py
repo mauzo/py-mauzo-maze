@@ -169,11 +169,15 @@ class App:
         rgb.load_file(GL_RGB, "tex/container2rgb.tiff")
         spec    = gl.Texture()
         spec.load_file(GL_ALPHA, "tex/container2s.tiff")
+        magic   = gl.Texture()
+        magic.load_file(GL_RGB, "tex/matrix.jpg")
 
         t = vao.add_texture(rgb)
         prg.u_material_diffuse(t)
         t = vao.add_texture(spec)
         prg.u_material_specular(t)
+        t = vao.add_texture(magic)
+        prg.u_material_magic(t)
         prg.u_material_shininess(32.0)
 
         prg.u_sun_direction(vec3(-0.2, -1.0, -0.3))
@@ -206,15 +210,20 @@ class App:
         prg.u_light3_linear(0.09)
         prg.u_light3_quadratic(0.032)
 
-        cutoff      = cos(radians(12.5))
-        softness    = cos(radians(10.5)) - cutoff
-        prg.u_spot_cutoff(cutoff)
-        prg.u_spot_softness(softness)
-        prg.u_spot_color_ambient(vec3(0.05, 0.05, 0.05))
-        prg.u_spot_color_diffuse(vec3(0.9, 0.6, 0.6))
-        prg.u_spot_color_specular(vec3(1.0, 0.4, 1.0))
+        cutoff      = cos(radians(8))
+        softness    = cos(radians(7)) - cutoff
+        prg.u_magic_cutoff(cutoff)
+        prg.u_magic_softness(softness)
+        prg.u_magic_limit(5.0)
+#        prg.u_spot_cutoff(cutoff)
+#        prg.u_spot_softness(softness)
+#        prg.u_spot_color_ambient(vec3(0.05, 0.05, 0.05))
+#        prg.u_spot_color_diffuse(vec3(0.9, 0.6, 0.6))
+#        prg.u_spot_color_specular(vec3(1.0, 0.4, 1.0))
         #prg.u_spot_linear(0.045)
         #prg.u_spot_quadratic(0.0075)
+
+
 
         self.box = vao
 
@@ -264,8 +273,9 @@ class App:
 
         prg     = self.box.shader
         prg.use()
-        prg.u_spot_position(camera.position)
-        prg.u_spot_direction(camera.front)
+        prg.u_now(now)
+        prg.u_magic_position(camera.position)
+        prg.u_magic_direction(camera.front)
 
         #self.light_pos  = vec3(1 + sin(now) * 2, sin(now/2), 2)
 
