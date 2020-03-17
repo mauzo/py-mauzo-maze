@@ -48,19 +48,37 @@ _tex_wrap = {
     "border":   GL_CLAMP_TO_BORDER,
     "edge":     GL_CLAMP_TO_EDGE,
 }
+_tex_filter = {
+    "nearest":  GL_NEAREST,
+    "linear":   GL_LINEAR,
+    "mipmapNN": GL_NEAREST_MIPMAP_NEAREST,
+    "mipmapLN": GL_LINEAR_MIPMAP_NEAREST,
+    "mipmapNL": GL_NEAREST_MIPMAP_LINEAR,
+    "mipmapLL": GL_LINEAR_MIPMAP_LINEAR,
+    "mipmap":   GL_LINEAR_MIPMAP_LINEAR,
+    False:      GL_NEAREST,
+    True:       GL_LINEAR_MIPMAP_LINEAR,
+}
+_tex_mipmaps = {
+    GL_NEAREST:                 (GL_NEAREST, False),
+    GL_LINEAR:                  (GL_LINEAR, False),
+    GL_NEAREST_MIPMAP_NEAREST:  (GL_NEAREST, True),
+    GL_NEAREST_MIPMAP_LINEAR:   (GL_LINEAR, True),
+    GL_LINEAR_MIPMAP_NEAREST:   (GL_NEAREST, True),
+    GL_LINEAR_MIPMAP_LINEAR:    (GL_LINEAR, True),
+}
 
 # This object represents a GL texture
 class Texture:
     __slots__ = [
-        # Our texture ID
-        "id",
-        # Our texture target
-        "target",
+        "id",       # Our texture ID
+        "target",   # Our texture target
+        "mipmaps",  # Do we want mipmaps?
     ]
 
     # Create a new texture. Accepts keyword arguments:
     #   target                  Defaults to GL_TEXTURE_2D
-    #   linear  True|False      Linear or nearest filtering
+    #   filter  as above        Linear or nearest filtering
     #   clamp   as above        Texture wrapping behaviour
     # Leaves the new texture bound, and returns the ID.
     def __init__ (self, **kwargs):
@@ -70,10 +88,10 @@ class Texture:
         if "target" in kwargs:
             self.target = kwargs["target"]
 
-        if "linear" in kwargs:
-            self.set_linear(kwargs["linear"])
+        if "filter" in kwargs:
+            self.set_filter(kwargs["filter"])
         else:
-            self.set_linear(True)
+            self.set_filter(True)
 
         if "wrap" in kwargs:
             self.set_wrap(kwargs["wrap"])
@@ -81,11 +99,20 @@ class Texture:
     def delete (self):
         glDeleteTextures(1, [self.id])
 
-    def set_linear (self, lin):
-        filt = (GL_LINEAR if lin else GL_NEAREST)
+    def set_filter (self, filt):
+        if isinstance(filt, tuple):
+            minf        = _tex_filter[filt[0]]
+            magf        = _tex_filter[filt[1]]
+            mip         = _tex_mipmaps[minf][1]
+        else:
+            minf        = _tex_filter[filt]
+            (magf, mip) = _tex_mipmaps[minf]
+
         self.bind()
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filt)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filt)
+        glTexParameteri(self.target, GL_TEXTURE_MIN_FILTER, minf)
+        glTexParameteri(self.target, GL_TEXTURE_MAG_FILTER, magf)
+
+        self.mipmaps    = mip
 
     def set_wrap (self, to):
         wrap = _tex_wrap[to]
@@ -102,11 +129,17 @@ class Texture:
     def disable (self):
         glDisable(self.target)
 
+    def use (self):
+        self.bind()
+        self.enable()
+
     # Load an image into a texture.
     def load (self, fmt, w, h, array):
         self.bind()
         glTexImage2D(self.target, 0, fmt, w, h, 0, fmt, GL_UNSIGNED_BYTE,
             array)
+        if self.mipmaps:
+            glGenerateMipmap(self.target)
 
     def load_file (self, fmt, f):
         img = PIL.Image.open(f)
