@@ -128,6 +128,13 @@ cube_positions = [
     vec3(-1.3, 1.0, -1.5),
 ]
 
+light_positions = [
+    vec3(0.7, 0.2, 2.0),
+    vec3(02.3, -3.3, 4.0),
+    vec3(-4.0, 2.0, -12.0),
+    vec3(0.0, 0.0, -3.0),
+]
+
 def read_glsl(name):
     with open("glsl/" + name + ".glsl", "rb") as f:
         return f.read()
@@ -168,22 +175,48 @@ class App:
         prg.u_material_specular(t)
         prg.u_material_shininess(32.0)
 
-        prg.u_light_ambient(vec3(0.2, 0.2, 0.2))
-        prg.u_light_diffuse(vec3(0.7, 0.7, 0.7))
-        prg.u_light_specular(vec3(1.0, 1.0, 1.0))
+        prg.u_sun_direction(vec3(-0.2, -1.0, -0.3))
+        prg.u_sun_ambient(vec3(0.05, 0.05, 0.05))
+        prg.u_sun_diffuse(vec3(0.4, 0.4, 0.4))
+        prg.u_sun_specular(vec3(0.5, 0.5, 0.5))
 
-        cutoff      = cos(radians(17.5))
-        softness    = cos(radians(12.5)) - cutoff
-        prg.u_light_cutoff(cutoff)
-        prg.u_light_softness(softness)
-        prg.u_light_linear(0.045)
-        prg.u_light_quadratic(0.0075)
+        prg.u_light0_position(light_positions[0])
+        prg.u_light0_ambient(vec3(0.05, 0.05, 0.05))
+        prg.u_light0_diffuse(vec3(0.8, 0.8, 0.8))
+        prg.u_light0_specular(vec3(1.0, 1.0, 1.0))
+        prg.u_light0_linear(0.09)
+        prg.u_light0_quadratic(0.032)
+        prg.u_light1_position(light_positions[1])
+        prg.u_light1_ambient(vec3(0.05, 0.05, 0.05))
+        prg.u_light1_diffuse(vec3(0.8, 0.8, 0.8))
+        prg.u_light1_specular(vec3(1.0, 1.0, 1.0))
+        prg.u_light1_linear(0.09)
+        prg.u_light1_quadratic(0.032)
+        prg.u_light2_position(light_positions[2])
+        prg.u_light2_ambient(vec3(0.05, 0.05, 0.05))
+        prg.u_light2_diffuse(vec3(0.8, 0.8, 0.8))
+        prg.u_light2_specular(vec3(1.0, 1.0, 1.0))
+        prg.u_light2_linear(0.09)
+        prg.u_light2_quadratic(0.032)
+        prg.u_light3_position(light_positions[3])
+        prg.u_light3_ambient(vec3(0.05, 0.05, 0.05))
+        prg.u_light3_diffuse(vec3(0.8, 0.8, 0.8))
+        prg.u_light3_specular(vec3(1.0, 1.0, 1.0))
+        prg.u_light3_linear(0.09)
+        prg.u_light3_quadratic(0.032)
+
+#        cutoff      = cos(radians(17.5))
+#        softness    = cos(radians(12.5)) - cutoff
+#        prg.u_light_cutoff(cutoff)
+#        prg.u_light_softness(softness)
+#        prg.u_light_linear(0.045)
+#        prg.u_light_quadratic(0.0075)
 
         self.box = vao
 
     def setup_lightcube_vao (self, slc):
         prg     = slc.build_shader(["v-light"], ["f-light"])
-        vao     = gl.VAO(None)
+        vao     = gl.VAO(prg)
 
         prg.use()
         prg.u_color(vec3(1, 1, 1))
@@ -194,7 +227,6 @@ class App:
         vao.unbind()
 
         self.lightcube      = vao
-        self.lamp_shader    = prg
 
     def setup (self):
         glClearColor(0, 0, 0, 1.0)
@@ -226,10 +258,10 @@ class App:
         keys    = pygame.key.get_pressed()
         now     = pygame.time.get_ticks()/1000
 
-        prg     = self.box.shader
-        prg.use()
-        prg.u_light_position(camera.position)
-        prg.u_light_direction(camera.front)
+        #prg     = self.box.shader
+        #prg.use()
+        #prg.u_light_position(camera.position)
+        #prg.u_light_direction(camera.front)
 
         #self.light_pos  = vec3(1 + sin(now) * 2, sin(now/2), 2)
 
@@ -254,16 +286,17 @@ class App:
         gl.clear()
 
         vao     = self.lightcube
-        prg     = self.lamp_shader
-        model   = mat4(1)
-        model   = glm.translate(model, self.light_pos)
-        model   = glm.scale(model, vec3(0.2))
+        prg     = vao.shader
         prg.use()
         prg.u_proj(proj)
         prg.u_view(view)
-        prg.u_model(model)
         vao.use()
-        vao.render()
+        for i in light_positions:
+            model   = mat4(1)
+            model   = glm.translate(model, i)
+            model   = glm.scale(model, vec3(0.2))
+            prg.u_model(model)
+            vao.render()
 
         vao     = self.box
         prg     = vao.shader

@@ -6,18 +6,33 @@ struct Material {
     float       shininess;
 };
 
-struct Light {
+struct LightParams {
     vec3    position;
+    vec3    normal;
+    vec3    view_dir;
+
+    vec3    color;
+    float   hilite;
+    float   shininess;
+};
+
+struct DirLight {
     vec3    direction;
-    float   cutoff;
-    float   softness;
 
     vec3    ambient;
     vec3    diffuse;
     vec3    specular;
+};
+
+struct PointLight {
+    vec3    position;
 
     float   linear;
     float   quadratic;
+
+    vec3    ambient;
+    vec3    diffuse;
+    vec3    specular;
 };
 
 in      vec3    v_pos;
@@ -27,47 +42,97 @@ in      vec2    v_tex;
 out     vec4    f_color;
 
 uniform mat3        u_normal_matrix;
-uniform Light       u_light;
-uniform Material    u_material;
 uniform vec3        u_view_pos;
 
-void main ()
+#define POINT_LIGHTS 4
+
+uniform Material    u_material;
+uniform DirLight    u_sun;
+uniform PointLight  u_light[POINT_LIGHTS];
+
+vec3    light_directional   (DirLight light, LightParams p);
+vec3    light_positional    (PointLight light, LightParams p);
+
+vec3 
+light_directional (DirLight light, LightParams p)
 {
-    // vectors
-    vec3    norm        = normalize(u_normal_matrix * v_normal);
-    vec3    light_off   = u_light.position - v_pos;
-    vec3    light_dir   = normalize(light_off);
-
-    // attenuation
-    float   distance    = length(light_off);
-    float   attenuation = 1.0 / (1.0 +
-        u_light.linear * distance +
-        u_light.quadratic * (distance * distance));
-
-    // texture lookup
-    vec3    color       = texture(u_material.diffuse, v_tex).rgb;
-    float   hilite      = texture(u_material.specular, v_tex).a;
+    vec3    light_dir   = normalize(-light.direction);
 
     // ambient
-    vec3    ambient     = u_light.ambient * color;
+    vec3    ambient     = light.ambient * p.color;
 
     // diffuse
-    float   diff        = max(dot(norm, light_dir), 0.0);
-    vec3    diffuse     = u_light.diffuse * diff * color;
+    float   diff        = max(dot(p.normal, light_dir), 0.0);
+    vec3    diffuse     = light.diffuse * diff * p.color;
 
     // specular
-    vec3    view_dir    = normalize(u_view_pos - v_pos);
-    vec3    reflect_dir = reflect(-light_dir, norm);
-    float   spec_base   = max(dot(view_dir, reflect_dir), 0.0);
-    float   spec        = pow(spec_base, u_material.shininess);
-    vec3    specular    = u_light.specular * spec * hilite;
+    vec3    reflect_dir = reflect(-light_dir, p.normal);
+    float   spec_base   = max(dot(p.view_dir, reflect_dir), 0.0);
+    float   spec        = pow(spec_base, p.shininess);
+    vec3    specular    = light.specular * spec * p.hilite;
 
+    return ambient + diffuse + specular;
+}
+
+vec3
+light_positional (PointLight light, LightParams p)
+{
+    // vectors
+    vec3    light_off   = light.position - p.position;
+    vec3    light_dir   = normalize(light_off);
+    float   distance    = length(light_off);
+
+    // ambient
+    vec3    ambient     = light.ambient * p.color;
+
+    // diffuse
+    float   diff        = max(dot(p.normal, light_dir), 0.0);
+    vec3    diffuse     = light.diffuse * diff * p.color;
+
+    // specular
+    vec3    reflect_dir = reflect(-light_dir, p.normal);
+    float   spec_base   = max(dot(p.view_dir, reflect_dir), 0.0);
+    float   spec        = pow(spec_base, p.shininess);
+    vec3    specular    = light.specular * spec * p.hilite;
+
+    // attenuation
+    float   attenuation = 1.0 / (1.0 +
+        light.linear * distance +
+        light.quadratic * (distance * distance));
+
+    return (ambient + diffuse + specular) * attenuation;
+}
+
+//vec3
+//light_spot (SpotLight light, LightParams p)
+//{
+    // XXX incomplete
     // spot
-    float   theta       = dot(light_dir, normalize(-u_light.direction));
-    float   spot_cone   = (theta - u_light.cutoff) / u_light.softness;
-    float   spot        = clamp(spot_cone, 0, 1);
+    //float   theta       = dot(light_dir, normalize(-u_light.direction));
+    //float   spot_cone   = (theta - u_light.cutoff) / u_light.softness;
+    //float   spot        = clamp(spot_cone, 0, 1);
 
-    vec3    direct      = diffuse + specular;
-    vec3    light       = ambient + direct  * spot * attenuation;
-    f_color             = vec4(light, 1.0);
+    //return vec3(1.0);
+//}
+
+void 
+main ()
+{
+    // fragment parameters
+    LightParams p;
+    p.position  = v_pos;
+    p.normal    = normalize(u_normal_matrix * v_normal);
+    p.view_dir  = normalize(u_view_pos - v_pos);
+    p.color     = texture(u_material.diffuse, v_tex).rgb;
+    p.hilite    = texture(u_material.specular, v_tex).a;
+    p.shininess = u_material.shininess;
+
+    // directional light
+    vec3    result  = light_directional(u_sun, p);
+    
+    int i;
+    for (i = 0; i < POINT_LIGHTS; i++)
+        result      += light_positional(u_light[i], p);
+
+    f_color         = vec4(result, 1.0);
 }
