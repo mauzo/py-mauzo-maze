@@ -144,15 +144,18 @@ class App:
     def __init__ (self):
         self.resize(WINSIZE[0], WINSIZE[1])
         
-    def setup_box_vao (self):
-        prg     = make_shader("v-box", "f-box")
+    def setup_box_vao (self, slc):
+        prg     = slc.build_shader(["v-box"], ["f-box"])
         vao     = gl.VAO(prg)
 
-        vao.setup_attrib("b_pos",       3, 8, 0)
-        vao.setup_attrib("b_normal",    3, 8, 3)
-        vao.setup_attrib("b_tex",       2, 8, 6)
+        vao.bind()
+        vao.add_attrib(prg.b_pos,       3, 8, 0)
+        vao.add_attrib(prg.b_normal,    3, 8, 3)
+        vao.add_attrib(prg.b_tex,       2, 8, 6)
         vao.add_primitive(GL_TRIANGLES, 0, 36)
         vao.unbind()
+
+        prg.use()
 
         rgb     = gl.Texture()
         rgb.load_file(GL_RGB, "tex/container2rgb.tiff")
@@ -160,20 +163,21 @@ class App:
         spec.load_file(GL_ALPHA, "tex/container2s.tiff")
 
         t = vao.add_texture(rgb)
-        prg.set_uniform1i("u_material.diffuse", t)
+        prg.u_material_diffuse(t)
         t = vao.add_texture(spec)
-        prg.set_uniform1i("u_material.specular", t)
-        prg.set_uniform1f("u_material.shininess",   32.0)
+        prg.u_material_specular(t)
+        prg.u_material_shininess(32.0)
 
-        prg.set_uniform3f("u_light.ambient",    0.2, 0.2, 0.2)
-        prg.set_uniform3f("u_light.diffuse",    0.7, 0.7, 0.7)
-        prg.set_uniform3f("u_light.specular",   1.0, 1.0, 1.0)
+        prg.u_light_ambient(vec3(0.2, 0.2, 0.2))
+        prg.u_light_diffuse(vec3(0.7, 0.7, 0.7))
+        prg.u_light_specular(vec3(1.0, 1.0, 1.0))
+
         cutoff      = cos(radians(17.5))
         softness    = cos(radians(12.5)) - cutoff
-        prg.set_uniform1f("u_light.cutoff",     cutoff)
-        prg.set_uniform1f("u_light.softness",   softness)
-        prg.set_uniform1f("u_light.linear",     0.045)
-        prg.set_uniform1f("u_light.quadratic",  0.0075)
+        prg.u_light_cutoff(cutoff)
+        prg.u_light_softness(softness)
+        prg.u_light_linear(0.045)
+        prg.u_light_quadratic(0.0075)
 
         self.box = vao
 
@@ -201,7 +205,7 @@ class App:
         slc     = gl.ShaderCompiler()
 
         vbo.bind()
-        self.setup_box_vao()
+        self.setup_box_vao(slc)
         self.setup_lightcube_vao(slc)
         vbo.unbind()
 
@@ -223,8 +227,9 @@ class App:
         now     = pygame.time.get_ticks()/1000
 
         prg     = self.box.shader
-        prg.set_uniform3v("u_light.position",   camera.position)
-        prg.set_uniform3v("u_light.direction",  camera.front)
+        prg.use()
+        prg.u_light_position(camera.position)
+        prg.u_light_direction(camera.front)
 
         #self.light_pos  = vec3(1 + sin(now) * 2, sin(now/2), 2)
 
@@ -242,40 +247,40 @@ class App:
             camera.process_keyboard(logcam.RIGHT, dt)
 
     def render (self):
-
         camera  = self.camera
-
         proj    = glm.perspective(radians(camera.zoom), self.aspect, 0.1, 100)
         view    = camera.get_view_matrix()
 
-        self.box.set_matrix4("u_proj", proj)
-        self.box.set_matrix4("u_view", view)
-
         gl.clear()
 
+        vao     = self.lightcube
+        prg     = self.lamp_shader
         model   = mat4(1)
         model   = glm.translate(model, self.light_pos)
         model   = glm.scale(model, vec3(0.2))
-        self.lamp_shader.use()
-        self.lamp_shader.u_proj(proj)
-        self.lamp_shader.u_view(view)
-        self.lamp_shader.u_model(model)
-        self.lightcube.use()
-        self.lightcube.render()
+        prg.use()
+        prg.u_proj(proj)
+        prg.u_view(view)
+        prg.u_model(model)
+        vao.use()
+        vao.render()
 
-        box     = self.box
-        prg     = box.shader
-        box.use()
+        vao     = self.box
+        prg     = vao.shader
+        prg.use()
+        prg.u_proj(proj)
+        prg.u_view(view)
+        prg.u_view_pos(camera.position)
+        vao.use()
         for i in range(len(cube_positions)):
             model   = mat4(1)
             model   = glm.translate(model, cube_positions[i])
             model   = glm.rotate(model, radians(20*i), vec3(1, 0.3, 0.5))
             normal  = gl.make_normal_matrix(model)
 
-            prg.set_matrix4("u_model",          model)
-            prg.set_matrix3("u_normal_matrix",  normal)
-            prg.set_uniform3v("u_view_pos",     camera.position)
-            box.render()
+            prg.u_model(model)
+            prg.u_normal_matrix(normal)
+            vao.render()
 
         flip()
 
