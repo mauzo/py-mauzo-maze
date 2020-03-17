@@ -413,6 +413,7 @@ class VAO:
         glVertexAttribPointer(ix, length, GL_FLOAT, GL_FALSE,
             stride*sz, c_void_p(offset*sz))
         glEnableVertexAttribArray(ix)
+        #print("VAO", self.id, "attrib", ix, length, stride, offset)
 
     def add_ebo (self, ebo):
         self.ebo    = ebo

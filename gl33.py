@@ -184,6 +184,7 @@ class App:
         prg.use()
         prg.u_color(vec3(1, 1, 1))
 
+        vao.bind()
         vao.add_attrib(prg.b_pos, 3, 8, 0)
         vao.add_primitive(GL_TRIANGLES, 0, 36)
         vao.unbind()
@@ -250,16 +251,15 @@ class App:
         self.box.set_matrix4("u_proj", proj)
         self.box.set_matrix4("u_view", view)
 
-        self.lamp_shader.u_proj(proj)
-        self.lamp_shader.u_view(view)
-
         gl.clear()
 
         model   = mat4(1)
         model   = glm.translate(model, self.light_pos)
         model   = glm.scale(model, vec3(0.2))
-        self.lamp_shader.u_model(model)
         self.lamp_shader.use()
+        self.lamp_shader.u_proj(proj)
+        self.lamp_shader.u_view(view)
+        self.lamp_shader.u_model(model)
         self.lightcube.use()
         self.lightcube.render()
 
