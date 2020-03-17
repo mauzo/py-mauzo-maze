@@ -16,23 +16,33 @@ struct LightParams {
     float   shininess;
 };
 
-struct DirLight {
-    vec3    direction;
-
+struct LightColor {
     vec3    ambient;
     vec3    diffuse;
     vec3    specular;
 };
 
+struct DirLight {
+    vec3        direction;
+    LightColor  color;
+};
+
 struct PointLight {
-    vec3    position;
+    vec3        position;
 
-    float   linear;
-    float   quadratic;
+    float       linear;
+    float       quadratic;
 
-    vec3    ambient;
-    vec3    diffuse;
-    vec3    specular;
+    LightColor  color;
+};
+
+struct SpotLight {
+    vec3        position;
+    vec3        direction;
+    float       cutoff;
+    float       softness;
+
+    LightColor  color;
 };
 
 in      vec3    v_pos;
@@ -49,29 +59,41 @@ uniform vec3        u_view_pos;
 uniform Material    u_material;
 uniform DirLight    u_sun;
 uniform PointLight  u_light[POINT_LIGHTS];
+uniform SpotLight   u_spot;
 
-vec3    light_directional   (DirLight light, LightParams p);
-vec3    light_positional    (PointLight light, LightParams p);
+LightColor  light_basic         (LightColor l, LightParams p, vec3 light_dir);
+vec3        light_directional   (DirLight light, LightParams p);
+vec3        light_positional    (PointLight light, LightParams p);
+vec3        light_spot          (SpotLight light, LightParams p);
 
-vec3 
-light_directional (DirLight light, LightParams p)
+LightColor
+light_basic (LightColor l, LightParams p, vec3 light_dir)
 {
-    vec3    light_dir   = normalize(-light.direction);
+    LightColor  res;
 
     // ambient
-    vec3    ambient     = light.ambient * p.color;
+    res.ambient         = l.ambient * p.color;
 
     // diffuse
     float   diff        = max(dot(p.normal, light_dir), 0.0);
-    vec3    diffuse     = light.diffuse * diff * p.color;
+    res.diffuse         = l.diffuse * diff * p.color;
 
     // specular
     vec3    reflect_dir = reflect(-light_dir, p.normal);
     float   spec_base   = max(dot(p.view_dir, reflect_dir), 0.0);
     float   spec        = pow(spec_base, p.shininess);
-    vec3    specular    = light.specular * spec * p.hilite;
+    res.specular        = l.specular * spec * p.hilite;
 
-    return ambient + diffuse + specular;
+    return res;
+}
+
+vec3 
+light_directional (DirLight light, LightParams p)
+{
+    vec3        light_dir   = normalize(-light.direction);
+    LightColor  l           = light_basic(light.color, p, light_dir);
+
+    return l.ambient + l.diffuse + l.specular;
 }
 
 vec3
@@ -82,25 +104,15 @@ light_positional (PointLight light, LightParams p)
     vec3    light_dir   = normalize(light_off);
     float   distance    = length(light_off);
 
-    // ambient
-    vec3    ambient     = light.ambient * p.color;
-
-    // diffuse
-    float   diff        = max(dot(p.normal, light_dir), 0.0);
-    vec3    diffuse     = light.diffuse * diff * p.color;
-
-    // specular
-    vec3    reflect_dir = reflect(-light_dir, p.normal);
-    float   spec_base   = max(dot(p.view_dir, reflect_dir), 0.0);
-    float   spec        = pow(spec_base, p.shininess);
-    vec3    specular    = light.specular * spec * p.hilite;
+    // basic light
+    LightColor  l       = light_basic(light.color, p, light_dir);
 
     // attenuation
     float   attenuation = 1.0 / (1.0 +
         light.linear * distance +
         light.quadratic * (distance * distance));
 
-    return (ambient + diffuse + specular) * attenuation;
+    return (l.ambient + l.diffuse + l.specular) * attenuation;
 }
 
 //vec3
