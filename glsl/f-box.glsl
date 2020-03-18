@@ -181,9 +181,9 @@ main ()
     //result  += light_spot(u_spot, p);
 
     // magic light
-    vec2 magic_tex  = v_tex + vec2(0, u_now/4);
-    vec3 magic      = texture(u_material.magic, magic_tex).rgb;
-    result          += light_magic(u_magic, p, magic);
+    //vec2 magic_tex  = v_tex + vec2(0, u_now/4);
+    //vec3 magic      = texture(u_material.magic, magic_tex).rgb;
+    //result          += light_magic(u_magic, p, magic);
 
     f_color         = vec4(result, 1.0);
 }
