@@ -9,6 +9,7 @@ import  glm
 from    glm             import vec3, vec4, mat4, radians
 # Do this last, since pygame.locals conflicts
 from    OpenGL.GL       import *
+import  pywavefront
 
 import  mauzo.maze.gl               as gl
 import  mauzo.learnopengl.camera    as logcam
@@ -116,6 +117,21 @@ indices = np.array([
     1, 2, 3,
 ], dtype=GLint)
 
+_mesh_layout = {
+    "T2F_N3F_V3F":  ((3, 8, 5), (3, 8, 2), (2, 8, 0)),
+}
+
+class Mesh:
+    def __init__ (self, mesh):
+        mat     = mesh.materials[0]
+
+        self.vertices   = np.array(mat.vertices,    dtype=GLfloat)
+        self.indices    = np.array(mesh.faces,      dtype=GLuint)
+        self.layout     = _mesh_layout[mat.vertex_format]
+        self.triangles  = len(mesh.faces)
+        self.diffuse    = mat.texture.path
+        self.specular   = mat.texture_specular_color.path
+
 cube_positions = [
     vec3(0, 0, 0),
     vec3(2, 5, -15),
@@ -137,10 +153,10 @@ light_positions = [
 ]
 
 light_colors = [
-    vec3(255/255, 153/255, 0),
-    vec3(1.0, 0, 0),
-    vec3(0.9, 0.7, 0.0),
-    vec3(0.7, 0.3, 0.0),
+    vec3(0.8, 0.8, 0.8),
+    vec3(0.8, 0.8, 0.8),
+    vec3(0.8, 0.8, 0.8),
+    vec3(0.8, 0.8, 0.8),
 ]
 
 def read_glsl(name):
@@ -163,33 +179,43 @@ class App:
         prg     = slc.build_shader(["v-box"], ["f-box"])
         vao     = gl.VAO(prg)
 
+        obj     = pywavefront.Wavefront("model/nanosuit/nanosuit.obj",
+                    collect_faces=True)
+        mesh    = Mesh(obj.mesh_list[2])
+
+        self.mesh   = mesh
+
+        vbo     = gl.Buffer("vbo", mesh.vertices)
+        #ebo     = gl.Buffer("ebo", mesh.indices)
+        layout  = mesh.layout
+
+        vbo.bind()
         vao.bind()
-        vao.add_attrib(prg.b_pos,       3, 8, 0)
-        vao.add_attrib(prg.b_normal,    3, 8, 3)
-        vao.add_attrib(prg.b_tex,       2, 8, 6)
-        vao.add_primitive(GL_TRIANGLES, 0, 36)
+        vao.add_attrib(prg.b_pos,       *layout[0])
+        vao.add_attrib(prg.b_normal,    *layout[1])
+        vao.add_attrib(prg.b_tex,       *layout[2])
+        #vao.add_ebo(ebo)
+        vao.add_primitive(GL_TRIANGLES, 0, mesh.triangles * 3)
         vao.unbind()
 
         prg.use()
 
         rgb     = gl.Texture()
-        rgb.load_file(GL_RGB, "tex/container2rgb.tiff")
+        rgb.load_file(GL_RGBA, mesh.diffuse)
         spec    = gl.Texture()
-        spec.load_file(GL_ALPHA, "tex/container2s.tiff")
-        #magic   = gl.Texture()
-        #magic.load_file(GL_RGB, "tex/matrix.jpg")
+        spec.load_file(GL_RGBA, mesh.specular)
 
         t = vao.add_texture(rgb)
         prg.u_material_diffuse(t)
         t = vao.add_texture(spec)
         prg.u_material_specular(t)
-        #t = vao.add_texture(magic)
-        #prg.u_material_magic(t)
+#        #t = vao.add_texture(magic)
+#        #prg.u_material_magic(t)
         prg.u_material_shininess(32)
 
         prg.u_sun_direction(vec3(-0.2, -1.0, -0.3))
         prg.u_sun_color_ambient(vec3(0.05, 0.05, 0.05))
-        prg.u_sun_color_diffuse(vec3(0.8, 0.7, 0.3))
+        prg.u_sun_color_diffuse(vec3(0.4, 0.4, 0.4))
         prg.u_sun_color_specular(vec3(0.5, 0.5, 0.5))
 
         prg.u_light0_position(light_positions[0])
@@ -235,26 +261,26 @@ class App:
     def setup_lightcube_vao (self, slc):
         prg     = slc.build_shader(["v-light"], ["f-light"])
         vao     = gl.VAO(prg)
+        vbo     = gl.Buffer("vbo", vertices)
 
+        vbo.bind()
         vao.bind()
         vao.add_attrib(prg.b_pos, 3, 8, 0)
         vao.add_primitive(GL_TRIANGLES, 0, 36)
         vao.unbind()
+        vbo.unbind()
 
         self.lightcube      = vao
 
     def setup (self):
-        glClearColor(191/255, 133/255, 76/255, 1.0)
+        glClearColor(1, 1, 1, 1.0)
 
         self.light_pos  = vec3(1.2, 1, 2)
 
-        vbo     = gl.Buffer("vbo", vertices)
         slc     = gl.ShaderCompiler()
 
-        vbo.bind()
         self.setup_box_vao(slc)
         self.setup_lightcube_vao(slc)
-        vbo.unbind()
 
         slc.delete()
 
