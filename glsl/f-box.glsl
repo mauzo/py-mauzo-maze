@@ -1,5 +1,5 @@
 #version 330 core
-// vi:set syn=c:
+// vi:set syn=glsl:
 
 struct Material {
     sampler2D   diffuse;
