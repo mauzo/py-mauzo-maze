@@ -131,9 +131,16 @@ cube_positions = [
 
 light_positions = [
     vec3(0.7, 0.2, 2.0),
-    vec3(02.3, -3.3, 4.0),
+    vec3(2.3, -3.3, 4.0),
     vec3(-4.0, 2.0, -12.0),
     vec3(0.0, 0.0, -3.0),
+]
+
+light_colors = [
+    vec3(255/255, 153/255, 0),
+    vec3(1.0, 0, 0),
+    vec3(0.9, 0.7, 0.0),
+    vec3(0.7, 0.3, 0.0),
 ]
 
 def read_glsl(name):
@@ -178,34 +185,34 @@ class App:
         prg.u_material_specular(t)
         #t = vao.add_texture(magic)
         #prg.u_material_magic(t)
-        prg.u_material_shininess(32.0)
+        prg.u_material_shininess(32)
 
         prg.u_sun_direction(vec3(-0.2, -1.0, -0.3))
         prg.u_sun_color_ambient(vec3(0.05, 0.05, 0.05))
-        prg.u_sun_color_diffuse(vec3(0.4, 0.4, 0.4))
+        prg.u_sun_color_diffuse(vec3(0.8, 0.7, 0.3))
         prg.u_sun_color_specular(vec3(0.5, 0.5, 0.5))
 
         prg.u_light0_position(light_positions[0])
-        prg.u_light0_color_ambient(vec3(0.05, 0.05, 0.05))
-        prg.u_light0_color_diffuse(vec3(0.8, 0.8, 0.8))
+        prg.u_light0_color_ambient(light_colors[0]/16)
+        prg.u_light0_color_diffuse(light_colors[0])
         prg.u_light0_color_specular(vec3(1.0, 1.0, 1.0))
         prg.u_light0_linear(0.09)
         prg.u_light0_quadratic(0.032)
         prg.u_light1_position(light_positions[1])
-        prg.u_light1_color_ambient(vec3(0.05, 0.05, 0.05))
-        prg.u_light1_color_diffuse(vec3(0.8, 0.8, 0.8))
+        prg.u_light1_color_ambient(light_colors[1]/16)
+        prg.u_light1_color_diffuse(light_colors[1])
         prg.u_light1_color_specular(vec3(1.0, 1.0, 1.0))
         prg.u_light1_linear(0.09)
         prg.u_light1_quadratic(0.032)
         prg.u_light2_position(light_positions[2])
-        prg.u_light2_color_ambient(vec3(0.05, 0.05, 0.05))
-        prg.u_light2_color_diffuse(vec3(0.8, 0.8, 0.8))
+        prg.u_light2_color_ambient(light_colors[2]/16)
+        prg.u_light2_color_diffuse(light_colors[2])
         prg.u_light2_color_specular(vec3(1.0, 1.0, 1.0))
         prg.u_light2_linear(0.09)
         prg.u_light2_quadratic(0.032)
         prg.u_light3_position(light_positions[3])
-        prg.u_light3_color_ambient(vec3(0.05, 0.05, 0.05))
-        prg.u_light3_color_diffuse(vec3(0.8, 0.8, 0.8))
+        prg.u_light3_color_ambient(light_colors[3]/16)
+        prg.u_light3_color_diffuse(light_colors[3])
         prg.u_light3_color_specular(vec3(1.0, 1.0, 1.0))
         prg.u_light3_linear(0.09)
         prg.u_light3_quadratic(0.032)
@@ -223,16 +230,11 @@ class App:
         #prg.u_spot_linear(0.045)
         #prg.u_spot_quadratic(0.0075)
 
-
-
         self.box = vao
 
     def setup_lightcube_vao (self, slc):
         prg     = slc.build_shader(["v-light"], ["f-light"])
         vao     = gl.VAO(prg)
-
-        prg.use()
-        prg.u_color(vec3(1, 1, 1))
 
         vao.bind()
         vao.add_attrib(prg.b_pos, 3, 8, 0)
@@ -242,7 +244,7 @@ class App:
         self.lightcube      = vao
 
     def setup (self):
-        glClearColor(0, 0, 0, 1.0)
+        glClearColor(191/255, 133/255, 76/255, 1.0)
 
         self.light_pos  = vec3(1.2, 1, 2)
 
@@ -305,11 +307,12 @@ class App:
         prg.u_proj(proj)
         prg.u_view(view)
         vao.use()
-        for i in light_positions:
+        for i in range(4):
             model   = mat4(1)
-            model   = glm.translate(model, i)
+            model   = glm.translate(model, light_positions[i])
             model   = glm.scale(model, vec3(0.2))
             prg.u_model(model)
+            prg.u_color(light_colors[i])
             vao.render()
 
         vao     = self.box
