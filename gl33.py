@@ -174,9 +174,9 @@ class App:
 
         vao     = box.vao
         rgb     = gl.Texture()
-        rgb.load_file(GL_RGBA, box.diffuse)
+        rgb.load_file(box.diffuse)
         spec    = gl.Texture()
-        spec.load_file(GL_RGBA, box.specular)
+        spec.load_file(box.specular)
 
         t = vao.add_texture(rgb)
         prg.u_material_diffuse(t)

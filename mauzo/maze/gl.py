@@ -67,6 +67,11 @@ _tex_mipmaps = {
     GL_LINEAR_MIPMAP_NEAREST:   (GL_NEAREST, True),
     GL_LINEAR_MIPMAP_LINEAR:    (GL_LINEAR, True),
 }
+_tex_format = {
+    "RGBA":     GL_RGBA,
+    "RGB":      GL_RGB,
+    "L":        GL_ALPHA,
+}
 
 # This object represents a GL texture
 class Texture:
@@ -141,9 +146,10 @@ class Texture:
         if self.mipmaps:
             glGenerateMipmap(self.target)
 
-    def load_file (self, fmt, f):
+    def load_file (self, f):
         img = PIL.Image.open(f)
         img = img.transpose(PIL.Image.FLIP_TOP_BOTTOM)
+        fmt = _tex_format[img.mode]
         self.load(fmt, img.width, img.height, img.tobytes())
 
 # Shader programs
