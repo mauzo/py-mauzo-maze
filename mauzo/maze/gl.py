@@ -443,7 +443,7 @@ class VAO:
         "textures",     # textures to bind before we render
     ]
 
-    def __init__ (self, shader):
+    def __init__ (self, shader=None):
         self.id         = glGenVertexArrays(1)
         self.shader     = shader
         self.ebo        = None

@@ -13,6 +13,7 @@ import  pywavefront
 
 import  mauzo.maze.gl               as gl
 import  mauzo.learnopengl.camera    as logcam
+import  mauzo.maze.model            as model
 
 WINSIZE = (500, 500)
 
@@ -117,21 +118,6 @@ indices = np.array([
     1, 2, 3,
 ], dtype=GLint)
 
-_mesh_layout = {
-    "T2F_N3F_V3F":  ((3, 8, 5), (3, 8, 2), (2, 8, 0)),
-}
-
-class Mesh:
-    def __init__ (self, mesh):
-        mat     = mesh.materials[0]
-
-        self.vertices   = np.array(mat.vertices,    dtype=GLfloat)
-        self.indices    = np.array(mesh.faces,      dtype=GLuint)
-        self.layout     = _mesh_layout[mat.vertex_format]
-        self.triangles  = len(mesh.faces)
-        self.diffuse    = mat.texture.path
-        self.specular   = mat.texture_specular_color.path
-
 cube_positions = [
     vec3(0, 0, 0),
     vec3(2, 5, -15),
@@ -175,35 +161,22 @@ class App:
     def __init__ (self):
         self.resize(WINSIZE[0], WINSIZE[1])
         
-    def setup_box_vao (self, slc):
+    def setup_box (self, slc):
         prg     = slc.build_shader(["v-box"], ["f-box"])
-        vao     = gl.VAO(prg)
+        obj     = pywavefront.Wavefront("model/nanosuit/nanosuit.obj")
+        box     = model.Mesh(obj.mesh_list[2])
 
-        obj     = pywavefront.Wavefront("model/nanosuit/nanosuit.obj",
-                    collect_faces=True)
-        mesh    = Mesh(obj.mesh_list[2])
-
-        self.mesh   = mesh
-
-        vbo     = gl.Buffer("vbo", mesh.vertices)
-        #ebo     = gl.Buffer("ebo", mesh.indices)
-        layout  = mesh.layout
-
-        vbo.bind()
-        vao.bind()
-        vao.add_attrib(prg.b_pos,       *layout[0])
-        vao.add_attrib(prg.b_normal,    *layout[1])
-        vao.add_attrib(prg.b_tex,       *layout[2])
-        #vao.add_ebo(ebo)
-        vao.add_primitive(GL_TRIANGLES, 0, mesh.triangles * 3)
-        vao.unbind()
-
+        self.box        = box
+        self.box_shader = prg
+        
+        box.make_vao(prg)
         prg.use()
 
+        vao     = box.vao
         rgb     = gl.Texture()
-        rgb.load_file(GL_RGBA, mesh.diffuse)
+        rgb.load_file(GL_RGBA, box.diffuse)
         spec    = gl.Texture()
-        spec.load_file(GL_RGBA, mesh.specular)
+        spec.load_file(GL_RGBA, box.specular)
 
         t = vao.add_texture(rgb)
         prg.u_material_diffuse(t)
@@ -256,8 +229,6 @@ class App:
         #prg.u_spot_linear(0.045)
         #prg.u_spot_quadratic(0.0075)
 
-        self.box = vao
-
     def setup_lightcube_vao (self, slc):
         prg     = slc.build_shader(["v-light"], ["f-light"])
         vao     = gl.VAO(prg)
@@ -279,7 +250,7 @@ class App:
 
         slc     = gl.ShaderCompiler()
 
-        self.setup_box_vao(slc)
+        self.setup_box(slc)
         self.setup_lightcube_vao(slc)
 
         slc.delete()
@@ -298,14 +269,6 @@ class App:
         camera  = self.camera
         keys    = pygame.key.get_pressed()
         now     = pygame.time.get_ticks()/1000
-
-        #prg     = self.box.shader
-        #prg.use()
-        #prg.u_now(now)
-        #prg.u_magic_position(camera.position)
-        #prg.u_magic_direction(camera.front)
-
-        #self.light_pos  = vec3(1 + sin(now) * 2, sin(now/2), 2)
 
         if keys[K_q]:
             camera.process_keyboard(logcam.BACKWARD, dt)
@@ -341,8 +304,8 @@ class App:
             prg.u_color(light_colors[i])
             vao.render()
 
-        vao     = self.box
-        prg     = vao.shader
+        vao     = self.box.vao
+        prg     = self.box_shader
         prg.use()
         prg.u_proj(proj)
         prg.u_view(view)
