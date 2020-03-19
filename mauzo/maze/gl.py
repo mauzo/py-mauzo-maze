@@ -160,7 +160,7 @@ _shader_types = {
 }
 
 class ShaderProg:
-    __slots__   = ["id"]
+    # No __slots__, so we can add methods as needed
 
     def __init__ (self, prg):
         self.id = prg
@@ -217,7 +217,7 @@ class ShaderCompiler:
 
         return prg
 
-    def _build_att_method (self, ns, prg, i):
+    def _build_att_method (self, obj, prg, i):
         info    = glGetActiveAttrib(prg, i)
         att     = info[0].decode()
         if att[0:3] == "gl_":
@@ -228,7 +228,7 @@ class ShaderCompiler:
             warnings.warn("Could not find attrib location for " + att)
             return
 
-        ns[att] = loc
+        obj.__dict__[att] = loc
 
         print("Added attrib", att)
 
@@ -239,7 +239,7 @@ class ShaderCompiler:
             return
         return loc
 
-    def _build_uni_method (self, ns, prg, i):
+    def _build_uni_method (self, obj, prg, i):
         info    = glGetActiveUniform(prg, i)
         att     = info[0].decode()
         if att[0:3] == "gl_":
@@ -251,57 +251,50 @@ class ShaderCompiler:
         meth    = meth.replace("[", "").replace("]", "")
 
         if info[1] == 1:
-            self._build_uni_lambda(ns, meth, prg, att, typ)
+            (typn, fn) = self._build_uni_lambda(prg, att, typ)
+            obj.__dict__[meth] = fn
+            print("Added uniform", typn, att, "as", meth)
         else:
             att     = att[0:-3]
             meth    = meth[0:-1]
             for i in range(info[1]):
-                self._build_uni_lambda(ns, meth + str(i),
-                    prg, att + "[" + str(i) + "]", typ)
+                m = "%s%u" % (meth, i)
+                a = "%s[%u]" % (att, i)
+                (typn, fn) = self._build_uni_lambda(prg, a, typ)
+                obj.__dict__[m] = fn
+                print("Added uniform", typn, a, "as", meth)
 
-    def _build_uni_lambda (self, ns, meth, prg, att, typ):
+    def _build_uni_lambda (self, prg, att, typ):
         loc     = glGetUniformLocation(prg, att)
-        typn    = None
 
         if typ == GL_FLOAT:
-            ns[meth] = lambda s, v: glUniform1f(loc, v)
-            typn = "float"
+            return "float", lambda v: glUniform1f(loc, v)
         elif typ == GL_FLOAT_VEC3:
-            ns[meth] = lambda s, v: glUniform3fv(loc, 1, glm.value_ptr(v))
-            typn = "vec3"
+            return "vec3", lambda v: glUniform3fv(loc, 1, glm.value_ptr(v))
         elif typ == GL_FLOAT_VEC4:
-            ns[meth] = lambda s, v: glUniform4fv(loc, 1, glm.value_ptr(v))
-            typn = "vec4"
+            return "vec4", lambda v: glUniform4fv(loc, 1, glm.value_ptr(v))
         elif typ == GL_SAMPLER_2D:
-            ns[meth] = lambda s, v: glUniform1i(loc, v)
-            typn = "sampler2D"
+            return "sampler2D", lambda v: glUniform1i(loc, v)
         elif typ == GL_FLOAT_MAT3:
-            ns[meth] = lambda s, v: \
+            return "mat3", lambda v: \
                 glUniformMatrix3fv(loc, 1, GL_FALSE, glm.value_ptr(v))
-            typn = "mat3"
         elif typ == GL_FLOAT_MAT4:
-            ns[meth] = lambda s, v: \
+            return "mat4", lambda v: \
                 glUniformMatrix4fv(loc, 1, GL_FALSE, glm.value_ptr(v))
-            typn = "mat4"
         else:
             raise RuntimeError("Unhandled uniform" + att)
 
-        print("Added uniform", typn, att, "as", meth)
-
-    def _build_shader_class (self, ns, prg):
+    def build_shader_obj (self, prg):
+        obj     = ShaderProg(prg)
         n_att   = glGetProgramiv(prg, GL_ACTIVE_ATTRIBUTES)
         n_uni   = glGetProgramiv(prg, GL_ACTIVE_UNIFORMS)
 
         for i in range(n_att):
-            self._build_att_method(ns, prg, i)
+            self._build_att_method(obj, prg, i)
         for i in range(n_uni):
-            self._build_uni_method(ns, prg, i)
+            self._build_uni_method(obj, prg, i)
 
-    def build_shader_obj (self, prg):
-        C = types.new_class("ShaderProgX", 
-            bases=(ShaderProg,),
-            exec_body=lambda ns: self._build_shader_class(ns, prg))
-        return C(prg)
+        return obj
 
     def build_shader (self, vxs, frs):
         objs    = [self.find_shader("vertex", i) for i in vxs]
@@ -309,101 +302,6 @@ class ShaderCompiler:
         prg     = self.link(objs)
         print("Building for", vxs, frs)
         return self.build_shader_obj(prg)
-
-class Shader:
-    __slots__ = ["id", "objs", "attribs", "uniforms"]
-
-    def __init__ (self):
-        self.id     = glCreateProgram()
-        self._clear()
-
-    def _clear (self):
-        self.objs       = []
-        self.attribs    = {}
-        self.uniforms   = {}
-
-    def add_shader (self, typ, src):
-        sh = glCreateShader(_shader_types[typ])
-        glShaderSource(sh, src)
-        glCompileShader(sh)
-
-        if not glGetShaderiv(sh, GL_COMPILE_STATUS):
-            log = glGetShaderInfoLog(sh)
-            raise RuntimeError("Shader compilation failed: " + log.decode())
-
-        glAttachShader(self.id, sh)
-        self.objs.append(sh)
-
-    def link (self):
-        glLinkProgram(self.id)
-
-        if not glGetProgramiv(self.id, GL_LINK_STATUS):
-            log = glGetProgramInfoLog(self.id)
-            raise RuntimeError("Shader link failed: " + log.decode())
-
-        for o in self.objs:
-            glDeleteShader(o)
-
-        self._clear()
-
-    def use (self):
-        glUseProgram(self.id)
-
-    def _cached (self, cache, att, lookup):
-        if att in cache:
-            return cache[att]
-
-        loc = lookup(self.id, att)
-        if loc < 0:
-            raise RuntimeError("Unknown attrib/uniform " + att)
-        cache[att] = loc
-        return loc
-
-    def get_attrib (self, att):
-        return self._cached(self.attribs, att, glGetAttribLocation)
-
-    def _get_uniform_loc (self, name):
-        return self._cached(self.uniforms, name, glGetUniformLocation)
-
-    def set_uniform4f (self, name, a, b, c, d):
-        loc = self._get_uniform_loc(name)
-        self.use()
-        glUniform4f(loc, a, b, c, d)
-
-    def set_uniform4v (self, name, value):
-        loc = self._get_uniform_loc(name)
-        self.use()
-        glUniform4fv(loc, 1, glm.value_ptr(value))
-
-    def set_uniform3f (self, name, a, b, c):
-        loc = self._get_uniform_loc(name)
-        self.use()
-        glUniform3f(loc, a, b, c)
-
-    def set_uniform3v (self, name, value):
-        loc = self._get_uniform_loc(name)
-        self.use()
-        glUniform3fv(loc, 1, glm.value_ptr(value))
-
-    def set_uniform1f (self, name, value):
-        loc = self._get_uniform_loc(name)
-        self.use()
-        glUniform1f(loc, value)
-
-    def set_uniform1i (self, name, value):
-        loc = self._get_uniform_loc(name)
-        self.use()
-        glUniform1i(loc, value)
-
-    def set_matrix3 (self, name, mat):
-        loc = self._get_uniform_loc(name)
-        self.use()
-        glUniformMatrix3fv(loc, 1, GL_FALSE, glm.value_ptr(mat))
-
-    def set_matrix4 (self, name, mat):
-        loc = self._get_uniform_loc(name)
-        self.use()
-        glUniformMatrix4fv(loc, 1, GL_FALSE, glm.value_ptr(mat))
 
 # VBOs
 
