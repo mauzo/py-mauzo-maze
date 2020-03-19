@@ -164,12 +164,83 @@ class ShaderProg:
 
     def __init__ (self, prg):
         self.id = prg
+        self.__init_glsl_methods()
 
     def use (self):
         glUseProgram(self.id)
 
     def delete (self):
         glDeleteProgram(self.id)
+
+    def __init_glsl_methods (self):
+        prg     = self.id
+        n_att   = glGetProgramiv(prg, GL_ACTIVE_ATTRIBUTES)
+        n_uni   = glGetProgramiv(prg, GL_ACTIVE_UNIFORMS)
+
+        for i in range(n_att):
+            self.__init_attrib(i)
+        for i in range(n_uni):
+            self.__init_uniform(i)
+
+    def __init_attrib (self, i):
+        prg     = self.id
+        info    = glGetActiveAttrib(prg, i)
+        att     = info[0].decode()
+        if att[0:3] == "gl_":
+            return
+
+        loc     = glGetAttribLocation(prg, att)
+        if loc == -1:
+            warnings.warn("Could not find attrib location for " + att)
+            return
+
+        self.__dict__[att] = loc
+
+        print("Added attrib", att)
+
+    def __init_uniform (self, i):
+        info    = glGetActiveUniform(self.id, i)
+        att     = info[0].decode()
+        if att[0:3] == "gl_":
+            return
+
+        typ     = info[2]
+        meth    = att.replace(".", "_")
+        meth    = meth.replace("[", "").replace("]", "")
+
+        if info[1] == 1:
+            (typn, fn) = self._build_uni_lambda(att, typ)
+            self.__dict__[meth] = fn
+            print("Added uniform", typn, att, "as", meth)
+        else:
+            att     = att[0:-3]
+            meth    = meth[0:-1]
+            for i in range(info[1]):
+                m = "%s%u" % (meth, i)
+                a = "%s[%u]" % (att, i)
+                (typn, fn) = self._build_uni_lambda(a, typ)
+                self.__dict__[m] = fn
+                print("Added uniform", typn, a, "as", meth)
+
+    def _build_uni_lambda (self, att, typ):
+        loc     = glGetUniformLocation(self.id, att)
+
+        if typ == GL_FLOAT:
+            return "float", lambda v: glUniform1f(loc, v)
+        elif typ == GL_FLOAT_VEC3:
+            return "vec3", lambda v: glUniform3fv(loc, 1, glm.value_ptr(v))
+        elif typ == GL_FLOAT_VEC4:
+            return "vec4", lambda v: glUniform4fv(loc, 1, glm.value_ptr(v))
+        elif typ == GL_SAMPLER_2D:
+            return "sampler2D", lambda v: glUniform1i(loc, v)
+        elif typ == GL_FLOAT_MAT3:
+            return "mat3", lambda v: \
+                glUniformMatrix3fv(loc, 1, GL_FALSE, glm.value_ptr(v))
+        elif typ == GL_FLOAT_MAT4:
+            return "mat4", lambda v: \
+                glUniformMatrix4fv(loc, 1, GL_FALSE, glm.value_ptr(v))
+        else:
+            raise RuntimeError("Unhandled uniform" + att)
 
 class ShaderCompiler:
     __slots__ = ["objs"]
@@ -217,91 +288,12 @@ class ShaderCompiler:
 
         return prg
 
-    def _build_att_method (self, obj, prg, i):
-        info    = glGetActiveAttrib(prg, i)
-        att     = info[0].decode()
-        if att[0:3] == "gl_":
-            return
-
-        loc     = glGetAttribLocation(prg, att)
-        if loc == -1:
-            warnings.warn("Could not find attrib location for " + att)
-            return
-
-        obj.__dict__[att] = loc
-
-        print("Added attrib", att)
-
-    def _find_uni_loc (self, prg, att):
-        loc     = glGetUniformLocation(prg, att)
-        if loc == -1:
-            warnings.warn("Could not find uniform location for " + att)
-            return
-        return loc
-
-    def _build_uni_method (self, obj, prg, i):
-        info    = glGetActiveUniform(prg, i)
-        att     = info[0].decode()
-        if att[0:3] == "gl_":
-            return
-
-        typ     = info[2]
-
-        meth    = att.replace(".", "_")
-        meth    = meth.replace("[", "").replace("]", "")
-
-        if info[1] == 1:
-            (typn, fn) = self._build_uni_lambda(prg, att, typ)
-            obj.__dict__[meth] = fn
-            print("Added uniform", typn, att, "as", meth)
-        else:
-            att     = att[0:-3]
-            meth    = meth[0:-1]
-            for i in range(info[1]):
-                m = "%s%u" % (meth, i)
-                a = "%s[%u]" % (att, i)
-                (typn, fn) = self._build_uni_lambda(prg, a, typ)
-                obj.__dict__[m] = fn
-                print("Added uniform", typn, a, "as", meth)
-
-    def _build_uni_lambda (self, prg, att, typ):
-        loc     = glGetUniformLocation(prg, att)
-
-        if typ == GL_FLOAT:
-            return "float", lambda v: glUniform1f(loc, v)
-        elif typ == GL_FLOAT_VEC3:
-            return "vec3", lambda v: glUniform3fv(loc, 1, glm.value_ptr(v))
-        elif typ == GL_FLOAT_VEC4:
-            return "vec4", lambda v: glUniform4fv(loc, 1, glm.value_ptr(v))
-        elif typ == GL_SAMPLER_2D:
-            return "sampler2D", lambda v: glUniform1i(loc, v)
-        elif typ == GL_FLOAT_MAT3:
-            return "mat3", lambda v: \
-                glUniformMatrix3fv(loc, 1, GL_FALSE, glm.value_ptr(v))
-        elif typ == GL_FLOAT_MAT4:
-            return "mat4", lambda v: \
-                glUniformMatrix4fv(loc, 1, GL_FALSE, glm.value_ptr(v))
-        else:
-            raise RuntimeError("Unhandled uniform" + att)
-
-    def build_shader_obj (self, prg):
-        obj     = ShaderProg(prg)
-        n_att   = glGetProgramiv(prg, GL_ACTIVE_ATTRIBUTES)
-        n_uni   = glGetProgramiv(prg, GL_ACTIVE_UNIFORMS)
-
-        for i in range(n_att):
-            self._build_att_method(obj, prg, i)
-        for i in range(n_uni):
-            self._build_uni_method(obj, prg, i)
-
-        return obj
-
     def build_shader (self, vxs, frs):
+        print("Building for", vxs, frs)
         objs    = [self.find_shader("vertex", i) for i in vxs]
         objs    += [self.find_shader("fragment", i) for i in frs]
         prg     = self.link(objs)
-        print("Building for", vxs, frs)
-        return self.build_shader_obj(prg)
+        return ShaderProg(prg)
 
 # VBOs
 
