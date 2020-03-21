@@ -125,8 +125,8 @@ class Texture:
     def set_wrap (self, to):
         wrap = _tex_wrap[to]
         self.bind()
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap)
+        glTexParameteri(self.target, GL_TEXTURE_WRAP_S, wrap)
+        glTexParameteri(self.target, GL_TEXTURE_WRAP_T, wrap)
 
     def bind (self):
         glBindTexture(self.target, self.id)
@@ -252,6 +252,8 @@ class ShaderProg:
             glUniform1i(loc, u)
             def bind_tex (t):
                 glActiveTexture(GL_TEXTURE0 + u)
+                # We don't need to t.use (which calls glEnable) as that
+                # only applies to FF rendering.
                 t.bind()
             return "sampler2D", bind_tex
         else:

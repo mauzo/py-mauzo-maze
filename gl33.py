@@ -299,6 +299,7 @@ class App:
         prg.u_proj(proj)
         prg.u_view(view)
         prg.u_view_pos(camera.position)
+        glDisable(GL_TEXTURE_2D)
         mod.use(prg)
         for i in range(len(cube_positions)):
             model   = mat4(1)
