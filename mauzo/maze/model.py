@@ -19,8 +19,10 @@ class Mesh:
         self.layout     = _mesh_layout[mat.vertex_format]
         per_vertex      = self.layout[0][1]
         self.count      = len(mat.vertices) // per_vertex
-        self.diffuse    = mat.texture.path
-        self.specular   = mat.texture_specular_color.path
+
+        self.diffuse    = gl.Texture(file=mat.texture.path)
+        self.specular   = gl.Texture(file=mat.texture_specular_color.path)
+        self.shininess  = mat.shininess
 
     def make_vao (self, prg):
         vao     = gl.VAO()
@@ -39,6 +41,16 @@ class Mesh:
         vao.unbind()
 
         self.vao    = vao
+
+    def use (self, prg):
+        prg.u_material_diffuse(self.diffuse)
+        prg.u_material_specular(self.specular)
+        prg.u_material_shininess(self.shininess)
+
+        self.vao.use()
+
+    def render (self):
+        self.vao.render()
 
 class Model:
     def __init__ (self, path):

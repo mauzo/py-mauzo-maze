@@ -161,30 +161,11 @@ class App:
     def __init__ (self):
         self.resize(WINSIZE[0], WINSIZE[1])
         
-    def setup_box (self, slc):
-        prg     = slc.build_shader(["v-box"], ["f-box"])
-        obj     = pywavefront.Wavefront("model/nanosuit/nanosuit.obj")
-        box     = model.Mesh(obj.mesh_list[2])
-
-        self.box        = box
-        self.box_shader = prg
+    def setup_shader (self, slc):
+        prg         = slc.build_shader(["v-box"], ["f-box"])
+        self.shader = prg
         
-        box.make_vao(prg)
         prg.use()
-
-        vao     = box.vao
-        rgb     = gl.Texture()
-        rgb.load_file(box.diffuse)
-        spec    = gl.Texture()
-        spec.load_file(box.specular)
-
-        t = vao.add_texture(rgb)
-        prg.u_material_diffuse(t)
-        t = vao.add_texture(spec)
-        prg.u_material_specular(t)
-#        #t = vao.add_texture(magic)
-#        #prg.u_material_magic(t)
-        prg.u_material_shininess(32)
 
         prg.u_sun_direction(vec3(-0.2, -1.0, -0.3))
         prg.u_sun_color_ambient(vec3(0.05, 0.05, 0.05))
@@ -229,6 +210,13 @@ class App:
         #prg.u_spot_linear(0.045)
         #prg.u_spot_quadratic(0.0075)
 
+    def setup_model (self):
+        obj         = pywavefront.Wavefront("model/nanosuit/nanosuit.obj")
+        box         = model.Mesh(obj.mesh_list[2])
+        self.model  = box
+
+        box.make_vao(self.shader)
+
     def setup_lightcube_vao (self, slc):
         prg     = slc.build_shader(["v-light"], ["f-light"])
         vao     = gl.VAO(prg)
@@ -250,7 +238,8 @@ class App:
 
         slc     = gl.ShaderCompiler()
 
-        self.setup_box(slc)
+        self.setup_shader(slc)
+        self.setup_model()
         self.setup_lightcube_vao(slc)
 
         slc.delete()
@@ -304,13 +293,13 @@ class App:
             prg.u_color(light_colors[i])
             vao.render()
 
-        vao     = self.box.vao
-        prg     = self.box_shader
+        mod     = self.model
+        prg     = self.shader
         prg.use()
         prg.u_proj(proj)
         prg.u_view(view)
         prg.u_view_pos(camera.position)
-        vao.use()
+        mod.use(prg)
         for i in range(len(cube_positions)):
             model   = mat4(1)
             model   = glm.translate(model, cube_positions[i])
@@ -319,7 +308,7 @@ class App:
 
             prg.u_model(model)
             prg.u_normal_matrix(normal)
-            vao.render()
+            mod.render()
 
         flip()
 

@@ -101,6 +101,9 @@ class Texture:
         if "wrap" in kwargs:
             self.set_wrap(kwargs["wrap"])
 
+        if "file" in kwargs:
+            self.load_file(kwargs["file"])
+
     def delete (self):
         glDeleteTextures(1, [self.id])
 
@@ -163,7 +166,10 @@ class ShaderProg:
     # No __slots__, so we can add methods as needed
 
     def __init__ (self, prg):
-        self.id = prg
+        self.id         = prg
+        self._next_tex  = 0
+
+        self.use()
         self.__init_glsl_methods()
 
     def use (self):
@@ -231,14 +237,23 @@ class ShaderProg:
             return "vec3", lambda v: glUniform3fv(loc, 1, glm.value_ptr(v))
         elif typ == GL_FLOAT_VEC4:
             return "vec4", lambda v: glUniform4fv(loc, 1, glm.value_ptr(v))
-        elif typ == GL_SAMPLER_2D:
-            return "sampler2D", lambda v: glUniform1i(loc, v)
         elif typ == GL_FLOAT_MAT3:
             return "mat3", lambda v: \
                 glUniformMatrix3fv(loc, 1, GL_FALSE, glm.value_ptr(v))
         elif typ == GL_FLOAT_MAT4:
             return "mat4", lambda v: \
                 glUniformMatrix4fv(loc, 1, GL_FALSE, glm.value_ptr(v))
+        elif typ == GL_SAMPLER_2D:
+            # For textures we allocate a texture unit and set it
+            # immediately. Then the method binds a texture to the
+            # appropriate unit.
+            u = self._next_tex
+            self._next_tex += 1
+            glUniform1i(loc, u)
+            def bind_tex (t):
+                glActiveTexture(GL_TEXTURE0 + u)
+                t.bind()
+            return "sampler2D", bind_tex
         else:
             raise RuntimeError("Unhandled uniform" + att)
 
@@ -336,7 +351,6 @@ class VAO:
         "shader",       # Our shader program
         "ebo",          # our EBO (a Buffer)
         "primitives",   # the list of primitives we render
-        "textures",     # textures to bind before we render
     ]
 
     def __init__ (self, shader=None):
@@ -344,7 +358,6 @@ class VAO:
         self.shader     = shader
         self.ebo        = None
         self.primitives = []
-        self.textures   = []
 
         print("Created VAO", self.id)
 
@@ -382,25 +395,7 @@ class VAO:
     def add_primitive (self, mode, off, n):
         self.primitives.append((mode, off, n))
 
-    def set_texture (self, n, tex):
-        self.textures[n] = tex
-
-    def add_texture (self, tex):
-        n = len(self.textures)
-        self.textures.append(tex)
-        return n
-
-    def set_matrix3 (self, name, matrix):
-        self.shader.set_matrix3(name, matrix)
-
-    def set_matrix4 (self, name, matrix):
-        self.shader.set_matrix4(name, matrix)
-
     def use (self):
-        for i in range(len(self.textures)):
-            glActiveTexture(GL_TEXTURE0 + i)
-            self.textures[i].bind()
-
         if self.shader is not None:
             self.shader.use()
         self.bind()
