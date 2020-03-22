@@ -1,14 +1,16 @@
 # camera.py - Camera
 # Functions for manipulating the camera.
 
+import  glm
+from    glm         import degrees, radians, vec2, vec3, vec4
 from    math        import fmod
 from    OpenGL.GL   import *
 
-from    .player     import Player
-from    .vectors    import *
+# This is the speed the camera pans at, in radians/second.
+CAMERA_PAN  = radians(60)
 
-# This is the speed the camera pans at, in degrees/second.
-CAMERA_PAN  = 60
+HALFPI      = glm.half_pi()
+TWOPI       = glm.two_pi()
 
 # This object has information about the camera. The camera moves with the
 # player but has its own direction.
@@ -30,8 +32,8 @@ class Camera:
     # This is called automatically to set up the object
     def __init__ (self, app, player):
         self.offset     = 8
-        self.angle      = [70, -10]
-        self.panning    = [0, 0]
+        self.angle      = vec2(radians(70), radians(-10))
+        self.panning    = vec2(0, 0)
         self.player     = player
 
     def init (self):
@@ -40,38 +42,33 @@ class Camera:
 
     # Change the camera pan speed
     def pan (self, v):
-        self.panning[0] += v[0] * CAMERA_PAN
-        self.panning[1] += v[1] * CAMERA_PAN
+        self.panning += v * CAMERA_PAN
 
     # Keep player up to date with the walk direction
     def update_player_face (self):
-        self.player.face(self.angle[0])
+        self.player.face(degrees(self.angle.x))
 
     # Update the camera angle if we are panning.
     def do_pan (self, dt):
-        if (self.panning == [0, 0]):
+        if self.panning == vec2(0, 0):
             return
 
         # Multiply the pan speed by the time step so we always pan at the
         # same speed.
-        delta   = [x * dt for x in self.panning]
+        delta   = dt * self.panning
         angle   = self.angle
 
         # This fmod() function divides by 360 and takes the remainder.
         # This makes sure we are always between 0 and 360 degrees.
         # We subtract delta[0] because angles are measured CCW but we want
         # a +ve pan to turn us right. Otherwise it's confusing.
-        horiz = fmod(angle[0] - delta[0], 360)
+        horiz = fmod(angle.x - delta.x, TWOPI)
         if (horiz < 0):
-            horiz += 360
+            horiz += TWOPI
         
-        vert = angle[1] + delta[1]
-        if (vert > 90):
-            vert = 90
-        if (vert < -90):
-            vert = -90
+        vert = glm.clamp(angle.y + delta.y, -HALFPI, HALFPI)
 
-        self.angle = [horiz, vert]
+        self.angle = vec2(horiz, vert)
         self.update_player_face()
 
     # Update the camera
@@ -101,9 +98,9 @@ class Camera:
         # Vertical rotation. We are pointing down +X so we would expect a
         # CCW rotation about -Y to make +ve angles turn upwards, but as
         # everthing is backwards we need to turn the other way.
-        glRotatef(angle[1], 0, 1, 0)
+        glRotatef(degrees(angle[1]), 0, 1, 0)
         # Horizontal rotation. Again we rotate about -Z rather than +Z.
-        glRotatef(angle[0], 0, 0, -1)
+        glRotatef(degrees(angle[0]), 0, 0, -1)
         # Move to the camera position. These need to be negative because we
         # are moving the world rather than moving the camera.
         glTranslatef(-pos[0], -pos[1], -pos[2])

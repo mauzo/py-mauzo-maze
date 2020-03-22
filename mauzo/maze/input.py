@@ -1,5 +1,6 @@
 # input.py - Handle user input
 
+from    glm             import vec2, vec3
 import  pygame.locals
 
 # For now we have a static list of keybindings. Later we want to move
@@ -7,10 +8,10 @@ import  pygame.locals
 _KEYS = [
     ("ESCAPE",   ["quit"],                      None),
     ("q",        ["quit"],                      None),
-    ("i",        ["pan", [0, 1]],               ["pan", [0, -1]]),
-    ("k",        ["pan", [0, -1]],              ["pan", [0, 1]]),
-    ("j",        ["pan", [-1, 0]],              ["pan", [1, 0]]),
-    ("l",        ["pan", [1, 0]],               ["pan", [-1, 0]]),
+    ("i",        ["pan", vec2(0, 1)],           ["pan", vec2(0, -1)]),
+    ("k",        ["pan", vec2(0, -1)],          ["pan", vec2(0, 1)]),
+    ("j",        ["pan", vec2(-1, 0)],          ["pan", vec2(1, 0)]),
+    ("l",        ["pan", vec2(1, 0)],           ["pan", vec2(-1, 0)]),
     ("w",        ["walk", [1, 0, 0]],           ["walk", [-1, 0, 0]]),
     ("s",        ["walk", [-1, 0, 0]],          ["walk", [1, 0, 0]]),
     ("a",        ["walk", [0, 1, 0]],           ["walk", [0, -1, 0]]),
