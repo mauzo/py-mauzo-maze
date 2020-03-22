@@ -4,7 +4,6 @@ from    OpenGL.GL       import *
 from    OpenGL.GLU      import *
 
 from    .vectors    import *
-from    .world      import doomed, find_floor_below, world_start_pos
 
 class Player:
     __slots__ = [
@@ -29,11 +28,6 @@ class Player:
     def __init__ (self, app):
         self.app    = app
 
-        # Find our starting position from the world definition. We need
-        # to change this from a tuple to a list since we need it to be
-        # modifiable.
-        self.pos    = [c for c in world_start_pos()]
-
         self.vel        = [0, 0, 0]
         self.walking    = [0, 0, 0]
         # This will be updated by the camera
@@ -42,6 +36,8 @@ class Player:
         self.stopped    = 0
 
     def init (self):
+        self.pos    = self.app.world.start_pos()
+
         # Compile a display list.
         self.DL = glGenLists(1)
         glNewList(self.DL, GL_COMPILE)
@@ -108,13 +104,14 @@ class Player:
         pos     = self.pos
         vel     = self.vel
         now     = self.app.now()
+        world   = self.app.world
 
         # Assume we are falling.
         falling     = True
 
         # Find the floor below us. If there is a floor, and we are close
         # enough to it, we are not falling.
-        floor = find_floor_below(pos)
+        floor = world.find_floor_below(pos)
         if (floor):
             floor_z = floor["pos"][2] + self.bump 
             if (pos[2] <= floor_z and vel[2] <= 0):
@@ -168,7 +165,7 @@ class Player:
             #(floor["colour"] if floor else "<none>"))
 
         # If we fall too far we die.
-        if (doomed(pos)):
+        if (world.doomed(pos)):
             self.app.die()
 
         # Save our new position.

@@ -36,6 +36,8 @@ class MazeApp:
         "render",
         # True if we should run the physics, False if we are paused
         "run_physics",
+        # Our World object, representing the current level
+        "world",
     ]
 
     # This is called automatically when we create a new object, to set
@@ -58,6 +60,7 @@ class MazeApp:
 
         # Create objects representing other parts of the system
         self.options        = options.Options(self)
+        self.world          = world.World(self)
         self.player         = player.Player(self)
         self.camera         = camera.Camera(self, self.player)
         self.render         = render.Renderer(self)
@@ -72,7 +75,7 @@ class MazeApp:
         display.init_display()
 
         # Run the other initialisation
-        world.init_world()
+        self.world.init()
         self.player.init()
         self.camera.init()
         self.render.init()

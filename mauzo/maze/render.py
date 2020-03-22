@@ -7,7 +7,6 @@ from    OpenGL.GLU  import *
 
 from    .           import gl
 from    .           import text
-from    .world      import render_world
 
 class Renderer:
     __slots__ = [
@@ -38,6 +37,6 @@ class Renderer:
         app = self.app
         gl.clear()
         app.camera.render()
-        render_world()
+        app.world.render()
         app.player.render()
         self.overlay()
