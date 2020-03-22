@@ -4,6 +4,7 @@
 import  glm
 from    glm         import degrees, radians, vec2, vec3, vec4
 from    math        import fmod
+import  numpy       as np
 from    OpenGL.GL   import *
 
 # This is the speed the camera pans at, in radians/second.
@@ -78,15 +79,15 @@ class Camera:
     # Position the camera based on the player's current position. We put
     # the camera 1 unit above the player's position.
     def render (self):
-        pos     = self.player.pos
+        pos     = vec3(self.player.pos)
         angle   = self.angle
         
         # Clear the previous camera position
-        glLoadIdentity()
+        view    = glm.mat4(1)
         # Annoyingly, the camera starts pointing down (-Z).
         # Rotate so we are pointing down +X with +Z upwards.
-        glRotatef(90, 0, 0, 1)
-        glRotatef(90, 0, 1, 0)
+        view    = glm.rotate(view, HALFPI, vec3(0, 0, 1))
+        view    = glm.rotate(view, HALFPI, vec3(0, 1, 0))
 
         # Set the new camera position for this frame. Everything has to be
         # done backwards because we are moving the world rather than moving
@@ -94,14 +95,19 @@ class Camera:
         # the other way round.
         
         # Back off from the player position.
-        glTranslatef(self.offset, 0, 0)
+        view    = glm.translate(view, vec3(self.offset, 0, 0))
         # Vertical rotation. We are pointing down +X so we would expect a
         # CCW rotation about -Y to make +ve angles turn upwards, but as
         # everthing is backwards we need to turn the other way.
-        glRotatef(degrees(angle[1]), 0, 1, 0)
+        view    = glm.rotate(view, angle.y, vec3(0, 1, 0))
         # Horizontal rotation. Again we rotate about -Z rather than +Z.
-        glRotatef(degrees(angle[0]), 0, 0, -1)
+        view    = glm.rotate(view, angle.x, vec3(0, 0, -1))
         # Move to the camera position. These need to be negative because we
         # are moving the world rather than moving the camera.
-        glTranslatef(-pos[0], -pos[1], -pos[2])
+        view    = glm.translate(view, -pos)
+
+        # Push the matrix to GL (I don't understand why value_ptr
+        # doesn't work here when it does with glUniformMatrix...)
+        view_a  = np.ndarray((4, 4), buffer=view, dtype=np.float32)
+        glLoadMatrixf(view_a)
 
