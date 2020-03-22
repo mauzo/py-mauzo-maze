@@ -124,6 +124,12 @@ _World = {
         },
     ],
 
+    "collide": [
+        {   "pos":      (0, 0, 0),
+            "edges":    ((2, 0, 0), (0, 2, 0), (0, 0, -2)),
+        },
+    ],
+
     # We die if we fall this low.
     "doom_z":   -20,
 }
@@ -132,19 +138,39 @@ FLOOR_THICKNESS = 0.2
 
 class World:
     __slots__ = [
-        "app",      # Our app
-        "dl",       # A displaylist to render the world
-        "start",    # The player's starting position
-        "doom_z",   # We die if we fall this low
+        "app",              # Our app
+        "collision_list",   # Used to detect collisions
+        "dl",               # A displaylist to render the world
+        "doom_z",           # We die if we fall this low
+        "start",            # The player's starting position
     ]
 
     def __init__ (self, app):
         self.app    = app
-        self.start  = [c for c in _World["start"]]
-        self.doom_z = _World["doom_z"]
 
     def init (self):
+        self.start  = [c for c in _World["start"]]
+        self.doom_z = _World["doom_z"]
         self.init_dl(_World)
+        self.init_collision(_World)
+
+    def init_collision (self, level):
+        planes = []
+        for f in level["collide"]:
+            p           = vec3(f["pos"])
+            e1, e2, e3  = (vec3(e) for e in f["edges"])
+            px          = p + e1 + e2 + e3
+            planes.append((
+                plane_from_points(p, e1, e2),
+                plane_from_points(p, e2, e3),
+                plane_from_points(p, e3, e1),
+                plane_from_points(px, e2, e1),
+                plane_from_points(px, e3, e2),
+                plane_from_points(px, e1, e3),
+            ))
+
+        self.collision_list = planes
+        print("Collision:", planes)
 
     # Build a display list representing the world, so we don't have to
     # calculate all the triangles every frame.
@@ -155,6 +181,7 @@ class World:
         self.draw_lights(level)
         self.draw_floors(level)
         self.draw_walls(level)
+        self.draw_collision(level)
         draw_origin_marker()
         glEndList()
 
@@ -182,6 +209,11 @@ class World:
             e3          = [0, 0, -FLOOR_THICKNESS]
             
             draw_ppiped(p, e1, e2, e3)
+
+    def draw_collision (self, level):
+        glColor(1, 1, 1, 1)
+        for f in level["collide"]:
+            draw_ppiped(f["pos"], *f["edges"])
 
     def draw_walls (self, level):
         colours = level["colours"]
@@ -218,6 +250,21 @@ class World:
                 continue
             found = f
         return found
+
+    def collision (self, p, margin):
+        for o in self.collision_list:
+            # Assume we collide with this object.
+            collide = True
+            print("collision for", p)
+            for pl in o:
+                # If we are outside any of the planes...
+                print("  p .", repr(pl), "=", glm.dot(vec4(p, 1), pl))
+                if glm.dot(vec4(p, 1), pl) > margin:
+                    # we do not collide.
+                    collide = False
+            if collide:
+                return True
+        return False
 
     # Check if the player has moved outside the world and died.
     def doomed (self, p):

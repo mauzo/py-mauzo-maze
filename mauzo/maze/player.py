@@ -140,6 +140,17 @@ class Player:
                 vel[2] = self.speed["jump"]
                 self.jumping = False
 
+        # Take the velocity vector we have calculated and add it to our
+        # position vector to give our new position. Multiply the
+        # velocity by the time taken to render the last frame so our
+        # speed is independant of the FPS.
+        pos = vec_add(pos, vec_mul(vel, dt))
+
+        # If we would collide, remove our velocity and don't save the
+        # new position.
+        if world.collision(pos, self.bump):
+            vel = [0, 0, 0]
+
         # Save our velocity for next time
         self.vel = vel
 
@@ -147,12 +158,6 @@ class Player:
         if (vel == [0, 0, 0]):
             self.stopped = now
             return
-
-        # Take the velocity vector we have calculated and add it to our position
-        # vector to give our new position. Multiply the velocity by the time
-        # taken to render the last frame so our speed is independant of the
-        # FPS.
-        pos = vec_add(pos, vec_mul(vel, dt))
 
         # If we have fallen through the floor put us back on top of the floor
         # so that we land on it.
