@@ -17,56 +17,8 @@ import  mauzo.maze.model            as model
 
 WINSIZE = (500, 500)
 
-def flip ():
-    pygame.display.flip()
-
 def sigint (x, y):
     raise KeyboardInterrupt()
-
-def init ():
-    signal.signal(signal.SIGINT, sigint)
-    pygame.init()
-    pygame.display.set_mode(WINSIZE, OPENGL|DOUBLEBUF|RESIZABLE)
-
-    # depth/cull
-    glEnable(GL_DEPTH_TEST)
-    glEnable(GL_CULL_FACE)
-    # blending
-    glEnable(GL_BLEND)
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-    # Pixel transfer
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
-
-def run (app):
-    clock   = pygame.time.Clock()
-    mouseok = False
-
-    def set_mouseok (b):
-        nonlocal mouseok # grr stupid language
-        mouseok = b
-        pygame.mouse.set_visible(not b)
-        pygame.event.set_grab(b)
-
-    while True:
-        es = pygame.event.get()
-        for e in es:
-            if e.type == QUIT:
-                return
-            if e.type == KEYDOWN and e.key == K_ESCAPE:
-                set_mouseok(False)
-            if e.type == MOUSEBUTTONDOWN:
-                set_mouseok(True)
-            if e.type == MOUSEMOTION and mouseok:
-                app.mouse(e)
-            if e.type == VIDEORESIZE:
-                glViewport(0, 0, e.w, e.h)
-                app.resize(e.w, e.h)
-
-        dt = clock.get_time() / 1000
-
-        app.update(dt)
-        app.render()
-        clock.tick(80)
 
 vertices = np.array([
     # position         # normal          # texture
@@ -161,6 +113,56 @@ class App:
     def __init__ (self):
         self.resize(WINSIZE[0], WINSIZE[1])
         
+    def init (self):
+        signal.signal(signal.SIGINT, sigint)
+        pygame.init()
+        pygame.display.set_mode(WINSIZE, OPENGL|DOUBLEBUF|RESIZABLE)
+
+        # depth/cull
+        glEnable(GL_DEPTH_TEST)
+        glEnable(GL_CULL_FACE)
+        # blending
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        # Pixel transfer
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+
+    def flip (self):
+        pygame.display.flip()
+
+    def run (self):
+        clock   = pygame.time.Clock()
+        mouseok = False
+
+        def set_mouseok (b):
+            nonlocal mouseok # grr stupid language
+            mouseok = b
+            pygame.mouse.set_visible(not b)
+            pygame.event.set_grab(b)
+
+        while True:
+            es = pygame.event.get()
+            for e in es:
+                if e.type == QUIT:
+                    return
+                if e.type == KEYDOWN and e.key == K_ESCAPE:
+                    set_mouseok(False)
+                if e.type == MOUSEBUTTONDOWN:
+                    set_mouseok(True)
+                if e.type == MOUSEMOTION and mouseok:
+                    self.mouse(e)
+                if e.type == VIDEORESIZE:
+                    print("RESIZE", e.w, e.h)
+                    glViewport(0, 0, e.w, e.h)
+                    self.resize(e.w, e.h)
+
+            dt = clock.get_time() / 1000
+
+            self.update(dt)
+            self.render()
+            self.flip()
+            clock.tick(80)
+
     def setup_shader (self, slc):
         prg         = slc.build_shader(["v-box"], ["f-box"])
         self.shader = prg
@@ -311,9 +313,8 @@ class App:
             prg.u_normal_matrix(normal)
             mod.render()
 
-        flip()
 
-init()
 app = App()
+app.init()
 app.setup()
-run(app)
+app.run()
