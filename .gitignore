@@ -1,5 +1,7 @@
 assimp-5.0.1
 doc
+gltest/gltest
 __pycache__
 *.lnk
+*.o
 *.swp
