@@ -1,4 +1,4 @@
-#version 330 core
+#version 130
 
 in      vec3    b_pos;
 in      vec3    b_normal;

@@ -1,4 +1,4 @@
-#version 330 core
+#version 130
 // vi:set syn=glsl:
 
 struct Material {
