@@ -234,8 +234,8 @@ class App:
         #prg.u_spot_quadratic(0.0075)
 
     def setup_model (self):
-        obj         = pywavefront.Wavefront("model/nanosuit/nanosuit.obj")
-        box         = model.Mesh(obj.mesh_list[2])
+        obj         = pywavefront.Wavefront("model/key/key.obj")
+        box         = model.Mesh(obj.mesh_list[0])
         self.model  = box
 
         box.make_vao(self.shader)

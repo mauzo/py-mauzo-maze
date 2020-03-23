@@ -1,5 +1,6 @@
 # model.py - model loading.
 
+import  glm
 import  numpy           as np
 import  pywavefront
 
@@ -20,9 +21,17 @@ class Mesh:
         per_vertex      = self.layout[0][1]
         self.count      = len(mat.vertices) // per_vertex
 
-        self.diffuse    = gl.Texture(file=mat.texture.path)
-        self.specular   = gl.Texture(file=mat.texture_specular_color.path)
+        self.diffuse    = glm.vec3(mat.diffuse)
+        self.specular   = mat.specular[0]
         self.shininess  = mat.shininess
+        if mat.texture:
+            self.diffuseT   = gl.Texture(file=mat.texture.path)
+        else:
+            self.diffuseT   = None
+        if mat.texture_specular_color:
+            self.specularT  = gl.Texture(file=mat.texture_specular_color.path)
+        else:
+            self.specularT  = None
 
     def make_vao (self, prg):
         vao     = gl.VAO()
@@ -35,7 +44,7 @@ class Mesh:
         vao.bind()
         vao.add_attrib(prg.b_pos,       *layout[0])
         vao.add_attrib(prg.b_normal,    *layout[1])
-        vao.add_attrib(prg.b_tex,       *layout[2])
+        #vao.add_attrib(prg.b_tex,       *layout[2])
         #vao.add_ebo(ebo)
         vao.add_primitive(GL_TRIANGLES, 0, self.count)
         vao.unbind()

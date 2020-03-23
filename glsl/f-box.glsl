@@ -2,10 +2,14 @@
 // vi:set syn=glsl:
 
 struct Material {
+    vec3        diffuse;
+    float       specular;
+    float       shininess;
+};
+
+struct Textures {
     sampler2D   diffuse;
     sampler2D   specular;
-    sampler2D   magic;
-    float       shininess;
 };
 
 struct LightParams {
@@ -165,8 +169,10 @@ main ()
     p.position  = v_pos;
     p.normal    = normalize(u_normal_matrix * v_normal);
     p.view_dir  = normalize(u_view_pos - v_pos);
-    p.color     = texture(u_material.diffuse, v_tex).rgb;
-    p.hilite    = texture(u_material.specular, v_tex).a;
+    //p.color     = texture(u_material.diffuse, v_tex).rgb;
+    //p.hilite    = texture(u_material.specular, v_tex).a;
+    p.color     = u_material.diffuse;
+    p.hilite    = u_material.specular;
     p.shininess = u_material.shininess;
 
     // directional light
