@@ -2,12 +2,9 @@ from    math            import sin, cos
 import  numpy           as np
 import  signal
 
-import  pygame
-from    pygame.locals   import *
-
+import  glfw
 import  glm
 from    glm             import vec3, vec4, mat4, radians
-# Do this last, since pygame.locals conflicts
 from    OpenGL.GL       import *
 import  pywavefront
 
@@ -111,57 +108,81 @@ def make_shader (vertex="vertex", fragment="frag"):
 
 class App:
     def __init__ (self):
+        self.mouseok    = False
+        self.mouse_x    = 0
+        self.mouse_y    = 0
         self.resize(WINSIZE[0], WINSIZE[1])
+
+    def handle_glfw_error (self, code, msg):
+        raise RuntimeError("glfw error: " + msg)
         
     def init (self):
         signal.signal(signal.SIGINT, sigint)
-        pygame.init()
-        pygame.display.set_mode(WINSIZE, OPENGL|DOUBLEBUF|RESIZABLE)
+        if not glfw.init():
+            raise RuntimeError("failed to init glfw")
+        glfw.set_error_callback(self.handle_glfw_error)
 
-        # depth/cull
-        glEnable(GL_DEPTH_TEST)
-        glEnable(GL_CULL_FACE)
-        # blending
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        # Pixel transfer
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+        window = glfw.create_window(*WINSIZE, "GL3", None, None);
+        if not window:
+            raise RuntimeError("failed to create window")
+        self.window = window
+        glfw.make_context_current(window)
 
-    def flip (self):
-        pygame.display.flip()
+        glfw.swap_interval(1)
+        glfw.set_framebuffer_size_callback(window, self.handle_resize)
+        glfw.set_key_callback(window, self.handle_key)
+        glfw.set_cursor_pos_callback(window, self.handle_mouse_pos)
+        glfw.set_mouse_button_callback(window, self.handle_mouse_click)
+
+    def delete (self):
+        glfw.destroy_window(self.window)
+        glfw.terminate()
+
+    def set_mouseok (self, b):
+        self.mouseok = b
+        if b:
+            glfw.set_input_mode(self.window, glfw.CURSOR, 
+                glfw.CURSOR_DISABLED)
+        else:
+            glfw.set_input_mode(self.window, glfw.CURSOR,
+                glfw.CURSOR_NORMAL)
+            
+    def handle_resize (self, window, w, h):
+        glViewport(0, 0, w, h)
+        self.resize(w, h)
+
+    def resize (self, w, h):
+        self.width  = w
+        self.height = h
+        self.aspect = w/h
+
+    def handle_key (self, window, key, code, action, mods):
+        if key == glfw.KEY_ESCAPE and action == glfw.PRESS:
+            self.set_mouseok(False)
+
+    def handle_mouse_pos (self, window, x, y):
+        if self.mouseok:
+            self.camera.process_mouse(x - self.mouse_x, self.mouse_y - y)
+        self.mouse_x    = x
+        self.mouse_y    = y
+
+    def handle_mouse_click (self, window, button, action, mods):
+        if action == glfw.PRESS:
+            self.set_mouseok(True)
 
     def run (self):
-        clock   = pygame.time.Clock()
-        mouseok = False
+        window  = self.window
+        last    = glfw.get_time()
+        while not glfw.window_should_close(window):
+            glfw.poll_events()
 
-        def set_mouseok (b):
-            nonlocal mouseok # grr stupid language
-            mouseok = b
-            pygame.mouse.set_visible(not b)
-            pygame.event.set_grab(b)
-
-        while True:
-            es = pygame.event.get()
-            for e in es:
-                if e.type == QUIT:
-                    return
-                if e.type == KEYDOWN and e.key == K_ESCAPE:
-                    set_mouseok(False)
-                if e.type == MOUSEBUTTONDOWN:
-                    set_mouseok(True)
-                if e.type == MOUSEMOTION and mouseok:
-                    self.mouse(e)
-                if e.type == VIDEORESIZE:
-                    print("RESIZE", e.w, e.h)
-                    glViewport(0, 0, e.w, e.h)
-                    self.resize(e.w, e.h)
-
-            dt = clock.get_time() / 1000
+            now     = glfw.get_time()
+            dt      = now - last
+            last    = now
 
             self.update(dt)
             self.render()
-            self.flip()
-            clock.tick(80)
+            glfw.swap_buffers(window)
 
     def setup_shader (self, slc):
         prg         = slc.build_shader(["v-box"], ["f-box"])
@@ -233,10 +254,22 @@ class App:
 
         self.lightcube      = vao
 
-    def setup (self):
+    def setup_gl (self):
+        # depth/cull
+        glEnable(GL_DEPTH_TEST)
+        glEnable(GL_CULL_FACE)
+        # blending
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        # Pixel transfer
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+        # clear
         glClearColor(1, 1, 1, 1.0)
 
+    def setup (self):
         self.light_pos  = vec3(1.2, 1, 2)
+
+        self.setup_gl()
 
         slc     = gl.ShaderCompiler()
 
@@ -248,30 +281,21 @@ class App:
 
         self.camera     = logcam.Camera(vec3(1, 0, 6))
 
-    def resize (self, w, h):
-        self.width  = w
-        self.height = h
-        self.aspect = w/h
-
-    def mouse (self, e):
-        self.camera.process_mouse(e.rel[0], -e.rel[1])
-
     def update (self, dt):
         camera  = self.camera
-        keys    = pygame.key.get_pressed()
-        now     = pygame.time.get_ticks()/1000
+        window  = self.window
 
-        if keys[K_q]:
+        if glfw.get_key(window, glfw.KEY_Q) == glfw.PRESS:
             camera.process_keyboard(logcam.BACKWARD, dt)
-        if keys[K_e]:
+        if glfw.get_key(window, glfw.KEY_E) == glfw.PRESS:
             camera.process_keyboard(logcam.FORWARD, dt)
-        if keys[K_w]:
+        if glfw.get_key(window, glfw.KEY_W) == glfw.PRESS:
             camera.process_keyboard(logcam.UP, dt)
-        if keys[K_s]:
+        if glfw.get_key(window, glfw.KEY_S) == glfw.PRESS:
             camera.process_keyboard(logcam.DOWN, dt)
-        if keys[K_a]:
+        if glfw.get_key(window, glfw.KEY_A) == glfw.PRESS:
             camera.process_keyboard(logcam.LEFT, dt)
-        if keys[K_d]:
+        if glfw.get_key(window, glfw.KEY_D) == glfw.PRESS:
             camera.process_keyboard(logcam.RIGHT, dt)
 
     def render (self):
