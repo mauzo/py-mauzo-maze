@@ -7,6 +7,9 @@ def err (msg):
 def handle_glfw_error (code, msg):
     err("glfw error: " + msg.decode())
 
+def handle_resize (window, w, h):
+    glViewport(0, 0, w, h)
+
 def read_file (fname):
     with open(fname, "rb") as f:
         src = f.read()
@@ -24,8 +27,10 @@ window  = glfw.create_window(800, 600, "Hello world", None, None)
 
 if not window:
     err("failed to create window")
+
 glfw.make_context_current(window)
 glfw.swap_interval(1)
+glfw.set_framebuffer_size_callback(window, handle_resize)
 
 src     = read_file("f-box.glsl")
 shader  = glCreateShader(GL_FRAGMENT_SHADER)
@@ -38,7 +43,7 @@ if not glGetShaderiv(shader, GL_COMPILE_STATUS):
 
 print("shader compiled successfully")
 
-glClearColor(0, 0, 0, 1)
+glClearColor(1, 1, 1, 1)
 glColor4f(1, 0, 0, 1)
 while not glfw.window_should_close(window):
     glClear(GL_COLOR_BUFFER_BIT)
