@@ -1,5 +1,4 @@
 #version 130
-// vi:set syn=glsl:
 
 struct Material {
     vec3        diffuse;
@@ -65,7 +64,6 @@ in      vec2    v_tex;
 
 out     vec4    f_color;
 
-uniform mat3        u_normal_matrix;
 uniform vec3        u_view_pos;
 uniform float       u_now;
 
@@ -167,7 +165,7 @@ main ()
     // fragment parameters
     LightParams p;
     p.position  = v_pos;
-    p.normal    = normalize(u_normal_matrix * v_normal);
+    p.normal    = normalize(v_normal);
     p.view_dir  = normalize(u_view_pos - v_pos);
     //p.color     = texture(u_material.diffuse, v_tex).rgb;
     //p.hilite    = texture(u_material.specular, v_tex).a;

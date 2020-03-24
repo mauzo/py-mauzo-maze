@@ -157,11 +157,6 @@ class Texture:
 
 # Shader programs
 
-_shader_types = {
-    "vertex":   GL_VERTEX_SHADER,
-    "fragment": GL_FRAGMENT_SHADER,
-}
-
 class ShaderProg:
     # No __slots__, so we can add methods as needed
 
@@ -259,6 +254,11 @@ class ShaderProg:
         else:
             raise RuntimeError("Unhandled uniform" + att)
 
+_shader_types = {
+    "vert": GL_VERTEX_SHADER,
+    "frag": GL_FRAGMENT_SHADER,
+}
+
 class ShaderCompiler:
     __slots__ = ["objs"]
 
@@ -269,8 +269,8 @@ class ShaderCompiler:
         for i in self.objs:
             glDeleteShader(self.objs[i])
 
-    def compile_str (self, typ, name, src):
-        sh = glCreateShader(_shader_types[typ])
+    def compile_str (self, typ, src):
+        sh = glCreateShader(typ)
         glShaderSource(sh, src)
         glCompileShader(sh)
 
@@ -278,19 +278,23 @@ class ShaderCompiler:
             log = glGetShaderInfoLog(sh)
             raise RuntimeError("Shader compilation failed: " + log.decode())
 
-        self.objs[name] = sh
         return sh
 
-    def compile_file (self, typ, name, fname):
-        # XXX search path etc.
-        with open(fname, "rb") as f:
+    def compile_file (self, typ, name):
+        with open(name, "rb") as f:
             src = f.read()
-        return self.compile_str(typ, name, src)
+        return self.compile_str(typ, src)
 
     def find_shader (self, typ, name):
+        gltyp   = _shader_types[typ]
+        name    = "glsl/%s.%s" % (name, typ)
+
         if name in self.objs:
             return self.objs[name]
-        return self.compile_file(typ, name, "glsl/" + name + ".glsl")
+
+        sh      = self.compile_file(gltyp, name)
+        self.objs[name] = sh
+        return sh
 
     def link (self, shs):
         prg = glCreateProgram()
@@ -305,10 +309,11 @@ class ShaderCompiler:
 
         return prg
 
-    def build_shader (self, vxs, frs):
-        print("Building for", vxs, frs)
-        objs    = [self.find_shader("vertex", i) for i in vxs]
-        objs    += [self.find_shader("fragment", i) for i in frs]
+    def build_shader (self, **kwargs):
+        print("Building for", kwargs)
+        objs    = [
+            self.find_shader(t, kwargs[t])
+                for t in kwargs]
         prg     = self.link(objs)
         return ShaderProg(prg)
 

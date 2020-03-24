@@ -185,7 +185,7 @@ class App:
             glfw.swap_buffers(window)
 
     def setup_shader (self, slc):
-        prg         = slc.build_shader(["v-box"], ["f-box"])
+        prg         = slc.build_shader(vert="plain", frag="material")
         self.shader = prg
         
         prg.use()
@@ -241,7 +241,7 @@ class App:
         box.make_vao(self.shader)
 
     def setup_lightcube_vao (self, slc):
-        prg     = slc.build_shader(["v-light"], ["f-light"])
+        prg     = slc.build_shader(vert="plain", frag="color")
         vao     = gl.VAO(prg)
         vbo     = gl.Buffer("vbo", vertices)
 
