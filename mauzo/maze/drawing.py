@@ -71,6 +71,16 @@ def draw_points (points):
     glEnd()
     glPopAttrib()
 
+# Draw a list of coloured large points
+def draw_point (colour, pos):
+    glPushAttrib(GL_POINT_BIT)
+    glPointSize(10)
+    glColor3fv(colour)
+    glBegin(GL_POINTS)
+    glVertex3fv(pos)
+    glEnd()
+    glPopAttrib()
+
 # Draw a marker at the origin so we can see where it is.
 def draw_origin_marker():
     glColor3f(1, 1, 1)

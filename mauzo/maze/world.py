@@ -126,6 +126,12 @@ World = {
         },
     ],
 
+    "keys": [
+        {   "pos":      (0, 0, -4.8),
+            "colour":   "Green",
+        },
+    ],
+
     # We die if we fall this low.
     "doom_z":   -20,
 }
@@ -147,6 +153,7 @@ def init_world():
 # Render the world using the display list
 def render_world ():
     glCallList(_DL)
+    draw_keys()
 
 # Position our lights
 def draw_world_lights ():
@@ -184,6 +191,14 @@ def draw_walls ():
             glColor3f(*colours[c[1]])
             draw_pgram(p, es[1], es[0])
 
+def draw_keys ():
+    colours = World["colours"]
+    for k in World["keys"]:
+        p = k["pos"]
+        c = k["colour"]
+        ac = colours[c]
+        draw_point(ac, p)
+        
 # Find the floor below a given position.
 # v is the point in space we want to start from.
 # Returns one of the dictionaries from World["floors"], or None.
