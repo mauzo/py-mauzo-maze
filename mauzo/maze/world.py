@@ -1,15 +1,13 @@
 # world.py - World definitions
 # This defines the world (the level layout).
 
-from    OpenGL.GL   import *
+import  glm
+from    glm         import  vec3, vec4
+from    OpenGL.GL   import  *
 
 from    .drawing    import *
 
-# This is a private variable (it isn't imported when you import *). It
-# holds our display list number
-_DL = None
-
-World = {
+_World = {
     # All the colours we use.
     "colours": {
         "Blue":     (0, 0, 0.5),
@@ -132,98 +130,186 @@ World = {
         },
     ],
 
+    "collide": [
+        {   "pos":      (0, 0, 0),
+            "edges":    ((2, 0, 0), (0, 2, 0), (0, 0, -2)),
+        },
+    ],
+
     # We die if we fall this low.
     "doom_z":   -20,
 }
 
-# Build a display list representing the world, so we don't have to
-# calculate all the triangles every frame.
-def init_world():
-    global _DL
+class Key:
+    __slots__ = [
+        "pos",      # the position
+        "colour",   # our colour
+    ]
 
-    _DL = glGenLists(1)
-    glNewList(_DL, GL_COMPILE)
-    #draw_cube_10()
-    draw_world_lights()
-    draw_floors()
-    draw_walls()
-    draw_origin_marker()
-    glEndList()
+    def __init__ (self, pos, colour):
+        self.pos    = pos
+        self.colour = colour
 
-# Render the world using the display list
-def render_world ():
-    glCallList(_DL)
-    draw_keys()
+    def render (self):
+        draw_point(self.colour, self.pos)
 
-# Position our lights
-def draw_world_lights ():
-    glLightfv(GL_LIGHT0, GL_AMBIENT,    [0.3, 0.3, 0.3, 1])
-    glLightfv(GL_LIGHT0, GL_DIFFUSE,    [0.7, 0.7, 0.7, 1])
-    glLightfv(GL_LIGHT0, GL_POSITION,   [0.3, -1.2, 0.4, 0])
-
-# Draw the floors out of World["floors"]. This breaks each rectangle into
-# two triangles but doesn't subdivide any further; this will probably need
-# changing when we get lights and/or textures.
 FLOOR_THICKNESS = 0.2
-def draw_floors ():
-    col = World["colours"]
-    for f in World["floors"]:
-        colname = f["colour"]
-        glColor(col[colname])
 
-        p           = f["pos"]
-        (e1, e2)    = f["edges"]
-        e3          = [0, 0, -FLOOR_THICKNESS]
-        
-        draw_ppiped(p, e1, e2, e3)
+class World:
+    __slots__ = [
+        "app",              # Our app
+        "collision_list",   # Used to detect collisions
+        "dl",               # A displaylist to render the world
+        "doom_z",           # We die if we fall this low
+        "keys",             # The keys in this level
+        "start",            # The player's starting position
+    ]
 
-def draw_walls ():
-    colours = World["colours"]
-    for w in World["walls"]:
-        p   = w["pos"]
-        es  = w["edges"]
-        c   = w["colour"]
+    def __init__ (self, app):
+        self.app    = app
 
-        if c[0] is not None:
-            glColor3f(*colours[c[0]])
-            draw_pgram(p, es[0], es[1])
-        if c[1] is not None:
-            glColor3f(*colours[c[1]])
-            draw_pgram(p, es[1], es[0])
+    def init (self):
+        self.start  = [c for c in _World["start"]]
+        self.doom_z = _World["doom_z"]
+        self.init_dl(_World)
+        self.init_keys(_World)
+        self.init_collision(_World)
 
-def draw_keys ():
-    colours = World["colours"]
-    for k in World["keys"]:
-        p = k["pos"]
-        c = k["colour"]
-        ac = colours[c]
-        draw_point(ac, p)
-        
-# Find the floor below a given position.
-# v is the point in space we want to start from.
-# Returns one of the dictionaries from World["floors"], or None.
-# This assumes floors are horizontal axis-aligned rectangles.
-def find_floor_below(v):
-    found = None
-    for f in World["floors"]:
-        pos = f["pos"]
-        edg = f["edges"]
+    def init_collision (self, level):
+        planes = []
+        for f in level["collide"]:
+            p           = vec3(f["pos"])
+            e1, e2, e3  = (vec3(e) for e in f["edges"])
+            px          = p + e1 + e2 + e3
+            planes.append((
+                plane_from_points(p, e1, e2),
+                plane_from_points(p, e2, e3),
+                plane_from_points(p, e3, e1),
+                plane_from_points(px, e2, e1),
+                plane_from_points(px, e3, e2),
+                plane_from_points(px, e1, e3),
+            ))
 
-        if v[0] < pos[0] or v[1] < pos[1]:
-            continue
-        if v[0] > pos[0] + edg[0][0] or v[1] > pos[1]+edg[1][1]:
-            continue
-        if v[2] < pos[2]:
-            continue
-        if found and pos[2] <= found["pos"][2]:
-            continue
-        found = f
-    return found
+        self.collision_list = planes
+        print("Collision:", planes)
 
-# Check if the player has moved outside the world and died.
-def doomed (p):
-    return p[2] < World["doom_z"]
+    # Build a display list representing the world, so we don't have to
+    # calculate all the triangles every frame.
+    def init_dl (self, level):
+        self.dl = glGenLists(1)
+        glNewList(self.dl, GL_COMPILE)
+        #draw_cube_10()
+        self.draw_lights(level)
+        self.draw_floors(level)
+        self.draw_walls(level)
+        self.draw_collision(level)
+        draw_origin_marker()
+        glEndList()
 
-# Return our starting position
-def world_start_pos ():
-    return World["start"]
+    def init_keys (self, level):
+        col     = level["colours"]
+        keys    = []
+        for k in level["keys"]:
+            c   = col[k["colour"]]
+            keys.append(Key(k["pos"], c))
+
+        self.keys = keys
+
+    # Render the world using the display list
+    def render (self):
+        glCallList(self.dl)
+        for k in self.keys:
+            k.render()
+
+    # Position our lights
+    def draw_lights (self, level):
+        glLightfv(GL_LIGHT0, GL_AMBIENT,    [0.3, 0.3, 0.3, 1])
+        glLightfv(GL_LIGHT0, GL_DIFFUSE,    [0.7, 0.7, 0.7, 1])
+        glLightfv(GL_LIGHT0, GL_POSITION,   [0.3, -1.2, 0.4, 0])
+
+    # Draw the floors out of World["floors"]. This breaks each rectangle
+    # into two triangles but doesn't subdivide any further; this will
+    # probably need changing when we get lights and/or textures.
+    def draw_floors (self, level):
+        col = level["colours"]
+        for f in level["floors"]:
+            colname = f["colour"]
+            glColor(col[colname])
+
+            p           = f["pos"]
+            (e1, e2)    = f["edges"]
+            e3          = [0, 0, -FLOOR_THICKNESS]
+            
+            draw_ppiped(p, e1, e2, e3)
+
+    def draw_collision (self, level):
+        glColor(1, 1, 1, 1)
+        for f in level["collide"]:
+            draw_ppiped(f["pos"], *f["edges"])
+
+    def draw_walls (self, level):
+        colours = level["colours"]
+        for w in level["walls"]:
+            p   = w["pos"]
+            es  = w["edges"]
+            c   = w["colour"]
+
+            if c[0] is not None:
+                glColor3f(*colours[c[0]])
+                draw_pgram(p, es[0], es[1])
+            if c[1] is not None:
+                glColor3f(*colours[c[1]])
+                draw_pgram(p, es[1], es[0])
+
+    # Find the floor below a given position.
+    # v is the point in space we want to start from.
+    # Returns one of the dictionaries from World["floors"], or None.
+    # This assumes floors are horizontal axis-aligned rectangles.
+    def find_floor_below(self, v):
+        found = None
+        # XXX this still references World as this will go soon
+        for f in _World["floors"]:
+            pos = f["pos"]
+            edg = f["edges"]
+
+            if v[0] < pos[0] or v[1] < pos[1]:
+                continue
+            if v[0] > pos[0] + edg[0][0] or v[1] > pos[1]+edg[1][1]:
+                continue
+            if v[2] < pos[2]:
+                continue
+            if found and pos[2] <= found["pos"][2]:
+                continue
+            found = f
+        return found
+
+    def collision (self, p, margin):
+        for o in self.collision_list:
+            # Assume we collide with this object.
+            collide = True
+            print("collision for", p)
+            for pl in o:
+                # If we are outside any of the planes...
+                print("  p .", repr(pl), "=", glm.dot(vec4(p, 1), pl))
+                if glm.dot(vec4(p, 1), pl) > margin:
+                    # we do not collide.
+                    collide = False
+            if collide:
+                return True
+        return False
+
+    # Check if the player has moved outside the world and died.
+    def doomed (self, p):
+        return p[2] < self.doom_z
+
+    # Return our starting position
+    def start_pos (self):
+        return self.start
+
+# Given a plane x = p + sa + tb return the vec4(A,B,C,D) where
+# vec3(A,B,C) is normal to the plane and Ax + By + Cz + D = 0 is an
+# equation of the plane. 
+def plane_from_points (p, a, b):
+    n   = glm.normalize(glm.cross(a, b))
+    d   = -glm.dot(n, p)
+    return vec4(n, d)

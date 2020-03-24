@@ -4,7 +4,6 @@ from    OpenGL.GL       import *
 from    OpenGL.GLU      import *
 
 from    .vectors    import *
-from    .world      import doomed, find_floor_below, world_start_pos
 
 class Player:
     __slots__ = [
@@ -29,11 +28,6 @@ class Player:
     def __init__ (self, app):
         self.app    = app
 
-        # Find our starting position from the world definition. We need
-        # to change this from a tuple to a list since we need it to be
-        # modifiable.
-        self.pos    = [c for c in world_start_pos()]
-
         self.vel        = [0, 0, 0]
         self.walking    = [0, 0, 0]
         # This will be updated by the camera
@@ -42,6 +36,8 @@ class Player:
         self.stopped    = 0
 
     def init (self):
+        self.pos    = self.app.world.start_pos()
+
         # Compile a display list.
         self.DL = glGenLists(1)
         glNewList(self.DL, GL_COMPILE)
@@ -108,13 +104,14 @@ class Player:
         pos     = self.pos
         vel     = self.vel
         now     = self.app.now()
+        world   = self.app.world
 
         # Assume we are falling.
         falling     = True
 
         # Find the floor below us. If there is a floor, and we are close
         # enough to it, we are not falling.
-        floor = find_floor_below(pos)
+        floor = world.find_floor_below(pos)
         if (floor):
             floor_z = floor["pos"][2] + self.bump 
             if (pos[2] <= floor_z and vel[2] <= 0):
@@ -130,7 +127,8 @@ class Player:
             vel[2] -= dt * self.speed["fall"]
             # If we have only just moved, remove our sideways velocity
             # so we fall straight down.
-            if now - self.stopped < 200:
+            if now - self.stopped < 0.2:
+                print("stopped", self.stopped, "now", now)
                 vel[0] = 0
                 vel[1] = 0
         else:
@@ -143,6 +141,17 @@ class Player:
                 vel[2] = self.speed["jump"]
                 self.jumping = False
 
+        # Take the velocity vector we have calculated and add it to our
+        # position vector to give our new position. Multiply the
+        # velocity by the time taken to render the last frame so our
+        # speed is independant of the FPS.
+        pos = vec_add(pos, vec_mul(vel, dt))
+
+        # If we would collide, remove our velocity and don't save the
+        # new position.
+        if world.collision(pos, self.bump):
+            vel = [0, 0, 0]
+
         # Save our velocity for next time
         self.vel = vel
 
@@ -150,12 +159,6 @@ class Player:
         if (vel == [0, 0, 0]):
             self.stopped = now
             return
-
-        # Take the velocity vector we have calculated and add it to our position
-        # vector to give our new position. Multiply the velocity by the time
-        # taken to render the last frame so our speed is independant of the
-        # FPS.
-        pos = vec_add(pos, vec_mul(vel, dt))
 
         # If we have fallen through the floor put us back on top of the floor
         # so that we land on it.
@@ -168,7 +171,7 @@ class Player:
             #(floor["colour"] if floor else "<none>"))
 
         # If we fall too far we die.
-        if (doomed(pos)):
+        if (world.doomed(pos)):
             self.app.die()
 
         # Save our new position.

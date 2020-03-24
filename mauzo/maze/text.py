@@ -46,7 +46,7 @@ class Glyph:
         if size == (0, 0):
             self.texture = None
         else:
-            tex = gl.Texture(wrap="clamp", linear=True)
+            tex = gl.Texture(wrap="clamp", filter="linear")
             tex.load(GL_ALPHA, *size, buf)
             self.texture = tex
 

@@ -1,8 +1,6 @@
 # events.py - Run the event loop
 
-import  pygame
-from    pygame.event        import Event
-from    pygame.locals       import *
+import  glfw
 
 from . import camera
 from . import display
@@ -15,49 +13,60 @@ from . import world
 # Temporary global to hold the app pointer
 _APP = None
 
+class Clock:
+    __slots__ = [
+        "now",      # the time last time we updated
+        "dt",       # the time difference last time we updated
+        "paused",   # are we paused?
+        "offset",   # our offset from 'real' time
+    ]
+
+    def __init__ (self):
+        self.now    = 0
+        self.dt     = 0
+        self.offset = 0
+        self.paused = None
+
+    def update (self, real):
+        if self.paused:
+            return
+        adjusted    = real - self.offset
+        self.dt     = adjusted - self.now
+        self.now    = adjusted
+
+    def pause (self, now):
+        self.paused = now
+
+    def resume (self, now):
+        self.offset += now - self.paused
+        self.paused = None
+
 class MazeApp:
     # This defines the attributes this object can have.
     __slots__ = [
-        # An object representing the camera
-        "camera",
-        # A clock to keep track of the framerate
-        "clock",
-        # A number saying what framerate we are aiming for
-        "fps",
-        # A dict saying how to handle different types of event
-        "handlers", 
-        # An object to handle input
-        "input",
-        # Options the user can change
-        "options",
-        # The player object
-        "player",
-        # An object that knows how to draw a frame
-        "render",
-        # True if we should run the physics, False if we are paused
-        "run_physics",
+        "camera",       # An object representing the camera
+        "clock",        # A clock to keep track of the framerate
+        "display",      # Our display
+        "input",        # An object to handle input
+        "options",      # Options the user can change
+        "player",       # The player object
+        "render",       # An object that knows how to draw a frame
+        "run_physics",  # Should we run the physics?
+        "world",        # Our World object, representing the current level
     ]
 
     # This is called automatically when we create a new object, to set
     # things up.
     def __init__ (self):
-        # This dict maps an event type to a function for handling that event.
-        # The lambdas are little functions defined on the spot. 
-        self.handlers = {
-            KEYDOWN:        lambda e: self.input.handle_key(e.key, True),
-            KEYUP:          lambda e: self.input.handle_key(e.key, False),
-            VIDEORESIZE:    lambda e: display.display_set_viewport(e.w, e.h),
-        }
-
         # We are not paused to start with
         self.run_physics    = True
-        # We start at 80 fps
-        self.fps            = 80
         # Set up a clock to keep track of the framerate.
-        self.clock          = pygame.time.Clock()
+        self.clock          = Clock()
 
         # Create objects representing other parts of the system
         self.options        = options.Options(self)
+        self.display        = display.Display(self)
+        self.world          = world.World(self)
         self.player         = player.Player(self)
         self.camera         = camera.Camera(self, self.player)
         self.render         = render.Renderer(self)
@@ -68,17 +77,39 @@ class MazeApp:
     # This has to be separate from __init__ so it can be called at the
     # right time.
     def init (self):
-        # Open the window and setup pygame
-        display.init_display()
+        # Start up GLFW and open window
+        self.init_glfw()
+        self.display.init()
+        self.init_handlers()
 
         # Run the other initialisation
-        world.init_world()
+        self.world.init()
         self.player.init()
         self.camera.init()
         self.render.init()
 
+    def init_glfw (self):
+        if not glfw.init():
+            raise RuntimeError("Failed to init GLFW")
+        glfw.set_error_callback(self.handle_glfw_error)
+
+    def init_handlers (self):
+        win = self.display.window
+
+        glfw.set_framebuffer_size_callback(win,
+            lambda win, w, h: self.display.set_viewport(w, h))
+        glfw.set_key_callback(win,
+            lambda win, key, code, action, mods: \
+                self.input.handle_key(key, action))
+        #glfw.set_cursor_pos_callback(window, self.handle_mouse_pos)
+        #glfw.set_mouse_button_callback(window, self.handle_mouse_click)
+
+    def handle_glfw_error (self, code, msg):
+        raise RuntimeError("GLFW error %d: %s" % (code, msg))
+
     def quit (self):
-        pygame.quit()
+        self.display.quit()
+        glfw.terminate()
 
     def option (s, o):
         return s.options.get(o)
@@ -86,61 +117,33 @@ class MazeApp:
     # This is the main loop that runs the whole game. We wait for events
     # and handle them as we need to.
     def run (self):
-        while True:
-            # Run the event loop once
-            if self.run_loop():
-                return
+        while not self.display.should_close():
+            now     = glfw.get_time()
+            self.clock.update(now)
 
-            # Wait if necessary so that we don't draw more frames per second
-            # than we want. Any more is just wasting processor time.
-            self.clock.tick(self.fps)
-
-    # Run the event loop once: handle any events, draw one frame to the
-    # screen, and run the physics if we're not paused. Return True to
-    # stop the app, False to continue.
-    def run_loop (self):
-        if self.process_events():
-            return True
-        self.render_frame()
-        if self.run_physics:
-            self.physics()
-        return False
-
-    # Process the event queue. Returns True to exit the event loop, False
-    # to continue.
-    def process_events (self):
-        # Check for events and deal with them.
-        events = pygame.event.get()
-        for event in events:
-            # Quit is special because it needs the clock
-            if event.type == QUIT:
-                print("FPS: ", self.clock.get_fps())
-                return True
-
-            if event.type in self.handlers:
-                h = self.handlers[event.type]
-                h(event)
-
-        return False
+            glfw.poll_events()
+            self.render_frame()
+            if self.run_physics:
+                self.physics()
 
     def render_frame (self):
         # Draw the frame. We draw on the 'back of the page' and then
         # flip the page over so we don't see a half-drawn picture.        
         self.render.render()
-        display.display_flip()
+        self.display.flip()
 
-    # Return the time now, in milliseconds.
+    # Return the time now, in seconds.
     def now (self):
-        return pygame.time.get_ticks()
+        return self.clock.now
 
     def physics (self):
         # Run the physics. Pass in the time taken since the last frame.
-        dt = self.clock.get_time() / 1000
+        dt = self.clock.dt
         self.player.physics(dt)
         self.camera.physics(dt)
 
     def post_quit (self):
-        pygame.event.post(Event(QUIT))
+        self.display.post_close()
 
     # The player has died...
     def die (self):
@@ -158,6 +161,3 @@ def get_app ():
         _APP = MazeApp()
     return _APP
 
-# Tell pygame we want to quit.
-def event_post_quit ():
-    pygame.event.post(Event(QUIT))

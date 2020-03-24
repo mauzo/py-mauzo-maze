@@ -1,4 +1,8 @@
+assimp-5.0.1
 doc
+gltest/gltest
 __pycache__
+*.blend1
 *.lnk
+*.o
 *.swp
