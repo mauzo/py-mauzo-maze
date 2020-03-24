@@ -10,26 +10,18 @@ from    .           import text
 
 class Renderer:
     __slots__ = [
-        # The app we are running
-        "app",
-        # The font to use for the text
-        "font",
+        "app",          # our app
+        "overlay",      # the text overlay
+
     ]
 
     def __init__ (self, app):
-        self.app    = app
+        self.app        = app
+        self.overlay    = text.Overlay(app)
 
     def init (self):
         gl.init()
-        text.init()
-        self.font   = text.GLFont("Stencil", 100)
-
-    def overlay (self):
-        if self.app.option("pause"):
-            text.push_gl_state()
-            glColor4f(1, 0.5, 0, 0.8)
-            self.font.show("PAUSED", 0, 0)
-            text.pop_gl_state()
+        self.overlay.init()
 
     # This is called to render every frame. We clear the window, position the
     # camera, and then call the display list to draw the world.
@@ -39,4 +31,4 @@ class Renderer:
         app.camera.render()
         app.world.render()
         app.player.render()
-        self.overlay()
+        self.overlay.render()

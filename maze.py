@@ -10,7 +10,6 @@ try:
 finally:
     app.quit()
 
-# GLFW: fix pause and text
 # Shader Sets
 # shader classes with default methods
 # shader includes

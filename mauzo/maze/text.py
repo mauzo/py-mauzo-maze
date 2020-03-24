@@ -6,35 +6,53 @@ import  pygame.freetype
 from    .       import display
 from    .       import gl
 
-def init ():
-    pygame.freetype.init()
+class Overlay:
+    __slots__ = [
+        "app",      # our app
+        "font",     # our font
+    ]
 
-# Push new GL state suitable for rendering text.
-def push_gl_state ():
-    (w, h) = display.Display["viewport"]
+    def __init__ (self, app):
+        self.app    = app
 
-    glMatrixMode(GL_PROJECTION)
-    glPushMatrix()
-    glLoadIdentity()
-    glOrtho(0, w, 0, h, -1, 1)
-    glMatrixMode(GL_MODELVIEW)
-    glPushMatrix()
-    glLoadIdentity()
+    def init (self):
+        pygame.freetype.init()
+        self.font   = GLFont("Stencil", 100)
 
-    glPushAttrib(GL_ENABLE_BIT|GL_TEXTURE_BIT)
-    glDisable(GL_LIGHTING)
-    glDisable(GL_DEPTH_TEST)
-    glDisable(GL_CULL_FACE)
-    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_BLEND)
+    # Push new GL state suitable for rendering text.
+    def push_gl_state (self):
+        (w, h) = self.app.display.viewport
 
-# Pop the state pushed above.
-def pop_gl_state ():
-    glPopAttrib()
+        glMatrixMode(GL_PROJECTION)
+        glPushMatrix()
+        glLoadIdentity()
+        glOrtho(0, w, 0, h, -1, 1)
+        glMatrixMode(GL_MODELVIEW)
+        glPushMatrix()
+        glLoadIdentity()
 
-    glMatrixMode(GL_PROJECTION)
-    glPopMatrix()
-    glMatrixMode(GL_MODELVIEW)
-    glPopMatrix()
+        glPushAttrib(GL_ENABLE_BIT|GL_TEXTURE_BIT)
+        glDisable(GL_LIGHTING)
+        glDisable(GL_DEPTH_TEST)
+        glDisable(GL_CULL_FACE)
+        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_BLEND)
+
+    # Draw the text
+    def render (self):
+        if self.app.option("pause"):
+            self.push_gl_state()
+            glColor4f(1, 0.5, 0, 0.8)
+            self.font.show("PAUSED", 0, 0)
+            self.pop_gl_state()
+
+    # Pop the state pushed above.
+    def pop_gl_state (self):
+        glPopAttrib()
+
+        glMatrixMode(GL_PROJECTION)
+        glPopMatrix()
+        glMatrixMode(GL_MODELVIEW)
+        glPopMatrix()
 
 class Glyph:
     __slots__ = ["texture", "metrics"]
