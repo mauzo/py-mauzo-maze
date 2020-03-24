@@ -17,7 +17,7 @@ class Overlay:
 
     def init (self):
         pygame.freetype.init()
-        self.font   = GLFont("Stencil", 100)
+        self.font   = GLFont("stencil.ttf", 100)
 
     # Push new GL state suitable for rendering text.
     def push_gl_state (self):
@@ -97,8 +97,8 @@ class GLFont:
     __slots__ = ["height", "characters"]
 
     def __init__ (self, font_name, height):
-        # XXX We probably don't want to use system fonts.
-        font    = pygame.freetype.SysFont(font_name, height)
+        ffile   = "font/" + font_name
+        font    = pygame.freetype.Font(ffile, height)
         
         chars = {}
         # XXX This is the usable range of ASCII, which will do for now.
