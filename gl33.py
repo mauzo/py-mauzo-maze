@@ -234,11 +234,10 @@ class App:
         #prg.u_spot_quadratic(0.0075)
 
     def setup_model (self):
-        obj         = pywavefront.Wavefront("model/key/key.obj")
-        box         = model.Mesh(obj.mesh_list[0])
-        self.model  = box
+        key         = model.Model("model/nanosuit/nanosuit.obj")
+        self.model  = key
 
-        box.make_vao(self.shader)
+        key.make_vaos(self.shader)
 
     def setup_lightcube_vao (self, slc):
         prg     = slc.build_shader(vert="plain", frag="color")
@@ -326,7 +325,6 @@ class App:
         prg.u_view(view)
         prg.u_view_pos(camera.position)
         glDisable(GL_TEXTURE_2D)
-        mod.use(prg)
         for i in range(len(cube_positions)):
             model   = mat4(1)
             model   = glm.translate(model, cube_positions[i])
@@ -335,7 +333,7 @@ class App:
 
             prg.u_model(model)
             prg.u_normal_matrix(normal)
-            mod.render()
+            mod.render(prg)
 
 
 app = App()

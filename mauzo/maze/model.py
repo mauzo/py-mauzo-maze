@@ -68,4 +68,10 @@ class Model:
         self.meshes = [Mesh(m) for m in obj.mesh_list]
 
     def make_vaos (self, prg):
-        self.vaos   = [m.make_vao(prg) for m in self.meshes]
+        for m in self.meshes:
+            m.make_vao(prg)
+
+    def render (self, prg):
+        for m in self.meshes:
+            m.use(prg)
+            m.render()
