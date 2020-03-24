@@ -54,12 +54,19 @@ class Overlay:
         glMatrixMode(GL_MODELVIEW)
         glPopMatrix()
 
+TWO16   = 2**16
+TWO32   = 2**32
+
 class Glyph:
     __slots__ = ["texture", "metrics"]
 
     def __init__ (self, font, char):
-        self.metrics    = font.get_metrics(char)[0]
+        metrics         = font.get_metrics(char)[0]
         (buf, size)     = font.render_raw(char)
+
+        self.metrics = tuple(
+            x - TWO32 if x > TWO16 else x
+                for x in metrics)
 
         if size == (0, 0):
             self.texture = None

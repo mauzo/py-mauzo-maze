@@ -175,4 +175,4 @@ yellow_16x16    = yellow_px * 16*16
 yellow_tex      = new_texture()
 load_texture(GL_RGB, 16, 16, yellow_16x16)
 
-stencil         = GLFont("Stencil")
+stencil         = GLFont("Stencil", 100)
