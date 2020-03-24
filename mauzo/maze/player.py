@@ -127,7 +127,8 @@ class Player:
             vel[2] -= dt * self.speed["fall"]
             # If we have only just moved, remove our sideways velocity
             # so we fall straight down.
-            if now - self.stopped < 200:
+            if now - self.stopped < 0.2:
+                print("stopped", self.stopped, "now", now)
                 vel[0] = 0
                 vel[1] = 0
         else:

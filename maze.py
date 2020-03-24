@@ -9,3 +9,7 @@ try:
     app.run()
 finally:
     app.quit()
+
+# GLFW
+# Shader Sets
+# shader classes with default methods
