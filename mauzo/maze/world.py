@@ -23,6 +23,16 @@ _World = {
     # The player's starting position
     "start":      (-2, -2, -0.49),
 
+    # The lights.
+    "lights":   [
+        {   "type":         "directional",
+            "direction":    (0.3, -1.2, 0.4),
+            "ambient":      (0.3, 0.3, 0.3),
+            "diffuse":      (0.7, 0.7, 0.7),
+            "specular":     (0.7, 0.7, 0.7),
+        },
+    ],
+
     # A list of all the floors. Floors are horizontal rectangles. Each
     # floor has a dict with these keys:
     #   pos         The coordinates of one corner
@@ -184,6 +194,7 @@ class World:
         self.start  = [c for c in _World["start"]]
         self.doom_z = _World["doom_z"]
         self.init_dl(_World)
+        self.init_shader_lights(_World)
         self.init_keys(_World)
         self.init_collision(_World)
 
@@ -218,6 +229,15 @@ class World:
         draw_origin_marker()
         glEndList()
 
+    def init_shader_lights (self, level):
+        prg     = self.app.render.shader
+        light   = level["lights"][0]
+        
+        prg.u_sun_direction(vec3(light["direction"]))
+        prg.u_sun_color_ambient(vec3(light["ambient"]))
+        prg.u_sun_color_diffuse(vec3(light["diffuse"]))
+        prg.u_sun_color_specular(vec3(light["specular"]))
+
     def init_keys (self, level):
         col     = level["colours"]
         keys    = []
@@ -238,9 +258,12 @@ class World:
 
     # Position our lights
     def draw_lights (self, level):
-        glLightfv(GL_LIGHT0, GL_AMBIENT,    [0.3, 0.3, 0.3, 1])
-        glLightfv(GL_LIGHT0, GL_DIFFUSE,    [0.7, 0.7, 0.7, 1])
-        glLightfv(GL_LIGHT0, GL_POSITION,   [0.3, -1.2, 0.4, 0])
+        for i, l in enumerate(level["lights"]):
+            ix  = GL_LIGHT0 + i
+            glLightfv(ix, GL_AMBIENT,   [*l["ambient"], 1])
+            glLightfv(ix, GL_DIFFUSE,   [*l["diffuse"], 1])
+            glLightfv(ix, GL_SPECULAR,  [*l["specular"], 1])
+            glLightfv(ix, GL_POSITION,  [*l["direction"], 0])
 
     # Draw the floors out of World["floors"]. This breaks each rectangle
     # into two triangles but doesn't subdivide any further; this will

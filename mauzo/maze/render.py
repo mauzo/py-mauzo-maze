@@ -2,6 +2,8 @@
 # These functions actually draw every frame. Most of the drawing
 # has already been done and put in the display lists.
 
+import  glm
+from    glm         import mat3, mat4, vec3, vec4
 from    OpenGL.GL   import *
 from    OpenGL.GLU  import *
 
@@ -63,4 +65,5 @@ class Renderer:
         prg.use()
         prg.u_proj(proj)
         prg.u_view(view)
+        prg.u_view_pos(glm.inverse(view) * vec4(0, 0, 0, 1))
         world.render_keys(prg)
