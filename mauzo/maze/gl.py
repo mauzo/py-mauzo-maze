@@ -3,6 +3,7 @@
 from    ctypes          import c_void_p, sizeof
 import  glm
 from    OpenGL.GL       import *
+import  numpy           as np
 import  PIL.Image
 import  types
 import  warnings
@@ -35,6 +36,17 @@ def init ():
 # Clear the buffers
 def clear ():
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+
+# Revert to the GL1 fixed-function pipeline
+def use_ffp ():
+    glUseProgram(0)
+
+# Load a matrix into the FFP.
+def load_ffp_matrix (mat):
+    # Push the matrix to GL (I don't understand why value_ptr
+    # doesn't work here when it does with glUniformMatrix...)
+    ary  = np.ndarray((4, 4), buffer=mat, dtype=np.float32)
+    glLoadMatrixf(ary)
 
 def make_normal_matrix (model):
     return glm.transpose(glm.inverse(glm.mat3(model)))

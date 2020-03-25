@@ -2,10 +2,11 @@
 # This defines the world (the level layout).
 
 import  glm
-from    glm         import  vec3, vec4
+from    glm         import  mat4, vec3, vec4
 from    OpenGL.GL   import  *
 
 from    .drawing    import *
+from    .           import gl
 
 _World = {
     # All the colours we use.
@@ -142,16 +143,27 @@ _World = {
 
 class Key:
     __slots__ = [
+        "world",    # the world we are in
+        "model",    # our model
         "pos",      # the position
-        "colour",   # our colour
     ]
 
-    def __init__ (self, pos, colour):
-        self.pos    = pos
-        self.colour = colour
+    def __init__ (self, world, pos):
+        self.world  = world
+        self.pos    = vec3(pos)
 
-    def render (self):
-        draw_point(self.colour, self.pos)
+        app         = world.app
+        render      = app.render
+        self.model  = render.load_model("key")
+
+    def render (self, prg):
+        model   = glm.translate(mat4(1), self.pos)
+        normal  = gl.make_normal_matrix(model)
+
+        prg.use()
+        prg.u_model(model)
+        prg.u_normal_matrix(normal)
+        self.model.render(prg)
 
 FLOOR_THICKNESS = 0.2
 
@@ -210,16 +222,19 @@ class World:
         col     = level["colours"]
         keys    = []
         for k in level["keys"]:
-            c   = col[k["colour"]]
-            keys.append(Key(k["pos"], c))
+            keys.append(Key(self, k["pos"]))
 
         self.keys = keys
 
     # Render the world using the display list
     def render (self):
         glCallList(self.dl)
+
+    # Render the keys. Since this uses shader rendering it needs to be
+    # separate from .render above.
+    def render_keys (self, prg):
         for k in self.keys:
-            k.render()
+            k.render(prg)
 
     # Position our lights
     def draw_lights (self, level):

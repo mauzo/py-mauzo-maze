@@ -83,10 +83,10 @@ class MazeApp:
         self.init_handlers()
 
         # Run the other initialisation
+        self.render.init()
         self.world.init()
         self.player.init()
         self.camera.init()
-        self.render.init()
 
     def init_glfw (self):
         if not glfw.init():

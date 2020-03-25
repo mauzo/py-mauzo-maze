@@ -4,7 +4,6 @@
 import  glm
 from    glm         import degrees, radians, vec2, vec3, vec4
 from    math        import fmod
-import  numpy       as np
 from    OpenGL.GL   import *
 
 # This is the speed the camera pans at, in radians/second.
@@ -76,13 +75,12 @@ class Camera:
     def physics (self, dt):
         self.do_pan(dt)
 
-    # Position the camera based on the player's current position. We put
-    # the camera 1 unit above the player's position.
-    def render (self):
+    # Build a view matrix for the current camera position.
+    def view_matrix (self):
         pos     = vec3(self.player.pos)
         angle   = self.angle
         
-        # Clear the previous camera position
+        # Start from the identity transformation.
         view    = glm.mat4(1)
         # Annoyingly, the camera starts pointing down (-Z).
         # Rotate so we are pointing down +X with +Z upwards.
@@ -106,8 +104,4 @@ class Camera:
         # are moving the world rather than moving the camera.
         view    = glm.translate(view, -pos)
 
-        # Push the matrix to GL (I don't understand why value_ptr
-        # doesn't work here when it does with glUniformMatrix...)
-        view_a  = np.ndarray((4, 4), buffer=view, dtype=np.float32)
-        glLoadMatrixf(view_a)
-
+        return view
