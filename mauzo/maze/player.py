@@ -156,6 +156,10 @@ class Player:
         if world.collision(pos, self.bump):
             vel = [0, 0, 0]
 
+        if world.key_collision(pos):
+            print("It's a key")
+        
+
         # Save our velocity for next time
         self.vel = vel
 
@@ -181,4 +185,3 @@ class Player:
 
         # Save our new position.
         self.pos = pos
-

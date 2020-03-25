@@ -217,6 +217,13 @@ class World:
                 return True
         return False
 
+    def key_collision (self, player):
+        player = vec3(player)
+        for key in self.keys:
+            if glm.length(player - key.pos) < 1:
+                return True
+        return False
+                     
     # Check if the player has moved outside the world and died.
     def doomed (self, p):
         return p[2] < self.doom_z
