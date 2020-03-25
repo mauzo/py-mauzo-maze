@@ -6,6 +6,7 @@ from    OpenGL.GL       import *
 from    OpenGL.GLU      import *
 
 from    .       import app
+from    .       import gl
 
 class Display:
     __slots__ = [
@@ -36,12 +37,10 @@ class Display:
 
         glViewport(0, 0, w, h)
 
-        # Keep this synced with the FFP matrix for now
-        self.projection = glm.perspective(45, aspect, 1, 40)
+        self.projection = glm.perspective(glm.radians(45), aspect, 1, 40)
 
         glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        gluPerspective(45.0, aspect, 1.0, 40.0)
+        gl.load_ffp_matrix(self.projection)
 
         glMatrixMode(GL_MODELVIEW)
 

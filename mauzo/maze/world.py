@@ -136,6 +136,8 @@ _World = {
     ],
 
     "keys": [
+        {   "pos":      (0, 0, 0),
+        },
         {   "pos":      (0, 0, -4.8),
             "colour":   "Green",
         },
@@ -249,6 +251,8 @@ class World:
     # Render the world using the display list
     def render (self):
         glCallList(self.dl)
+        for k in self.keys:
+            draw_point((0, 1, 1), list(k.pos))
 
     # Render the keys. Since this uses shader rendering it needs to be
     # separate from .render above.
