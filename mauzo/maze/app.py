@@ -148,7 +148,7 @@ class MazeApp:
     # The player has died...
     def die (self):
         print("AAAARGH!!!")
-        self.post_quit()
+        self.player.reset()
 
     # The player has won...
     def win (self):

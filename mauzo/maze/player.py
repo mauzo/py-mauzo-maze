@@ -28,7 +28,6 @@ class Player:
     def __init__ (self, app):
         self.app    = app
 
-        self.vel        = [0, 0, 0]
         self.walking    = [0, 0, 0]
         # This will be updated by the camera
         self.facing     = [0, 0, 0, 0]
@@ -36,13 +35,18 @@ class Player:
         self.stopped    = 0
 
     def init (self):
-        self.pos    = self.app.world.start_pos()
-
         # Compile a display list.
         self.DL = glGenLists(1)
         glNewList(self.DL, GL_COMPILE)
         self.draw()
         glEndList()
+
+        self.reset()
+
+    def reset (self):
+        self.pos    = self.app.world.start_pos()
+        self.vel    = [0, 0, 0]
+        print("RESET", self.pos, self.vel)
 
     # The speeds at which the player walks, jumps and falls.
     # These numbers don't make sense to me; possibly I'm expecting the
@@ -173,6 +177,7 @@ class Player:
         # If we fall too far we die.
         if (world.doomed(pos)):
             self.app.die()
+            return
 
         # Save our new position.
         self.pos = pos
