@@ -11,6 +11,12 @@ from    .           import gl
 from    .           import model
 from    .           import text
 
+class RenderContext:
+    __slots__ = [
+        "now",          # the time now
+        "shader",       # the shader program we are using
+    ]
+
 class Renderer:
     __slots__ = [
         "app",          # our app
@@ -54,6 +60,10 @@ class Renderer:
         view    = app.camera.view_matrix()
         prg     = self.shader
 
+        ctx         = RenderContext()
+        ctx.shader  = prg
+        ctx.now     = app.now()
+
         gl.clear()
 
         gl.use_ffp()
@@ -66,4 +76,4 @@ class Renderer:
         prg.u_proj(proj)
         prg.u_view(view)
         prg.u_view_pos(glm.inverse(view) * vec4(0, 0, 0, 1))
-        world.render_keys(prg)
+        world.render_keys(ctx)

@@ -8,6 +8,8 @@ from    OpenGL.GL   import  *
 from    .drawing    import *
 from    .           import gl
 
+PI = glm.pi()
+
 # The actual world definition that was here has moved into levels/1.py.
 
 class Key:
@@ -25,8 +27,13 @@ class Key:
         render      = app.render
         self.model  = render.load_model("key")
 
-    def render (self, prg):
+    def render (self, ctx):
+        prg     = ctx.shader
+        now     = ctx.now
         model   = glm.translate(mat4(1), self.pos)
+        model   = glm.scale(model, vec3(0.2))
+        model   = glm.rotate(model, 0.8 * PI * now, vec3(0, 0, 1))
+        model   = glm.rotate(model, PI/3, vec3(0, 1, 0))
         normal  = gl.make_normal_matrix(model)
 
         prg.use()
@@ -123,14 +130,12 @@ class World:
     # Render the world using the display list
     def render (self):
         glCallList(self.dl)
-        for k in self.keys:
-            draw_point((0, 1, 1), list(k.pos))
 
     # Render the keys. Since this uses shader rendering it needs to be
     # separate from .render above.
-    def render_keys (self, prg):
+    def render_keys (self, ctx):
         for k in self.keys:
-            k.render(prg)
+            k.render(ctx)
 
     # Position our lights
     def draw_lights (self, level):
