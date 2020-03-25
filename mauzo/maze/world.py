@@ -8,150 +8,7 @@ from    OpenGL.GL   import  *
 from    .drawing    import *
 from    .           import gl
 
-_World = {
-    # All the colours we use.
-    "colours": {
-        "Blue":     (0, 0, 0.5),
-        "Green":    (0, 0.5, 0),
-        "Red":      (0.5, 0, 0),
-        "Grey":     (0.5, 0.5, 0.5),
-        "Pink":     (0.8, 0, 1),
-        "White":    (1, 1, 1),
-        "Yellow":   (0.8, 0.8, 0),
-    },
-
-    # The player's starting position
-    "start":      (-2, -2, -0.49),
-
-    # The lights.
-    "lights":   [
-        {   "type":         "directional",
-            "direction":    (0.3, -1.2, 0.4),
-            "ambient":      (0.3, 0.3, 0.3),
-            "diffuse":      (0.7, 0.7, 0.7),
-            "specular":     (0.7, 0.7, 0.7),
-        },
-    ],
-
-    # A list of all the floors. Floors are horizontal rectangles. Each
-    # floor has a dict with these keys:
-    #   pos         The coordinates of one corner
-    #   edges       The vectors along the two edges, X first, then Y.
-    #   colour      A tuple of (red, green, blue)
-    #   win         True if this is a winning platform, False otherwise
-    "floors": [
-        { "pos":        (-10, -10, -1),
-          "edges":      ((20, 0, 0), (0, 20, 0)),
-          "colour":     "Red",
-          "win":        False,
-        },
-        { "pos":        (-10, 10, -1),
-          "edges":      ((10, 0, 0), (0, 5, 0)),
-          "colour":     "Green",
-          "win":        False,
-        },
-        { "pos":        (0, 10, -1),
-          "edges":      ((10, 0, 0), (0, 5, 0)),
-          "colour":     "Blue",
-          "win":        False,
-        },
-        { "pos":        (-7, 0, 1),
-          "edges":      ((3, 0, 0), (0, 5, 0)),
-          "colour":     "Green",
-          "win":        False,
-        },
-        { "pos":        (0, 0, 2),
-          "edges":      ((5, 0, 0), (0, 5, 0)),
-          "colour":     "Yellow",
-          "win":        False,
-        },
-        { "pos":        (0, 6, 4),
-          "edges":      ((5, 0, 0), (0, 5, 0)),
-          "colour":     "Pink",
-          "win":        False,
-        },
-        { "pos":        (6, 6, 6),
-          "edges":      ((6, 0, 0), (0, 5, 0)),
-          "colour":     "White",
-          "win":        True,
-        },
-        { "pos":        (-10, 10, 3),
-          "edges":      ((15, 0, 0), (0, 5, 0)),
-          "colour":     "Grey",
-          "win":        False,
-        },
-        { "pos":        (-13, -13, -5),
-          "edges":      ((10, 0, 0), (0, 15, 0)),
-          "colour":     "Pink",
-          "win":        False,
-        },
-        { "pos":        (1, -13, -3),
-          "edges":      ((8, 0, 0), (0, 2, 0)),
-          "colour":     "Blue",
-          "win":        False,
-        },
-        { "pos":        (8, -14, -3),
-          "edges":      ((1, 0, 0), (0, 1, 0)),
-          "colour":     "Blue",
-          "win":        False,
-        }
-    ],
-
-    # A list of the walls. Walls are parallelograms. The edges must be
-    # given in anticlockwise order, looking at the side of the wall you
-    # can see.
-    "walls": [
-        {   "pos":      (-9, -10, -1),
-            "edges":    ((0, 0, 2), (17, 0, 0)),
-            "colour":   ("Blue", "Yellow"),
-        },
-        {   "pos":      (9, -10, -1),
-            "edges":    ((0, 0, 5), (1, 0, 0)),
-            "colour":   ("Blue", "Yellow"),
-        },
-        {   "pos":      (-10, -10, -1),
-            "edges":    ((0, 20, 0), (0, 0, 5)),
-            "colour":   ("Blue", None),
-        },
-        {   "pos":      (10, -10, -1),
-            "edges":    ((0, 0, 5), (0, 20, 0)),
-            "colour":   ("Blue", None),
-        },
-        {   "pos":      (-10, 10, -1),
-            "edges":    ((0, 5, 0), (0, 0, 5)),
-            "colour":   ("Red", None),
-        },
-        {   "pos":      (-10, 15, -1),
-            "edges":    ((10, 0, 0), (0, 0, 5)),
-            "colour":   ("Red", None),
-        },
-        {   "pos":      (10, 10, -1),
-            "edges":    ((0, 0, 5), (0, 5, 0)),
-            "colour":   ("Green", None),
-        },
-        {   "pos":      (0, 15, -1),
-            "edges":    ((10, 0, 0), (0, 0, 5)),
-            "colour":   ("Green", None),
-        },
-    ],
-
-    "keys": [
-        {   "pos":      (0, 0, 0),
-        },
-        {   "pos":      (0, 0, -4.8),
-            "colour":   "Green",
-        },
-    ],
-
-    "collide": [
-        {   "pos":      (0, 0, 0),
-            "edges":    ((2, 0, 0), (0, 2, 0), (0, 0, -2)),
-        },
-    ],
-
-    # We die if we fall this low.
-    "doom_z":   -20,
-}
+# The actual world definition that was here has moved into levels/1.py.
 
 class Key:
     __slots__ = [
@@ -185,6 +42,7 @@ class World:
         "collision_list",   # Used to detect collisions
         "dl",               # A displaylist to render the world
         "doom_z",           # We die if we fall this low
+        "floors",           # XXX the floors out of the level file
         "keys",             # The keys in this level
         "start",            # The player's starting position
     ]
@@ -192,13 +50,27 @@ class World:
     def __init__ (self, app):
         self.app    = app
 
+    def read_level (self, level):
+        fp  = open("levels/%s.py" % level, "r")
+        py  = fp.read()
+        fp.close()
+
+        # XXX I don't like this. Something safer than running eval on
+        # Python code would be nice, but most of the obvious
+        # alternatives are annoying.
+        return eval(py)
+
     def init (self):
-        self.start  = [c for c in _World["start"]]
-        self.doom_z = _World["doom_z"]
-        self.init_dl(_World)
-        self.init_shader_lights(_World)
-        self.init_keys(_World)
-        self.init_collision(_World)
+        level       = self.read_level("1")
+
+        self.start  = [c for c in level["start"]]
+        self.doom_z = level["doom_z"]
+        self.floors = level["floors"]
+
+        self.init_dl(level)
+        self.init_shader_lights(level)
+        self.init_keys(level)
+        self.init_collision(level)
 
     def init_collision (self, level):
         planes = []
@@ -310,7 +182,7 @@ class World:
     def find_floor_below(self, v):
         found = None
         # XXX this still references World as this will go soon
-        for f in _World["floors"]:
+        for f in self.floors:
             pos = f["pos"]
             edg = f["edges"]
 
