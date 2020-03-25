@@ -52,6 +52,7 @@ class World:
         "floors",           # XXX the floors out of the level file
         "keys",             # The keys in this level
         "start",            # The player's starting position
+        "start_angle",
     ]
 
     def __init__ (self, app):
@@ -68,9 +69,10 @@ class World:
         return eval(py)
 
     def init (self):
-        level       = self.read_level("1")
+        level       = self.read_level("2")
 
-        self.start  = [c for c in level["start"]]
+        self.start          = [c for c in level["start"]]
+        self.start_angle    = level["start_angle"]
         self.doom_z = level["doom_z"]
         self.floors = level["floors"]
 

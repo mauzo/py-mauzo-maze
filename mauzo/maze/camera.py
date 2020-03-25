@@ -31,12 +31,15 @@ class Camera:
 
     # This is called automatically to set up the object
     def __init__ (self, app, player):
+        self.app        = app
         self.offset     = 8
-        self.angle      = vec2(radians(70), radians(-10))
         self.panning    = vec2(0, 0)
         self.player     = player
 
     def init (self):
+        world       = self.app.world
+        angle       = tuple(radians(x) for x in world.start_angle)
+        self.angle  = vec2(angle)
         # Make sure the player is facing the right way
         self.update_player_face()
 
