@@ -39,11 +39,16 @@ class Overlay:
 
     # Draw the text
     def render (self):
+        self.push_gl_state()
+
         if self.app.option("pause"):
-            self.push_gl_state()
             glColor4f(1, 0.5, 0, 0.8)
-            self.font.show("PAUSED", 0, 0)
-            self.pop_gl_state()
+            self.font.show("PAUSED", 0, 0, 100)
+
+        glColor4f(0, 0.5, 0, 1)
+        self.font.show("hello", 0, 200, 40)
+
+        self.pop_gl_state()
 
     # Pop the state pushed above.
     def pop_gl_state (self):
@@ -125,11 +130,19 @@ class GLFont:
 
         return (x, y)
 
-    def show (self, msg, x, y):
+    def show (self, msg, x, y, size):
         chars   = self.characters
+        size    = size/self.height
 
+        glPushMatrix()
+        glTranslate(x, y, 0)
+        glScale(size, size, size)
+
+        (x, y) = (0, 0)
         for c in msg:
             (x, y) = chars[c].show(x, y)
+
+        glPopMatrix()
 
         return (x, y)
 

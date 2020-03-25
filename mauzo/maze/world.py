@@ -206,10 +206,8 @@ class World:
         for o in self.collision_list:
             # Assume we collide with this object.
             collide = True
-            print("collision for", p)
             for pl in o:
                 # If we are outside any of the planes...
-                print("  p .", repr(pl), "=", glm.dot(vec4(p, 1), pl))
                 if glm.dot(vec4(p, 1), pl) > margin:
                     # we do not collide.
                     collide = False
