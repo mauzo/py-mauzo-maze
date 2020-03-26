@@ -85,7 +85,7 @@ class World:
     def load_level (self):
         level       = self.read_level(self.level)
 
-        self.start          = [c for c in level["start"]]
+        self.start          = vec3(level["start"])
         self.start_angle    = level["start_angle"]
         self.doom_z         = level["doom_z"]
         self.floors         = level["floors"]
@@ -208,16 +208,15 @@ class World:
     # This assumes floors are horizontal axis-aligned rectangles.
     def find_floor_below(self, v):
         found = None
-        # XXX this still references World as this will go soon
         for f in self.floors:
             pos = f["pos"]
             edg = f["edges"]
 
-            if v[0] < pos[0] or v[1] < pos[1]:
+            if v.x < pos[0] or v.y < pos[1]:
                 continue
-            if v[0] > pos[0] + edg[0][0] or v[1] > pos[1]+edg[1][1]:
+            if v.x > pos[0] + edg[0][0] or v.y > pos[1]+edg[1][1]:
                 continue
-            if v[2] < pos[2]:
+            if v.z < pos[2]:
                 continue
             if found and pos[2] <= found["pos"][2]:
                 continue
@@ -238,7 +237,6 @@ class World:
         return False
 
     def key_collision (self, player):
-        player = vec3(player)
         for key in self.keys:
             if glm.length(player - key.pos) < 1:
                 return key
@@ -246,7 +244,7 @@ class World:
                      
     # Check if the player has moved outside the world and died.
     def doomed (self, p):
-        return p[2] < self.doom_z
+        return p.z < self.doom_z
 
     # Return our starting position
     def start_pos (self):

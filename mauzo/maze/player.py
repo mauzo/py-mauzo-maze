@@ -1,38 +1,31 @@
 # player.py - The player character
 
+import  glm
+from    glm             import quat, radians, vec2, vec3, vec4
 from    OpenGL.GL       import *
 from    OpenGL.GLU      import *
 
-from    .vectors    import *
+EPSILON = 0.0001
 
 class Player:
     __slots__ = [
-        # A ref to our app
-        "app",
-        # Our display list number
-        "DL",
-        # Our current position
-        "pos",
-        # Our current veolcity (our speed in the X, Y and Z directions)
-        "vel",
-        # Our current walk speed.
-        "walking",
-        # Our current facing direction (a quaternion)
-        "facing",
-        # True if we are currently jumping.
-        "jumping",
-        # The time we were last stopped.
-        "stopped",
-        # Do we have the key?
-        "have_key",
+        "app",          # A ref to our app
+        "DL",           # Our display list number
+        "pos",          # Our current position
+        "vel",          # Our current velocity
+        "walking",      # Our current walk speed.
+        "facing",       # Our current facing direction (a quaternion)
+        "jumping",      # True if we are currently jumping.
+        "stopped",      # The time we were last stopped.
+        "have_key",     # Do we have the key?
     ]
 
     def __init__ (self, app):
         self.app    = app
 
-        self.walking    = [0, 0, 0]
+        self.walking    = vec3(0)
         # This will be updated by the camera
-        self.facing     = [0, 0, 0, 0]
+        self.facing     = quat()
         self.jumping    = False
         self.stopped    = 0
         self.have_key   = False
@@ -48,7 +41,7 @@ class Player:
 
     def reset (self):
         self.pos    = self.app.world.start_pos()
-        self.vel    = [0, 0, 0]
+        self.vel    = vec3(0)
         print("RESET", self.pos, self.vel)
 
     # The speeds at which the player walks, jumps and falls.
@@ -81,7 +74,7 @@ class Player:
         p   = self.pos
         v   = self.vel
 
-        s   = [abs(v[0])*0.015 + 1, abs(v[1])*0.015 + 1, abs(v[2])*0.0075 + 1]
+        s = vec3(0.015, 0.015, 0.0075) * v + vec3(1)
 
         glPushMatrix()
         glTranslate(*p)
@@ -91,13 +84,12 @@ class Player:
 
     # Set our facing direction
     def face (self, angle):
-        self.facing = quat_rotate_about(angle, [0, 0, 1])
+        self.facing = glm.rotate(quat(), radians(angle), vec3(0, 0, 1))
 
     # Set how we're trying to walk. We will only move if we're on the
     # ground. Don't attempt to set a Z coordinate
     def walk (self, v):
-        self.walking = vec_add(self.walking, 
-            vec_mul(v, self.speed["walk"]))
+        self.walking += self.speed["walk"] * v
 
     # Set the flag to show we're jumping. We will only jump if we're on the
     # ground.
@@ -121,44 +113,45 @@ class Player:
         floor = world.find_floor_below(pos)
         if (floor):
             floor_z = floor["pos"][2] + self.bump 
-            if (pos[2] <= floor_z and vel[2] <= 0):
+            if (pos.z <= floor_z and vel.z <= 0):
                 falling = False
                 if (floor["win"]):
                     self.app.win()
                     return
-            #else:
-                #("Falling through floor", floor)
 
-        if (falling):
+        if falling:
             # If we are falling, increase our velocity in the downwards
-            # z direction by the fall speed (actually an acceleration). 
-            vel[2] -= dt * self.speed["fall"]
+            # z direction by the fall speed (actually an acceleration).
+            v_z     = vel.z - self.speed["fall"] * dt
             # If we have only just moved, remove our sideways velocity
             # so we fall straight down.
             if now - self.stopped < 0.2:
-                #print("stopped", self.stopped, "now", now)
-                vel[0] = 0
-                vel[1] = 0
+                vel = vec3(0, 0, v_z)
+            else:
+                vel = vec3(vel.xy, v_z)
         else:
             # Otherwise, set our velocity to our walk vector rotated to the
-            # direction we are facing.
-            vel     = quat_apply(self.facing, self.walking)
+            # direction we are facing. This is a quaternion multiply,
+            # which rotates the vector using the quaternion.
+            walk    = self.facing * self.walking
             # Then, if we are jumping, set our z velocity to be the jump speed
             # and turn off the jump (we only jump once).
-            if (self.jumping):
-                vel[2] = self.speed["jump"]
+            if self.jumping:
+                v_z = self.speed["jump"]
                 self.jumping = False
+            else:
+                v_z = 0
+            vel = vec3(walk.xy, v_z)
 
         # Take the velocity vector we have calculated and add it to our
         # position vector to give our new position. Multiply the
         # velocity by the time taken to render the last frame so our
         # speed is independant of the FPS.
-        pos = vec_add(pos, vec_mul(vel, dt))
+        pos = pos + vel * dt
 
-        # If we would collide, remove our velocity and don't save the
-        # new position.
+        # If we would collide, we don't move.
         if world.collision(pos, self.bump):
-            vel = [0, 0, 0]
+            vel = vec3(0)
 
         key = world.key_collision(pos)
         if key:
@@ -169,22 +162,17 @@ class Player:
         self.vel = vel
 
         # If we aren't moving, record that we stopped and return.
-        if (vel == [0, 0, 0]):
+        if vel == vec3(0):
             self.stopped = now
             return
 
         # If we have fallen through the floor put us back on top of the floor
         # so that we land on it.
-        if (floor and pos[2] < floor_z and vel[2] <= 0):
-            pos[2] = floor_z
-
-        #print("Player move from", Player["pos"])
-        #print("    to", pos)
-        #print("    falling", falling, "floor", 
-            #(floor["colour"] if floor else "<none>"))
+        if floor and pos.z <= floor_z and vel.z <= 0:
+            pos = vec3(pos.xy, floor_z - EPSILON)
 
         # If we fall too far we die.
-        if (world.doomed(pos)):
+        if world.doomed(pos):
             self.app.die()
             return
 
