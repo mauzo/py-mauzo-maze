@@ -149,11 +149,16 @@ class MazeApp:
     def die (self):
         print("AAAARGH!!!")
         self.player.reset()
+        self.camera.reset()
 
     # The player has won...
     def win (self):
         print("YaaaY!!!!")
-        self.post_quit()
+        if self.world.next_level():
+            self.player.reset()
+            self.camera.reset()
+        else:
+            self.post_quit()
 
 def get_app ():
     global _APP

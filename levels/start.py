@@ -16,6 +16,9 @@
     "start":      (0, 0, -0.49),
     "start_angle": (70, -10),
 
+    # The name of the next level
+    "next_level":   "key",
+
     # The lights.
     "lights":   [
         {   "type":         "directional",

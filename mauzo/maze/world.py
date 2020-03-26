@@ -51,12 +51,26 @@ class World:
         "doom_z",           # We die if we fall this low
         "floors",           # XXX the floors out of the level file
         "keys",             # The keys in this level
+        "level",            # The current level name
+        "_next_level",      # The name of the next level, or None
         "start",            # The player's starting position
         "start_angle",
     ]
 
     def __init__ (self, app):
         self.app    = app
+
+    def init (self):
+        self.level  = "start"
+        self.load_level()
+
+    def next_level (self):
+        if not self._next_level:
+            return False
+
+        self.level  = self._next_level
+        self.load_level()
+        return True
 
     def read_level (self, level):
         fp  = open("levels/%s.py" % level, "r")
@@ -67,14 +81,19 @@ class World:
         # Python code would be nice, but most of the obvious
         # alternatives are annoying.
         return eval(py)
-
-    def init (self):
-        level       = self.read_level("2")
+    
+    def load_level (self):
+        level       = self.read_level(self.level)
 
         self.start          = [c for c in level["start"]]
         self.start_angle    = level["start_angle"]
-        self.doom_z = level["doom_z"]
-        self.floors = level["floors"]
+        self.doom_z         = level["doom_z"]
+        self.floors         = level["floors"]
+
+        if "next_level" in level:
+            self._next_level = level["next_level"]
+        else:
+            self._next_level = None
 
         self.init_dl(level)
         self.init_shader_lights(level)
