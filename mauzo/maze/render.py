@@ -9,7 +9,7 @@ from    OpenGL.GLU  import *
 
 from    .           import gl
 from    .           import model
-from    .           import text
+from    .           import overlay
 
 class RenderContext:
     __slots__ = [
@@ -28,7 +28,7 @@ class Renderer:
     def __init__ (self, app):
         self.app        = app
         self.models     = {}
-        self.overlay    = text.Overlay(app)
+        self.overlay    = overlay.Overlay(app)
 
     def init (self):
         gl.init()
@@ -56,7 +56,7 @@ class Renderer:
     def render (self):
         app     = self.app
         world   = app.world
-        proj    = app.display.projection
+        proj    = app.display.perspective
         view    = app.camera.view_matrix()
         prg     = self.shader
 

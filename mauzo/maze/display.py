@@ -11,7 +11,8 @@ from    .       import gl
 class Display:
     __slots__ = [
         "app",          # our app
-        "projection",   # the current projection matrix
+        "overlay",      # a projection matrix for the overlay
+        "perspective",  # a projection matrix for the perspective view
         "viewport",     # the size of our window
         "window",       # the glfw window handle
     ]
@@ -37,10 +38,11 @@ class Display:
 
         glViewport(0, 0, w, h)
 
-        self.projection = glm.perspective(glm.radians(45), aspect, 1, 40)
+        self.perspective    = glm.perspective(glm.radians(45), aspect, 1, 40)
+        self.overlay        = glm.ortho(0, w, 0, h, -1, 1)
 
         glMatrixMode(GL_PROJECTION)
-        gl.load_ffp_matrix(self.projection)
+        gl.load_ffp_matrix(self.perspective)
 
         glMatrixMode(GL_MODELVIEW)
 

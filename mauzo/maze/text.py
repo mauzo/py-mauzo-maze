@@ -3,64 +3,13 @@
 from    OpenGL.GL       import *
 import  pygame.freetype
 
-from    .       import display
 from    .       import gl
-
-class Overlay:
-    __slots__ = [
-        "app",      # our app
-        "font",     # our font
-    ]
-
-    def __init__ (self, app):
-        self.app    = app
-
-    def init (self):
-        pygame.freetype.init()
-        self.font   = GLFont("stencil.ttf", 100)
-
-    # Push new GL state suitable for rendering text.
-    def push_gl_state (self):
-        (w, h) = self.app.display.viewport
-
-        glMatrixMode(GL_PROJECTION)
-        glPushMatrix()
-        glLoadIdentity()
-        glOrtho(0, w, 0, h, -1, 1)
-        glMatrixMode(GL_MODELVIEW)
-        glPushMatrix()
-        glLoadIdentity()
-
-        glPushAttrib(GL_ENABLE_BIT|GL_TEXTURE_BIT)
-        glDisable(GL_LIGHTING)
-        glDisable(GL_DEPTH_TEST)
-        glDisable(GL_CULL_FACE)
-        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_BLEND)
-
-    # Draw the text
-    def render (self):
-        self.push_gl_state()
-
-        if self.app.option("pause"):
-            glColor4f(1, 0.5, 0, 0.8)
-            self.font.show("PAUSED", 0, 0, 100)
-
-        glColor4f(0, 0.5, 0, 1)
-        self.font.show("hello", 0, 200, 40)
-
-        self.pop_gl_state()
-
-    # Pop the state pushed above.
-    def pop_gl_state (self):
-        glPopAttrib()
-
-        glMatrixMode(GL_PROJECTION)
-        glPopMatrix()
-        glMatrixMode(GL_MODELVIEW)
-        glPopMatrix()
 
 TWO16   = 2**16
 TWO32   = 2**32
+
+def init ():
+    pygame.freetype.init()
 
 class Glyph:
     __slots__ = ["texture", "metrics"]
