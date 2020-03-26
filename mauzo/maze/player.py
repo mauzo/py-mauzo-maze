@@ -23,6 +23,8 @@ class Player:
         "jumping",
         # The time we were last stopped.
         "stopped",
+        # Do we have the key?
+        "have_key",
     ]
 
     def __init__ (self, app):
@@ -33,6 +35,7 @@ class Player:
         self.facing     = [0, 0, 0, 0]
         self.jumping    = False
         self.stopped    = 0
+        self.have_key   = False
 
     def init (self):
         # Compile a display list.
@@ -133,7 +136,7 @@ class Player:
             # If we have only just moved, remove our sideways velocity
             # so we fall straight down.
             if now - self.stopped < 0.2:
-                print("stopped", self.stopped, "now", now)
+                #print("stopped", self.stopped, "now", now)
                 vel[0] = 0
                 vel[1] = 0
         else:
@@ -157,8 +160,10 @@ class Player:
         if world.collision(pos, self.bump):
             vel = [0, 0, 0]
 
-        if world.key_collision(pos):
-            print("It's a key")
+        key = world.key_collision(pos)
+        if key:
+            self.have_key = True
+            key.visible = False
 
         # Save our velocity for next time
         self.vel = vel

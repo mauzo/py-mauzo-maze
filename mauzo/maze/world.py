@@ -15,15 +15,17 @@ class Key:
         "world",    # the world we are in
         "model",    # our model
         "pos",      # the position
+        "visible",  # Can you  see it?
     ]
 
     def __init__ (self, world, pos):
         self.world  = world
         self.pos    = vec3(pos)
 
-        app         = world.app
-        render      = app.render
-        self.model  = render.load_model("key")
+        app          = world.app
+        render       = app.render
+        self.model   = render.load_model("key")
+        self.visible = True  
 
     def render (self, ctx):
         prg     = ctx.shader
@@ -154,7 +156,8 @@ class World:
     # separate from .render above.
     def render_keys (self, ctx):
         for k in self.keys:
-            k.render(ctx)
+            if k.visible:
+                k.render(ctx)
 
     # Position our lights
     def draw_lights (self, level):
@@ -238,8 +241,8 @@ class World:
         player = vec3(player)
         for key in self.keys:
             if glm.length(player - key.pos) < 1:
-                return True
-        return False
+                return key
+        return None
                      
     # Check if the player has moved outside the world and died.
     def doomed (self, p):

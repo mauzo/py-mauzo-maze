@@ -11,11 +11,13 @@ class Overlay:
         "display",  # our display
         "font",     # our font
         "key",      # the key model
+        "player",   # the player
     ]
 
     def __init__ (self, app):
         self.app        = app
         self.display    = app.display
+        self.player     = app.player
 
     def init (self):
         text.init()
@@ -46,6 +48,9 @@ class Overlay:
         if self.app.option("pause"):
             glColor4f(1, 0.5, 0, 0.8)
             self.font.show("PAUSED", 0, 0, 100)
+        if self.player.have_key:
+            glColor4f(0.5, 0.5, 1, 0.8)
+            self.font.show("KEY", 0, 100, 40)
 
         self.pop_gl_state()
 
