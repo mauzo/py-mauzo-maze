@@ -185,6 +185,13 @@ class ShaderProg:
     def delete (self):
         glDeleteProgram(self.id)
 
+    # XXX Ignore unknown uniforms, for now.
+    def __getattr__ (self, att):
+        if att[0:2] == "u_":
+            return lambda v: \
+                warnings.warn("Attempt to set nonexistent uniform " + att)
+        raise AttributeError("ShaderProg has no attribute " + att)
+
     def __init_glsl_methods (self):
         prg     = self.id
         n_att   = glGetProgramiv(prg, GL_ACTIVE_ATTRIBUTES)
@@ -209,7 +216,7 @@ class ShaderProg:
 
         self.__dict__[att] = loc
 
-        print("Added attrib", att)
+        print("Added attrib", att, "=", loc)
 
     def __init_uniform (self, i):
         info    = glGetActiveUniform(self.id, i)
