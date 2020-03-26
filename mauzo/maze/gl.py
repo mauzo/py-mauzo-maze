@@ -271,6 +271,16 @@ _shader_types = {
     "frag": GL_FRAGMENT_SHADER,
 }
 
+# Standard attribute bindings, so all the shaders are the same
+_shader_attribs = {
+    "b_pos":        0,
+    "b_normal":     1,
+    "b_tex":        2,
+}
+
+def shader_attribs ():
+    return _shader_attribs
+
 class ShaderCompiler:
     __slots__ = ["objs"]
 
@@ -312,6 +322,9 @@ class ShaderCompiler:
         prg = glCreateProgram()
         for sh in shs:
             glAttachShader(prg, sh)
+
+        for ix, att in enumerate(shader_attribs()):
+            glBindAttribLocation(prg, ix, att)
 
         glLinkProgram(prg)
 

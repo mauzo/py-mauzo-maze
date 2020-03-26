@@ -10,8 +10,6 @@ from    .           import gl
 
 PI = glm.pi()
 
-# The actual world definition that was here has moved into levels/1.py.
-
 class Key:
     __slots__ = [
         "world",    # the world we are in

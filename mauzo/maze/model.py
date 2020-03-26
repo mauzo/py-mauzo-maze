@@ -33,18 +33,19 @@ class Mesh:
         else:
             self.specularT  = None
 
-    def make_vao (self, prg):
+    def make_vao (self):
         vao     = gl.VAO()
         vbo     = gl.Buffer("vbo", self.vertices)
         # No EBO for now, as pywf duplicates all the vertices
         #ebo     = gl.Buffer("ebo", self.indices)
         layout  = self.layout
+        attrs   = gl.shader_attribs()
 
         vbo.bind()
         vao.bind()
-        vao.add_attrib(prg.b_pos,       *layout[0])
-        vao.add_attrib(prg.b_normal,    *layout[1])
-        #vao.add_attrib(prg.b_tex,       *layout[2])
+        vao.add_attrib(attrs["b_pos"],      *layout[0])
+        vao.add_attrib(attrs["b_normal"],   *layout[1])
+        vao.add_attrib(attrs["b_tex"],      *layout[2])
         #vao.add_ebo(ebo)
         vao.add_primitive(GL_TRIANGLES, 0, self.count)
         vao.unbind()
@@ -66,10 +67,8 @@ class Model:
         obj         = pywavefront.Wavefront(path)
 
         self.meshes = [Mesh(m) for m in obj.mesh_list]
-
-    def make_vaos (self, prg):
         for m in self.meshes:
-            m.make_vao(prg)
+            m.make_vao()
 
     def render (self, prg):
         for m in self.meshes:

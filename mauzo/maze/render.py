@@ -46,8 +46,8 @@ class Renderer:
         if name in self.models:
             return self.models[name]
 
-        m   = model.Model("model/%s/%s.obj" % (name, name))
-        m.make_vaos(self.shader)
+        m = model.Model("model/%s/%s.obj" % (name, name))
+        self.models[name] = m
 
         return m
 
