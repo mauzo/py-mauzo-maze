@@ -36,13 +36,13 @@ class Camera:
         self.player     = player
 
     def init (self):
+        self.panning    = vec2(0, 0)
         self.reset()
 
     def reset (self):
         world           = self.app.world
         angle           = tuple(radians(x) for x in world.start_angle)
         self.angle      = vec2(angle)
-        self.panning    = vec2(0, 0)
         # Make sure the player is facing the right way
         self.update_player_face()
 

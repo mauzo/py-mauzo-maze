@@ -122,6 +122,7 @@ class Player:
                 falling = False
                 if (floor["win"]):
                     self.app.win()
+                    return
             #else:
                 #("Falling through floor", floor)
 
@@ -158,7 +159,6 @@ class Player:
 
         if world.key_collision(pos):
             print("It's a key")
-        
 
         # Save our velocity for next time
         self.vel = vel
