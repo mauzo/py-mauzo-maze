@@ -100,13 +100,14 @@ class World:
         self.init_collision(level)
 
     def init_collision (self, level):
-        planes = []
+        coll = []
         for f in level["floors"]:
             p           = vec3(f["pos"])
             e1, e2      = (vec3(e) for e in f["edges"])
             e3          = vec3(0, 0, -FLOOR_THICKNESS)
             px          = p + e1 + e2 + e3
-            planes.append((
+            coll.append((
+                f["win"],
                 plane_from_vectors(p, e1, e2),
                 plane_from_vectors(p, e2, e3),
                 plane_from_vectors(p, e3, e1),
@@ -115,8 +116,8 @@ class World:
                 plane_from_vectors(px, e1, e3),
             ))
 
-        self.collision_list = planes
-        print("Collision:", planes)
+        self.collision_list = coll
+        print("Collision:", coll)
 
     # Build a display list representing the world, so we don't have to
     # calculate all the triangles every frame.
@@ -228,7 +229,7 @@ class World:
     def collision (self, old, new, margin):
         old4    = vec4(old, 1)
         new4    = vec4(new, 1)
-        for pls in self.collision_list:
+        for obj, *pls in self.collision_list:
             # Assume we collide with this object.
             collide = True
             for pl in pls:
@@ -242,7 +243,7 @@ class World:
                 for pl in pls:
                     if glm.dot(old4, pl) > margin:
                         break
-                return vec3(pl)
+                return obj, vec3(pl)
         return None
 
     def key_collision (self, player):

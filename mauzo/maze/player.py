@@ -114,11 +114,15 @@ class Player:
             vel = vec3(0, 0, v_z)
 
         npos    = pos + vel * dt
-        norm    = world.collision(pos, npos, self.bump)
+        hit     = world.collision(pos, npos, self.bump)
 
-        if norm:
+        if hit:
+            (win, norm) = hit
             if self.falling:
                 self.vel    = vec3(0)
+                if win:
+                    self.app.win()
+                    return None
             self.falling    = False
             return norm
 
@@ -146,8 +150,9 @@ class Player:
         npos    = pos + vel * dt
 
         # If we would collide, we move along the wall instead.
-        norm = self.world.collision(pos, npos, self.bump)
-        if norm:
+        hit = self.world.collision(pos, npos, self.bump)
+        if hit:
+            obj, norm = hit
             vel = project_onto_plane(norm, vel)
             pos = pos + vel * dt
         else:
