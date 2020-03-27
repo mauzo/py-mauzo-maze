@@ -147,18 +147,17 @@ class Player:
 
     def check_collisions (self, vel, dt):
         pos     = self.pos
-        npos    = pos + vel * dt
 
-        # If we would collide, we move along the wall instead.
-        hit = self.world.collision(pos, npos, self.bump)
-        if hit:
-            obj, norm = hit
-            vel = project_onto_plane(norm, vel)
-            pos = pos + vel * dt
-        else:
-            pos = npos
+        while True:
+            npos    = pos + vel * dt
+            hit = self.world.collision(pos, npos, self.bump)
+            if hit:
+                obj, norm = hit
+                vel = project_onto_plane(norm, vel)
+            else:
+                break
 
-        self.pos    = pos
+        self.pos    = npos
         self.vel    = vel
 
     def update_position (self, dt):

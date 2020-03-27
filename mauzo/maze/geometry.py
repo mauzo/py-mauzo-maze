@@ -15,8 +15,12 @@ def plane_from_vectors (p, a, b):
 # plane. This assumes planes/vectors through the origin.
 # XXX I think there must be an easier algorithm here...
 def project_onto_plane (p, v):
-    r   = glm.normalize(glm.cross(p, v))
-    q   = glm.cross(r, p)
+    r   = glm.cross(p, v)
+    if r == vec3(0):
+        return vec3(0)
+
+    rh  = glm.normalize(r)
+    q   = glm.cross(rh, p)
     w   = glm.dot(v, q) * q
 
     return w
