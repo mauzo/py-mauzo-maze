@@ -17,6 +17,7 @@ class RenderContext:
         "shader",       # the shader program we are using
     ]
 
+
 class Renderer:
     __slots__ = [
         "app",          # our app
@@ -34,6 +35,7 @@ class Renderer:
         gl.init()
         self.overlay.init()
         self.init_shader()
+        self.register_options()
 
     def init_shader (self):
         slc     = gl.ShaderCompiler()
@@ -41,6 +43,29 @@ class Renderer:
         slc.delete()
 
         self.shader = shader
+
+    def wireframe_on (self):
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+
+    def wireframe_off (self):
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+
+    def backface_on (self):
+        glDisable(GL_CULL_FACE)
+        # Display back faces bright cyan
+        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1)
+        glMaterialfv(GL_BACK, GL_EMISSION, [0, 1, 1])
+
+    def backface_off (self):
+        glEnable(GL_CULL_FACE)
+
+    def register_options (self):
+        opt     = self.app.options
+
+        opt.register("wireframe",
+            on=self.wireframe_on, off=self.wireframe_off)
+        opt.register("backface",
+            on=self.backface_on, off=self.backface_off)
 
     def load_model (self, name):
         if name in self.models:
