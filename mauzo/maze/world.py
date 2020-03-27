@@ -1,11 +1,10 @@
 # world.py - World definitions
 # This defines the world (the level layout).
 
-import  glm
-from    glm         import  mat4, vec3, vec4
 from    OpenGL.GL   import  *
 
 from    .drawing    import *
+from    .geometry   import *
 from    .           import gl
 
 PI = glm.pi()
@@ -107,12 +106,12 @@ class World:
             e1, e2, e3  = (vec3(e) for e in f["edges"])
             px          = p + e1 + e2 + e3
             planes.append((
-                plane_from_points(p, e1, e2),
-                plane_from_points(p, e2, e3),
-                plane_from_points(p, e3, e1),
-                plane_from_points(px, e2, e1),
-                plane_from_points(px, e3, e2),
-                plane_from_points(px, e1, e3),
+                plane_from_vectors(p, e1, e2),
+                plane_from_vectors(p, e2, e3),
+                plane_from_vectors(p, e3, e1),
+                plane_from_vectors(px, e2, e1),
+                plane_from_vectors(px, e3, e2),
+                plane_from_vectors(px, e1, e3),
             ))
 
         self.collision_list = planes
@@ -223,18 +222,27 @@ class World:
             found = f
         return found
 
-    def collision (self, p, margin):
-        for o in self.collision_list:
+    # We have just moved from 'old' to 'new'.
+    # margin is the bump margin.
+    def collision (self, old, new, margin):
+        old4    = vec4(old, 1)
+        new4    = vec4(new, 1)
+        for pls in self.collision_list:
             # Assume we collide with this object.
             collide = True
-            for pl in o:
+            for pl in pls:
                 # If we are outside any of the planes...
-                if glm.dot(vec4(p, 1), pl) > margin:
+                if glm.dot(new4, pl) > margin:
                     # we do not collide.
                     collide = False
+                    break
             if collide:
-                return True
-        return False
+                # Find the plane we collided with
+                for pl in pls:
+                    if glm.dot(old4, pl) > margin:
+                        break
+                return vec3(pl)
+        return None
 
     def key_collision (self, player):
         for key in self.keys:
@@ -250,10 +258,3 @@ class World:
     def start_pos (self):
         return self.start
 
-# Given a plane x = p + sa + tb return the vec4(A,B,C,D) where
-# vec3(A,B,C) is normal to the plane and Ax + By + Cz + D = 0 is an
-# equation of the plane. 
-def plane_from_points (p, a, b):
-    n   = glm.normalize(glm.cross(a, b))
-    d   = -glm.dot(n, p)
-    return vec4(n, d)

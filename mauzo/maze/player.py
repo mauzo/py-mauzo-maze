@@ -1,9 +1,9 @@
 # player.py - The player character
 
-import  glm
-from    glm             import quat, radians, vec2, vec3, vec4
 from    OpenGL.GL       import *
 from    OpenGL.GLU      import *
+
+from    .geometry       import *
 
 EPSILON = 0.0001
 
@@ -147,11 +147,15 @@ class Player:
         # position vector to give our new position. Multiply the
         # velocity by the time taken to render the last frame so our
         # speed is independant of the FPS.
-        pos = pos + vel * dt
+        new_pos = pos + vel * dt
 
-        # If we would collide, we don't move.
-        if world.collision(pos, self.bump):
-            vel = vec3(0)
+        # If we would collide, we move along the wall instead.
+        norm = world.collision(pos, new_pos, self.bump)
+        if norm:
+            vel = project_onto_plane(norm, vel)
+            pos = pos + vel * dt
+        else:
+            pos = new_pos
 
         key = world.key_collision(pos)
         if key:
