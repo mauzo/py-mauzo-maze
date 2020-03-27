@@ -116,6 +116,20 @@ class World:
                 plane_from_vectors(px, e1, e3),
             ))
 
+        for w in level["walls"]:
+            p           = vec3(w["pos"])
+            e1, e2, e3  = (vec3(e) for e in w["edges"]) 
+            px          = p + e1 + e2 + e3
+            coll.append((
+                f["win"],
+                plane_from_vectors(p, e1, e2),
+                plane_from_vectors(p, e2, e3),
+                plane_from_vectors(p, e3, e1),
+                plane_from_vectors(px, e2, e1),
+                plane_from_vectors(px, e3, e2),
+                plane_from_vectors(px, e1, e3),
+            ))
+
         self.collision_list = coll
         print("Collision:", coll)
 
@@ -196,12 +210,8 @@ class World:
             es  = w["edges"]
             c   = w["colour"]
 
-            if c[0] is not None:
-                glColor3f(*colours[c[0]])
-                draw_pgram(p, es[0], es[1])
-            if c[1] is not None:
-                glColor3f(*colours[c[1]])
-                draw_pgram(p, es[1], es[0])
+            glColor3f(*colours[c])
+            draw_ppiped(p, *es)
 
     # Find the floor below a given position.
     # v is the point in space we want to start from.
