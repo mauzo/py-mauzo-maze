@@ -13,7 +13,7 @@
     },
 
     # The player's starting position
-    "start":      (0, 0, -0.49),
+    "start":      (0, 0, 0),
     "start_angle": (70, -10),
 
     # The name of the next level

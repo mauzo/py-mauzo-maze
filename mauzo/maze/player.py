@@ -11,23 +11,25 @@ class Player:
     __slots__ = [
         "app",          # A ref to our app
         "DL",           # Our display list number
+        "falling",      # Are we falling?
         "pos",          # Our current position
         "vel",          # Our current velocity
         "walking",      # Our current walk speed.
         "facing",       # Our current facing direction (a quaternion)
         "jumping",      # True if we are currently jumping.
-        "stopped",      # The time we were last stopped.
         "have_key",     # Do we have the key?
+        "world",        # The world
     ]
 
     def __init__ (self, app):
         self.app    = app
+        self.world  = app.world
 
         self.walking    = vec3(0)
         # This will be updated by the camera
         self.facing     = quat()
+        self.falling    = False
         self.jumping    = False
-        self.stopped    = 0
         self.have_key   = False
 
     def init (self):
@@ -52,7 +54,7 @@ class Player:
     speed = {
         "walk":     8.0,        # m/s
         "jump":     8.0,        # m/s
-        "fall":     16.0,       # m/s^2
+        "fall":    16.0,       # m/s^2
     }
 
     # Draw the player as a wireframe sphere.
@@ -74,7 +76,7 @@ class Player:
         p   = self.pos
         v   = self.vel
 
-        s = vec3(0.015, 0.015, 0.0075) * v + vec3(1)
+        s = vec3(0.015, 0.015, 0.0075) * glm.abs(v) + vec3(1)
 
         glPushMatrix()
         glTranslate(*p)
@@ -98,87 +100,82 @@ class Player:
 
     bump = 0.49
 
-    # Run the player physics. dt the time since the last frame, in seconds.
-    def physics(self, dt):
+    # See if we can fall. Returns None if we can fall, or the normal of
+    # the floor if we can't.
+    def find_floor (self, dt):
         pos     = self.pos
         vel     = self.vel
-        now     = self.app.now()
-        world   = self.app.world
+        world   = self.world
 
-        # Assume we are falling.
-        falling     = True
-
-        # Find the floor below us. If there is a floor, and we are close
-        # enough to it, we are not falling.
-        floor = world.find_floor_below(pos)
-        if (floor):
-            floor_z = floor["pos"][2] + self.bump 
-            if (pos.z <= floor_z and vel.z <= 0):
-                falling = False
-                if (floor["win"]):
-                    self.app.win()
-                    return
-
-        if falling:
-            # If we are falling, increase our velocity in the downwards
-            # z direction by the fall speed (actually an acceleration).
-            v_z     = vel.z - self.speed["fall"] * dt
-            # If we have only just moved, remove our sideways velocity
-            # so we fall straight down.
-            if now - self.stopped < 0.2:
-                vel = vec3(0, 0, v_z)
-            else:
-                vel = vec3(vel.xy, v_z)
+        v_z     = vel.z - self.speed["fall"] * dt
+        if self.falling:
+            vel = vec3(vel.xy, v_z)
         else:
-            # Otherwise, set our velocity to our walk vector rotated to the
-            # direction we are facing. This is a quaternion multiply,
-            # which rotates the vector using the quaternion.
-            walk    = self.facing * self.walking
-            # Then, if we are jumping, set our z velocity to be the jump speed
-            # and turn off the jump (we only jump once).
-            if self.jumping:
-                v_z = self.speed["jump"]
-                self.jumping = False
-            else:
-                v_z = 0
-            vel = vec3(walk.xy, v_z)
+            vel = vec3(0, 0, v_z)
 
-        # Take the velocity vector we have calculated and add it to our
-        # position vector to give our new position. Multiply the
-        # velocity by the time taken to render the last frame so our
-        # speed is independant of the FPS.
-        new_pos = pos + vel * dt
+        npos    = pos + vel * dt
+        norm    = world.collision(pos, npos, self.bump)
+
+        if norm:
+            if self.falling:
+                self.vel    = vec3(0)
+            self.falling    = False
+            return norm
+
+        self.pos        = npos
+        self.vel        = vel
+        self.falling    = True
+        return None
+
+    def walk_velocity (self, dt):
+        # Rotate our 'walking' speed by our 'facing' direction
+        walk    = self.facing * self.walking
+
+        if self.jumping:
+            v_z = self.speed["jump"]
+            self.jumping    = False
+            self.falling    = True
+        else:
+            v_z = 0
+
+        vel = vec3(walk.xy, v_z)
+        return vel 
+
+    def check_collisions (self, vel, dt):
+        pos     = self.pos
+        npos    = pos + vel * dt
 
         # If we would collide, we move along the wall instead.
-        norm = world.collision(pos, new_pos, self.bump)
+        norm = self.world.collision(pos, npos, self.bump)
         if norm:
             vel = project_onto_plane(norm, vel)
             pos = pos + vel * dt
         else:
-            pos = new_pos
+            pos = npos
 
-        key = world.key_collision(pos)
+        self.pos    = pos
+        self.vel    = vel
+
+    def update_position (self, dt):
+        floor   = self.find_floor(dt)
+        if not floor:
+            return
+
+        vel     = self.walk_velocity(dt)
+        self.check_collisions(vel, dt)
+
+    # Run the player physics. dt the time since the last frame, in seconds.
+    def physics(self, dt):
+        self.update_position(dt)
+        pos     = self.pos
+        world   = self.world
+
+        key     = world.key_collision(pos)
         if key:
             self.have_key = True
             key.visible = False
-
-        # Save our velocity for next time
-        self.vel = vel
-
-        # If we aren't moving, record that we stopped and return.
-        if vel == vec3(0):
-            self.stopped = now
-            return
-
-        # If we have fallen through the floor put us back on top of the floor
-        # so that we land on it.
-        if floor and pos.z <= floor_z and vel.z <= 0:
-            pos = vec3(pos.xy, floor_z - EPSILON)
 
         # If we fall too far we die.
         if world.doomed(pos):
             self.app.die()
             return
-
-        # Save our new position.
-        self.pos = pos

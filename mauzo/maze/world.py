@@ -101,9 +101,10 @@ class World:
 
     def init_collision (self, level):
         planes = []
-        for f in level["collide"]:
+        for f in level["floors"]:
             p           = vec3(f["pos"])
-            e1, e2, e3  = (vec3(e) for e in f["edges"])
+            e1, e2      = (vec3(e) for e in f["edges"])
+            e3          = vec3(0, 0, -FLOOR_THICKNESS)
             px          = p + e1 + e2 + e3
             planes.append((
                 plane_from_vectors(p, e1, e2),
