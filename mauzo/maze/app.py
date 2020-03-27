@@ -10,9 +10,6 @@ from . import player
 from . import render
 from . import world
 
-# Temporary global to hold the app pointer
-_APP = None
-
 class Clock:
     __slots__ = [
         "now",      # the time last time we updated
@@ -44,6 +41,7 @@ class Clock:
 class MazeApp:
     # This defines the attributes this object can have.
     __slots__ = [
+        "argv",         # Our command-line arguments
         "camera",       # An object representing the camera
         "clock",        # A clock to keep track of the framerate
         "display",      # Our display
@@ -57,7 +55,9 @@ class MazeApp:
 
     # This is called automatically when we create a new object, to set
     # things up.
-    def __init__ (self):
+    def __init__ (self, argv):
+        self.argv           = argv
+
         # We are not paused to start with
         self.run_physics    = True
         # Set up a clock to keep track of the framerate.
@@ -171,10 +171,3 @@ class MazeApp:
             self.camera.reset()
         else:
             self.post_quit()
-
-def get_app ():
-    global _APP
-    if not _APP:
-        _APP = MazeApp()
-    return _APP
-

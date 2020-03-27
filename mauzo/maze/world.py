@@ -59,8 +59,12 @@ class World:
     def __init__ (self, app):
         self.app    = app
 
+        if len(app.argv):
+            self.level  = app.argv[0]
+        else:
+            self.level  = "start"
+
     def init (self):
-        self.level  = "start"
         self.load_level()
 
     def next_level (self):

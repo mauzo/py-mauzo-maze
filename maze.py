@@ -1,9 +1,10 @@
 # maze.py
 # Playing with OpenGL
 
-from mauzo.maze.app import *
+import  sys
+import  mauzo.maze.app
 
-app = get_app()
+app = mauzo.maze.app.MazeApp(sys.argv[1:])
 try:
     app.init()
     app.run()
