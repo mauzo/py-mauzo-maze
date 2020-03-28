@@ -108,14 +108,17 @@ class Player:
         vel     = self.vel
         world   = self.world
 
-        v_z     = vel.z - self.speed["fall"] * dt
+        dv_z    = -self.speed["fall"] * dt    
         if self.falling:
-            vel = vec3(vel.xy, v_z)
+            vel = vec3(vel.xy, vel.z + dv_z)
         else:
-            vel = vec3(0, 0, v_z)
+            vel = vec3(0, 0, dv_z)
 
         npos    = pos + vel * dt
         hit     = world.collision(pos, npos, self.bump)
+
+        if npos.z > pos.z:
+            print("fallen upwards! vel", vel)
 
         if hit:
             (win, norm) = hit
@@ -132,18 +135,23 @@ class Player:
         self.falling    = True
         return None
 
-    def walk_velocity (self, dt):
+    def walk_velocity (self, floor, dt):
         # Rotate our 'walking' speed by our 'facing' direction
         walk    = self.facing * self.walking
+        walk_n  = glm.normalize(walk)
 
         if self.jumping:
-            v_z = self.speed["jump"]
+            vel             = vec3(walk.xy, self.speed["jump"])
             self.jumping    = False
             self.falling    = True
+        elif glm.dot(walk_n, floor) > -0.5:
+            vel     = project_onto_plane(floor, walk)
+            #vel     *= glm.clamp(1 + 2 * cos_th, 0, 1)
+            print("vel", repr(vel), "gradient",
+                vel.z / glm.length(vel.xy))
         else:
-            v_z = 0
+            vel = vec3(0)
 
-        vel = vec3(walk.xy, v_z)
         return vel 
 
     def check_collisions (self, vel, dt):
@@ -166,7 +174,7 @@ class Player:
         if not floor:
             return
 
-        vel     = self.walk_velocity(dt)
+        vel     = self.walk_velocity(floor, dt)
         self.check_collisions(vel, dt)
 
     # Run the player physics. dt the time since the last frame, in seconds.
