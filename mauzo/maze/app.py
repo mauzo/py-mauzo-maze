@@ -162,6 +162,7 @@ class MazeApp:
         print("AAAARGH!!!")
         self.player.reset()
         self.camera.reset()
+        self.world.reset()
 
     # The player has won...
     def win (self):

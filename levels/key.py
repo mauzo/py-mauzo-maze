@@ -15,7 +15,10 @@
     # The player's starting position
     "start":      (-2, -2, -0.49),
     "start_angle": (70, -10),
-
+    
+    # The name of the next level
+    "next_level":   "enemy",
+    
     # The lights.
     "lights":   [
         {   "type":         "directional",

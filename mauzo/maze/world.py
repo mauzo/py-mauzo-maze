@@ -53,7 +53,7 @@ class World:
         "level",            # The current level name
         "_next_level",      # The name of the next level, or None
         "start",            # The player's starting position
-        "start_angle",
+        "start_angle",      # Tha player's starting angle
     ]
 
     def __init__ (self, app):
@@ -66,6 +66,10 @@ class World:
 
     def init (self):
         self.load_level()
+
+    def reset (self):
+        for k in self.keys:
+            k.visible = True
 
     def next_level (self):
         if not self._next_level:
@@ -265,7 +269,7 @@ class World:
             if glm.length(player - key.pos) < 1:
                 return key
         return None
-                     
+    
     # Check if the player has moved outside the world and died.
     def doomed (self, p):
         return p.z < self.doom_z

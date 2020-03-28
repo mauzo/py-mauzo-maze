@@ -17,7 +17,7 @@
     "start_angle": (0, -10),
 
     # The name of the next level
-    "next_level":   "key",
+    "next_level":   "he real maze",
 
     # The lights.
     "lights":   [
