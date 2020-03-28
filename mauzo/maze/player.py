@@ -44,6 +44,7 @@ class Player:
     def reset (self):
         self.pos    = self.app.world.start_pos()
         self.vel    = vec3(0)
+        self.have_key = False
         print("RESET", self.pos, self.vel)
 
     # The speeds at which the player walks, jumps and falls.

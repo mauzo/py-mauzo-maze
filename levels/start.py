@@ -14,7 +14,7 @@
 
     # The player's starting position
     "start":      (0, 0, 0),
-    "start_angle": (70, -10),
+    "start_angle": (0, -10),
 
     # The name of the next level
     "next_level":   "key",
@@ -36,24 +36,24 @@
     #   colour      A tuple of (red, green, blue)
     #   win         True if this is a winning platform, False otherwise
     "floors": [
-        { "pos":        (-2, -2, -1),
-          "edges":      ((4, 0, 0), (0, 4, 0)),
+        { "pos":        (-3, -3, -1),
+          "edges":      ((5, 0, 0), (0, 5, 0)),
           "colour":     "Red",
           "win":        False,
         },
-        { "pos":        (9, -6, 3),
-          "edges":      ((4, 0, 0), (0, 4, 0)),
+        { "pos":        (12, -8, 3),
+          "edges":      ((5, 0, 0), (0, 5, 0)),
           "colour":     "Green",
           "win":        False,
         },
-        { "pos":        (3, -2, 1),
-          "edges":      ((4, 0, 0), (0, 4, 0)),
+        { "pos":        (4, -3, 1),
+          "edges":      ((5, 0, 0), (0, 5, 0)),
           "colour":     "Blue",
           "win":        False,
         },
-        { "pos":        (14, -1, 5),
-          "edges":      ((4, 0, 0), (0, 4, 0)),
-          "colour":     "Grey",
+        { "pos":        (19, -1, 5),
+          "edges":      ((3, 0, 0), (0, 3, 0)),
+          "colour":     "White",
           "win":        True,
         },
         
