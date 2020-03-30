@@ -81,16 +81,11 @@
           "colour":     "Pink",
           "win":        False,
         },
-        { "pos":        (1, -13, -3),
-          "edges":      ((8, 0, 0), (0, 2, 0)),
+        { "pos":        (8, -13, -1),
+          "edges":      ((1, 0, 0), (0, 3, 0)),
           "colour":     "Blue",
           "win":        False,
         },
-        { "pos":        (8, -14, -3),
-          "edges":      ((1, 0, 0), (0, 1, 0)),
-          "colour":     "Blue",
-          "win":        False,
-        }
     ],
 
     # A list of the walls. Walls are parallelograms. The edges must be
@@ -130,7 +125,7 @@
             "colour":   "Green",
         },
         {   "pos":      (0, -13, -3),
-            "edges":    ((9, 0, 2), (0, 2, 0), (0, 0, -0.5)),
+            "edges":    ((8, 0, 2.1), (0, 2, 0), (0, 0, -0.5)),
             "colour":   "Pink",
         },
         {   "pos":      (-3, 0, 0),
