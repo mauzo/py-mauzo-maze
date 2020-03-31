@@ -9,20 +9,31 @@ from    .           import gl
 
 PI = glm.pi()
 
-class Key:
+class Item:
     __slots__ = [
         "world",    # the world we are in
-        "model",    # our model
-        "pos",      # the position
-        "visible",  # Can you  see it?
+        "pos",      # our position
     ]
 
     def __init__ (self, world, pos):
         self.world  = world
         self.pos    = vec3(pos)
 
-        app          = world.app
-        render       = app.render
+    def render (self, ctx):
+        raise RuntimeError("render called on base Item")
+
+class Key (Item):
+    __slots__ = [
+        "model",    # our model
+        "visible",  # Can you  see it?
+    ]
+
+    def __init__ (self, **kws):
+        # Call up to the parent class __init__
+        super().__init__(**kws)
+
+        # Now do our own stuff
+        render       = self.world.app.render
         self.model   = render.load_model("key")
         self.visible = True  
 
@@ -167,7 +178,7 @@ class World:
         col     = level["colours"]
         keys    = []
         for k in level["keys"]:
-            keys.append(Key(self, k["pos"]))
+            keys.append(Key(world=self, pos=k["pos"]))
 
         self.keys = keys
 
