@@ -17,7 +17,7 @@
     "start_angle": (0, -10),
 
     # The name of the next level
-    "next_level":   "he real maze",
+    "next_level":   "flashlight",
 
     # The lights.
     "lights":   [
@@ -58,7 +58,7 @@
         },
         { "pos":        (14, 3, -5),
           "edges":      ((4, 0, 0), (0, 4, 0)),
-          "colour":     "Yellow",
+          "colour":     "Purple",
           "win":        False,
         }, 
     ],
@@ -71,7 +71,7 @@
     "collide": [],
     "keys":[
         {   "pos":      (16, 5, -4.8),
-                    "colour":   "Green",
+            "colour":   "Green",
         },
     ],
 
