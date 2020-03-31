@@ -127,7 +127,7 @@ def draw_ppiped (p, e1, e2, e3):
 
     glPushAttrib(GL_POLYGON_BIT)
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-    _draw_ppiped(p, e1, e2, e3)
+    #_draw_ppiped(p, e1, e2, e3)
     glPopAttrib()
 
 def _draw_ppiped (p, e1, e2, e3):
