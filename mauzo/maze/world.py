@@ -1,6 +1,7 @@
 # world.py - World definitions
 # This defines the world (the level layout).
 
+import  numpy       as      np
 from    OpenGL.GL   import  *
 
 from    .drawing    import *
@@ -50,6 +51,23 @@ class Key (Item):
         prg.u_model(model)
         prg.u_normal_matrix(normal)
         self.model.render(prg)
+
+class Portal (Item):
+    __slots__ = [
+        "vao",          # A VAO to draw a box
+        "to",           # The level to port to
+    ]
+
+    def __init__ (self, to, **kws):
+        # Call up to the parent's __init__
+        super().__init__(**kws)
+
+        # Now do our own stuff
+        self.to     = to
+
+        # XXX create a VBO array
+        #vbo         = gl.VBO(
+        self.vao    = gl.VAO()
 
 FLOOR_THICKNESS = 0.2
 
