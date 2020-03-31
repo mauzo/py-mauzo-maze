@@ -250,13 +250,19 @@ class World:
         for obj, *pls in self.collision_list:
             # Assume we collide with this object.
             collide = True
+            outside  = []
             for pl in pls:
+                d   = glm.dot(new4, pl)
                 # If we are outside any of the planes...
-                if glm.dot(new4, pl) > margin:
+                if d > margin:
                     # we do not collide.
                     collide = False
                     break
+                elif d > 0:
+                    outside.append(pl)
             if collide:
+                if len(outside) > 1:
+                    print("Collision, outside", outside)
                 # Find the plane we collided with
                 for pl in pls:
                     if glm.dot(old4, pl) > margin:
