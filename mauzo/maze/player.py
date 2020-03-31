@@ -25,12 +25,9 @@ class Player:
         self.app    = app
         self.world  = app.world
 
-        self.walking    = vec3(0)
         # This will be updated by the camera
         self.facing     = quat()
-        self.falling    = False
-        self.jumping    = False
-        self.have_key   = False
+        self.walking    = vec3(0)
 
     def init (self):
         # Compile a display list.
@@ -42,8 +39,10 @@ class Player:
         self.reset()
 
     def reset (self):
-        self.pos    = self.app.world.start_pos()
-        self.vel    = vec3(0)
+        self.pos        = self.app.world.start_pos()
+        self.vel        = vec3(0)
+        self.jumping    = False
+        self.falling    = False
         self.have_key = False
         print("RESET", self.pos, self.vel)
 
@@ -96,8 +95,8 @@ class Player:
 
     # Set the flag to show we're jumping. We will only jump if we're on the
     # ground.
-    def jump (self):
-        self.jumping = True
+    def jump (self, j):
+        self.jumping = j
 
     bump = 0.49
 

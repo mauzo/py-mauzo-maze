@@ -17,7 +17,7 @@ _KEYS = [
     ("A",        ["walk", vec3(0, 1, 0)],       ["walk", vec3(0, -1, 0)]),
     ("D",        ["walk", vec3(0, -1, 0)],      ["walk", vec3(0, 1, 0)]),
     ("P",        ["toggle", "pause"],           None),
-    ("SPACE",    ["jump"],                      None),
+    ("SPACE",    ["jump", True],                ["jump", False]),
     ("F2",       ["toggle", "wireframe"],       None),
     ("F3",       ["toggle", "backface"],        None),
     ("F4",       ["toggle", "40fps"],           None),
