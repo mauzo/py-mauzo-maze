@@ -129,7 +129,7 @@ class World:
             e1, e2, e3  = (vec3(e) for e in w["edges"]) 
             px          = p + e1 + e2 + e3
             coll.append((
-                f["win"],
+                False,
                 plane_from_vectors(p, e1, e2),
                 plane_from_vectors(p, e2, e3),
                 plane_from_vectors(p, e3, e1),
