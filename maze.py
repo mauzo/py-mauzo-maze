@@ -14,3 +14,7 @@ finally:
 # Shader Sets
 # shader classes with default methods
 # shader includes
+
+# fix bump at corners
+# fix hang when we bump overhead
+#   ...generally remove excessive project_onto_plane calls
