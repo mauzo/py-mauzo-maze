@@ -2,9 +2,11 @@
 # These functions draw 3D objects. Most of them are used to build display
 # lists rather than called to render every frame.
 
-from    OpenGL.GL       import *
+import  numpy           as      np
+from    OpenGL.GL       import  *
 
-from    .vectors        import *
+from    .geometry       import  *
+from    .vectors        import  *
 
 # Draw a coloured cube around the origin. Not used; for checking on
 # camera positioning.
@@ -144,3 +146,40 @@ def _draw_ppiped (p, e1, e2, e3):
     draw_pgram(p, e3, e2)
     draw_pgram(p, e1, e3)
 
+# Create an array containing the vertices of a parallelogram. 
+# ary is a numpy array; offset is the offset of the first entry to set.
+# p is one corner; e1, e2 are vectors along the edges.
+# This function uses glm vectors.
+def make_pgram (p, e1, e2):
+    n = glm.normalize(glm.cross(e1, e2))
+
+    p1 = p + e1
+    p2 = p1 + e2
+    p3 = p + e2
+
+    return np.array([
+        [[*list(x), *list(n)] for x in (p, p1, p2, p, p2, p3)]
+    ], dtype=GLfloat).reshape(6, 6)
+
+# Create a numpy array containing the vertices of a parallelopiped.
+# p is the position of one corner. 
+# e1,e2,e3 are vectors from that corner along the three edges.
+# The edges must be specified right-handed for an outward-facing ppiped.
+# This uses glm vectors.
+def make_ppiped (p, e1, e2, e3):
+    b   = np.zeros((36, 6), dtype=GLfloat)
+
+    b[0:6]      = make_pgram(p, e1, e2)
+    b[6:12]     = make_pgram(p, e2, e3)
+    b[12:18]    = make_pgram(p, e3, e1)
+
+    p   = p + e1 + e2 + e3
+    e1  = -e1
+    e2  = -e2
+    e3  = -e3
+
+    b[18:24]    = make_pgram(p, e2, e1)
+    b[24:30]    = make_pgram(p, e3, e2)
+    b[30:36]    = make_pgram(p, e1, e3)
+
+    return b
