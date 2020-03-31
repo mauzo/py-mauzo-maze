@@ -115,6 +115,22 @@ def draw_pgram (p, e1, e2):
 # vectors from that corner along the three edges.
 # The edges must be specified right-handed for an outward-facing ppiped.
 def draw_ppiped (p, e1, e2, e3):
+    _draw_ppiped(p, e1, e2, e3)
+
+    e1n = vec_mul(vec_unit(e1), 0.49)
+    e2n = vec_mul(vec_unit(e2), 0.49)
+    e3n = vec_mul(vec_unit(e3), 0.49)
+    p   = vec_subtract(p, vec_add(e1n, vec_add(e2n, e3n)))
+    e1  = vec_add(e1, vec_mul(e1n, 2))
+    e2  = vec_add(e2, vec_mul(e2n, 2))
+    e3  = vec_add(e3, vec_mul(e3n, 2))
+
+    glPushAttrib(GL_POLYGON_BIT)
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+    _draw_ppiped(p, e1, e2, e3)
+    glPopAttrib()
+
+def _draw_ppiped (p, e1, e2, e3):
     draw_pgram(p, e1, e2)
     draw_pgram(p, e2, e3)
     draw_pgram(p, e3, e1)
