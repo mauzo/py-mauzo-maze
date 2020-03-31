@@ -202,6 +202,16 @@
           "colour":     "Purple",
           "win":        False,
         },
+        { "pos":        (8, 2, -1),
+          "edges":      ((0, 0.1, 0), (2, 0, 0), (0, 0, 5)),
+          "colour":     "Purple",
+          "win":        False,
+        },
+        { "pos":        (0.1, 24, -1),
+          "edges":      ((0, 0.1, 0), (1.9, 0, 0), (0, 0, 5)),
+          "colour":     "Purple",
+          "win":        False,
+        },
     ],
 
     "keys": [
