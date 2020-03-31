@@ -38,7 +38,7 @@ class Display:
 
         glViewport(0, 0, w, h)
 
-        self.perspective    = glm.perspective(glm.radians(45), aspect, 1, 40)
+        self.perspective    = glm.perspective(glm.radians(45), aspect, 1, 100)
         self.overlay        = glm.ortho(0, w, 0, h, -1, 1)
 
         glMatrixMode(GL_PROJECTION)
