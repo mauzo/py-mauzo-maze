@@ -314,7 +314,7 @@
         },
     ],
 
-    "keys": [
+    "items": [
     ],
 
     "collide": [

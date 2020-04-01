@@ -101,4 +101,4 @@ class Renderer:
         prg.u_proj(proj)
         prg.u_view(view)
         prg.u_view_pos(glm.inverse(view) * vec4(0, 0, 0, 1))
-        world.render_keys(ctx)
+        world.render_items(ctx)

@@ -43,7 +43,7 @@ class Player:
         self.vel        = vec3(0)
         self.jumping    = False
         self.falling    = False
-        self.have_key = False
+        self.have_key   = False
         print("RESET", self.pos, self.vel)
 
     # The speeds at which the player walks, jumps and falls.
@@ -182,10 +182,7 @@ class Player:
         pos     = self.pos
         world   = self.world
 
-        key     = world.key_collision(pos)
-        if key:
-            self.have_key = True
-            key.visible = False
+        world.check_item_collisions(self)
 
         # If we fall too far we die.
         if world.doomed(pos):

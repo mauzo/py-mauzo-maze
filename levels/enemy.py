@@ -69,9 +69,9 @@
     "walls": [],
     
     "collide": [],
-    "keys":[
-        {   "pos":      (16, 5, -4.8),
-            "colour":   "Green",
+    "items": [
+        {   "type":     "Key",
+            "pos":      (16, 5, -4.8),
         },
     ],
 

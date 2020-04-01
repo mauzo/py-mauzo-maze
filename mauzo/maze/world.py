@@ -16,12 +16,26 @@ class Item:
         "pos",      # our position
     ]
 
-    def __init__ (self, world, pos):
+    bump    = 0.5
+
+    # We accept a 'type' argument and do nothing with it.
+    def __init__ (self, world, pos, type=None):
         self.world  = world
         self.pos    = vec3(pos)
 
     def render (self, ctx):
         raise RuntimeError("render called on base Item")
+
+    def activate (self, player):
+        raise RuntimeError("activate called on base Item")
+
+    def collide (self, pos, bump):
+        d   = glm.length(self.pos - pos)
+        b   = bump + self.bump
+        return d < b
+
+    def reset (self):
+        pass
 
 class Key (Item):
     __slots__ = [
@@ -36,9 +50,17 @@ class Key (Item):
         # Now do our own stuff
         render       = self.world.app.render
         self.model   = render.load_model("key")
+
+        self.reset()
+
+    def reset (self):
+        super().reset()
         self.visible = True  
 
     def render (self, ctx):
+        if not self.visible:
+            return
+
         prg     = ctx.shader
         now     = ctx.now
         model   = glm.translate(mat4(1), self.pos)
@@ -51,6 +73,11 @@ class Key (Item):
         prg.u_model(model)
         prg.u_normal_matrix(normal)
         self.model.render(prg)
+
+    def activate (self, player):
+        if self.visible:
+            player.have_key = True
+            self.visible = False
 
 class Portal (Item):
     __slots__ = [
@@ -65,9 +92,39 @@ class Portal (Item):
         # Now do our own stuff
         self.to     = to
 
-        # XXX create a VBO array
-        #vbo         = gl.VBO(
-        self.vao    = gl.VAO()
+        buf         = make_ppiped(vec3(-0.5, -0.5, -0.5),
+                        vec3(1, 0, 0), vec3(0, 0, 1), vec3(0, 1, 0))
+        vbo         = gl.Buffer("vbo", buf)
+        vao         = gl.VAO()
+        attrs       = gl.shader_attribs()
+
+        vbo.bind()
+        vao.bind()
+        vao.add_attrib(attrs["b_pos"],      3, 6, 0)
+        vao.add_attrib(attrs["b_normal"],   3, 6, 3)
+        vao.add_primitive(GL_TRIANGLES, 0, 36)
+        vao.unbind()
+
+        self.vao    = vao
+
+    def render (self, ctx):
+        prg     = ctx.shader
+        model   = glm.translate(mat4(1), self.pos)
+        model   = glm.scale(model, vec3(0.8))
+        normal  = gl.make_normal_matrix(model)
+
+        prg.use()
+        prg.u_model(model)
+        prg.u_normal_matrix(normal)
+        prg.u_material_diffuse(vec3(1, 1, 1))
+        prg.u_material_specular(1)
+        prg.u_material_shininess(128)
+
+        self.vao.use()
+        self.vao.render()
+
+    def activate (self, player):
+        print("PORT TO", self.to)
 
 FLOOR_THICKNESS = 0.2
 
@@ -78,11 +135,11 @@ class World:
         "dl",               # A displaylist to render the world
         "doom_z",           # We die if we fall this low
         "floors",           # XXX the floors out of the level file
-        "keys",             # The keys in this level
+        "items",            # The items on this level
         "level",            # The current level name
         "_next_level",      # The name of the next level, or None
         "start",            # The player's starting position
-        "start_angle",      # Tha player's starting angle
+        "start_angle",      # The player's starting angle
     ]
 
     def __init__ (self, app):
@@ -97,8 +154,8 @@ class World:
         self.load_level()
 
     def reset (self):
-        for k in self.keys:
-            k.visible = True
+        for i in self.items:
+            i.reset()
 
     def next_level (self):
         if not self._next_level:
@@ -133,7 +190,7 @@ class World:
 
         self.init_dl(level)
         self.init_shader_lights(level)
-        self.init_keys(level)
+        self.init_items(level)
         self.init_collision(level)
 
     def init_collision (self, level):
@@ -192,13 +249,17 @@ class World:
         prg.u_sun_color_diffuse(vec3(light["diffuse"]))
         prg.u_sun_color_specular(vec3(light["specular"]))
 
-    def init_keys (self, level):
-        col     = level["colours"]
-        keys    = []
-        for k in level["keys"]:
-            keys.append(Key(world=self, pos=k["pos"]))
+    def init_items (self, level):
+        items   = []
+        # XXX We look up the class for each item in the current module.
+        # This is perhaps not the best idea...
+        classes = globals()
 
-        self.keys = keys
+        for i in level["items"]:
+            Cls = classes[i["type"]]
+            items.append(Cls(world=self, **i))
+
+        self.items  = items
 
     # Render the world using the display list
     def render (self):
@@ -206,10 +267,9 @@ class World:
 
     # Render the keys. Since this uses shader rendering it needs to be
     # separate from .render above.
-    def render_keys (self, ctx):
-        for k in self.keys:
-            if k.visible:
-                k.render(ctx)
+    def render_items (self, ctx):
+        for i in self.items:
+            i.render(ctx)
 
     # Position our lights
     def draw_lights (self, level):
@@ -299,11 +359,10 @@ class World:
                 return obj, vec3(pl)
         return None
 
-    def key_collision (self, player):
-        for key in self.keys:
-            if glm.length(player - key.pos) < 1:
-                return key
-        return None
+    def check_item_collisions (self, player):
+        for item in self.items:
+            if item.collide(player.pos, player.bump):
+                item.activate(player)
     
     # Check if the player has moved outside the world and died.
     def doomed (self, p):

@@ -65,7 +65,7 @@
     "walls": [],
     
     "collide": [],
-    "keys":    [],
+    "items":   [],
 
     # We die if we fall this low.
     "doom_z":   -20,

@@ -134,9 +134,13 @@
         },
     ],
 
-    "keys": [
-        {   "pos":      (-5, -5, -4.8),
-            "colour":   "Green",
+    "items": [
+        {   "type":     "Key",
+            "pos":      (-5, -5, -4.8),
+        },
+        {   "type":     "Portal",
+            "pos":      (0, 0, 0),
+            "to":       "enemy",
         },
     ],
 
