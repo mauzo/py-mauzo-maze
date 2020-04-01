@@ -3,6 +3,7 @@
 from    OpenGL.GL       import *
 from    OpenGL.GLU      import *
 
+from    .exceptions     import *
 from    .geometry       import *
 
 EPSILON = 0.0001
@@ -124,8 +125,7 @@ class Player:
             if self.falling:
                 self.vel    = vec3(0)
                 if win:
-                    self.app.win()
-                    return None
+                    raise XPortal(world.next_level)
             self.falling    = False
             return norm
 
@@ -186,5 +186,4 @@ class Player:
 
         # If we fall too far we die.
         if world.doomed(pos):
-            self.app.die()
-            return
+            raise XDie()

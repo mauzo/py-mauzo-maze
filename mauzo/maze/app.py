@@ -4,6 +4,7 @@ import  glfw
 
 from . import camera
 from . import display
+from . import exceptions
 from . import input
 from . import options
 from . import player
@@ -151,24 +152,12 @@ class MazeApp:
     def physics (self):
         # Run the physics. Pass in the time taken since the last frame.
         dt = self.clock.dt
-        self.player.physics(dt)
-        self.camera.physics(dt)
+
+        try:
+            self.player.physics(dt)
+            self.camera.physics(dt)
+        except exceptions.XMaze as x:
+            x.handle(self)
 
     def post_quit (self):
         self.display.post_close()
-
-    # The player has died...
-    def die (self):
-        print("AAAARGH!!!")
-        self.player.reset()
-        self.camera.reset()
-        self.world.reset()
-
-    # The player has won...
-    def win (self):
-        print("YaaaY!!!!")
-        if self.world.next_level():
-            self.player.reset()
-            self.camera.reset()
-        else:
-            self.post_quit()

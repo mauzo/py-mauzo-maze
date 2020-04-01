@@ -137,7 +137,7 @@ class World:
         "floors",           # XXX the floors out of the level file
         "items",            # The items on this level
         "level",            # The current level name
-        "_next_level",      # The name of the next level, or None
+        "next_level",       # The name of the next level, or None
         "start",            # The player's starting position
         "start_angle",      # The player's starting angle
     ]
@@ -151,19 +151,11 @@ class World:
             self.level  = "start"
 
     def init (self):
-        self.load_level()
+        self._load_level()
 
     def reset (self):
         for i in self.items:
             i.reset()
-
-    def next_level (self):
-        if not self._next_level:
-            return False
-
-        self.level  = self._next_level
-        self.load_level()
-        return True
 
     def read_level (self, level):
         fp  = open("levels/%s.py" % level, "r")
@@ -175,7 +167,11 @@ class World:
         # alternatives are annoying.
         return eval(py)
     
-    def load_level (self):
+    def load_level (self, name):
+        self.level  = name
+        self._load_level()
+
+    def _load_level (self):
         level       = self.read_level(self.level)
 
         self.start          = vec3(level["start"])
@@ -184,9 +180,9 @@ class World:
         self.floors         = level["floors"]
 
         if "next_level" in level:
-            self._next_level = level["next_level"]
+            self.next_level = level["next_level"]
         else:
-            self._next_level = None
+            self.next_level = None
 
         self.init_dl(level)
         self.init_shader_lights(level)
