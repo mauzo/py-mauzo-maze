@@ -34,27 +34,22 @@
     #   pos         The coordinates of one corner
     #   edges       The vectors along the two edges, X first, then Y.
     #   colour      A tuple of (red, green, blue)
-    #   win         True if this is a winning platform, False otherwise
     "floors": [
         { "pos":        (-3, -3, -1),
           "edges":      ((5, 0, 0), (0, 5, 0)),
           "colour":     "Red",
-          "win":        False,
         },
         { "pos":        (12, -8, 3),
           "edges":      ((5, 0, 0), (0, 5, 0)),
           "colour":     "Green",
-          "win":        False,
         },
         { "pos":        (4, -3, 1),
           "edges":      ((5, 0, 0), (0, 5, 0)),
           "colour":     "Blue",
-          "win":        False,
         },
         { "pos":        (19, -1, 5),
           "edges":      ((3, 0, 0), (0, 3, 0)),
           "colour":     "White",
-          "win":        True,
         },
         
     ],
@@ -65,7 +60,12 @@
     "walls": [],
     
     "collide": [],
-    "items":   [],
+    "items":   [
+        {   "type":     "Portal",
+            "pos":      (20.5, 1, 6),
+            "to":       "key",
+        },
+    ],
 
     # We die if we fall this low.
     "doom_z":   -20,

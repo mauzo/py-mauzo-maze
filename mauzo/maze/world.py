@@ -5,6 +5,7 @@ import  numpy       as      np
 from    OpenGL.GL   import  *
 
 from    .drawing    import *
+from    .exceptions import *
 from    .geometry   import *
 from    .           import gl
 
@@ -125,6 +126,7 @@ class Portal (Item):
 
     def activate (self, player):
         print("PORT TO", self.to)
+        raise XPortal(self.to)
 
 FLOOR_THICKNESS = 0.2
 
@@ -197,7 +199,6 @@ class World:
             e3          = vec3(0, 0, -FLOOR_THICKNESS)
             px          = p + e1 + e2 + e3
             coll.append((
-                f["win"],
                 plane_from_vectors(p, e1, e2),
                 plane_from_vectors(p, e2, e3),
                 plane_from_vectors(p, e3, e1),
@@ -211,7 +212,6 @@ class World:
             e1, e2, e3  = (vec3(e) for e in w["edges"]) 
             px          = p + e1 + e2 + e3
             coll.append((
-                False,
                 plane_from_vectors(p, e1, e2),
                 plane_from_vectors(p, e2, e3),
                 plane_from_vectors(p, e3, e1),
@@ -332,7 +332,7 @@ class World:
     def collision (self, old, new, margin):
         old4    = vec4(old, 1)
         new4    = vec4(new, 1)
-        for obj, *pls in self.collision_list:
+        for pls in self.collision_list:
             # Assume we collide with this object.
             collide = True
             outside  = []
@@ -352,7 +352,7 @@ class World:
                 for pl in pls:
                     if glm.dot(old4, pl) > margin:
                         break
-                return obj, vec3(pl)
+                return vec3(pl)
         return None
 
     def check_item_collisions (self, player):

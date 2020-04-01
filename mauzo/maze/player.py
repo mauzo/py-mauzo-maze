@@ -121,13 +121,10 @@ class Player:
             print("fallen upwards! vel", vel)
 
         if hit:
-            (win, norm) = hit
             if self.falling:
                 self.vel    = vec3(0)
-                if win:
-                    raise XPortal(world.next_level)
             self.falling    = False
-            return norm
+            return hit
 
         self.pos        = npos
         self.vel        = vel
@@ -160,8 +157,7 @@ class Player:
             npos    = pos + vel * dt
             hit = self.world.collision(pos, npos, self.bump)
             if hit:
-                obj, norm = hit
-                vel = project_onto_plane(norm, vel)
+                vel = project_onto_plane(hit, vel)
             else:
                 break
 
