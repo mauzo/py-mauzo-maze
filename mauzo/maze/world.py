@@ -232,7 +232,6 @@ class World:
         self.draw_lights(level)
         self.draw_floors(level)
         self.draw_walls(level)
-        self.draw_collision(level)
         draw_origin_marker()
         glEndList()
 
@@ -290,11 +289,6 @@ class World:
             e3          = [0, 0, -FLOOR_THICKNESS]
             
             draw_ppiped(p, e1, e2, e3)
-
-    def draw_collision (self, level):
-        glColor(1, 1, 1, 1)
-        for f in level["collide"]:
-            draw_ppiped(f["pos"], *f["edges"])
 
     def draw_walls (self, level):
         colours = level["colours"]

@@ -16,9 +16,6 @@
     "start":      (0, 0, 0),
     "start_angle": (0, -10),
 
-    # The name of the next level
-    "next_level":   "key",
-
     # The lights.
     "lights":   [
         {   "type":         "directional",
@@ -59,7 +56,6 @@
     # can see.
     "walls": [],
     
-    "collide": [],
     "items":   [
         {   "type":     "Portal",
             "pos":      (20.5, 1, 6),

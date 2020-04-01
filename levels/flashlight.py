@@ -16,9 +16,6 @@
     "start":      (1, 25, 0),
     "start_angle": (90, -10),
 
-     # The name of the next level
-    "next_level":   "key",
-    
     # The lights.
     "lights":   [
         {   "type":         "directional",
@@ -264,9 +261,6 @@
             "pos":      (25, 1, 0),
             "to":       None,
         },
-    ],
-
-    "collide": [
     ],
 
     # We die if we fall this low.

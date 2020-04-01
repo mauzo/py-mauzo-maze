@@ -16,9 +16,6 @@
     "start":      (0, 0, 0),
     "start_angle": (0, -10),
 
-    # The name of the next level
-    "next_level":   "flashlight",
-
     # The lights.
     "lights":   [
         {   "type":         "directional",
@@ -62,7 +59,6 @@
     # can see.
     "walls": [],
     
-    "collide": [],
     "items": [
         {   "type":     "Key",
             "pos":      (16, 5, -4.8),
