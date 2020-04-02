@@ -121,6 +121,7 @@ class World:
         prg     = self.app.render.shader
         light   = level["lights"][0]
         
+        prg.use()
         prg.u_sun_direction(vec3(light["direction"]))
         prg.u_sun_color_ambient(vec3(light["ambient"]))
         prg.u_sun_color_diffuse(vec3(light["diffuse"]))

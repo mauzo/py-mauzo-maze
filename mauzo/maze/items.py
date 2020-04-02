@@ -7,8 +7,6 @@ from    .exceptions     import  *
 from    .geometry       import  *
 from    .               import  gl
 
-PI = glm.pi()
-
 class Item:
     __slots__ = [
         "world",    # the world we are in

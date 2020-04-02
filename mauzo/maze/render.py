@@ -102,3 +102,5 @@ class Renderer:
         prg.u_view(view)
         prg.u_view_pos(glm.inverse(view) * vec4(0, 0, 0, 1))
         world.render_items(ctx)
+
+        self.overlay.render_gl3(ctx)

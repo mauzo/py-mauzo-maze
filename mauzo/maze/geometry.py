@@ -11,6 +11,10 @@ Yneg    = vec3(0, -1, 0)
 Zpos    = vec3(0, 0, 1)
 Zneg    = vec3(0, 0, -1)
 
+PI      = glm.pi()
+TWOPI   = glm.two_pi()
+HALFPI  = glm.half_pi()
+
 # Given a plane x = p + sa + tb return the vec4(A,B,C,D) where
 # vec3(A,B,C) is normal to the plane and Ax + By + Cz + D = 0 is an
 # equation of the plane. 
