@@ -6,8 +6,6 @@ from    OpenGL.GLU      import *
 from    .exceptions     import *
 from    .geometry       import *
 
-EPSILON = 0.0001
-
 class Player:
     __slots__ = [
         "app",          # A ref to our app
@@ -40,7 +38,7 @@ class Player:
         self.reset()
 
     def reset (self):
-        self.pos        = self.world.start_pos()
+        self.pos        = self.world.start
         self.vel        = zero3
         self.jumping    = False
         self.falling    = False
@@ -117,9 +115,6 @@ class Player:
         npos    = pos + vel * dt
         hit     = world.collision(pos, npos, self.bump)
 
-        if npos.z > pos.z:
-            print("fallen upwards! vel", vel)
-
         if hit:
             if self.falling:
                 self.vel    = vec3(0)
@@ -143,8 +138,6 @@ class Player:
         elif glm.dot(walk_n, floor) > -0.5:
             vel     = project_onto_plane(floor, walk)
             #vel     *= glm.clamp(1 + 2 * cos_th, 0, 1)
-            print("vel", repr(vel), "gradient",
-                vel.z / glm.length(vel.xy))
         else:
             vel = vec3(0)
 

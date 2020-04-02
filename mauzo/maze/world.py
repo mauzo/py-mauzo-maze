@@ -18,10 +18,8 @@ class World:
         "collision_list",   # Used to detect collisions
         "dl",               # A displaylist to render the world
         "doom_z",           # We die if we fall this low
-        "floors",           # XXX the floors out of the level file
         "items",            # The items on this level
         "level",            # The current level name
-        "next_level",       # The name of the next level, or None
         "start",            # The player's starting position
         "start_angle",      # The player's starting angle
     ]
@@ -61,12 +59,6 @@ class World:
         self.start          = vec3(level["start"])
         self.start_angle    = level["start_angle"]
         self.doom_z         = level["doom_z"]
-        self.floors         = level["floors"]
-
-        if "next_level" in level:
-            self.next_level = level["next_level"]
-        else:
-            self.next_level = None
 
         self.init_dl(level)
         self.init_shader_lights(level)
@@ -183,27 +175,6 @@ class World:
             glColor3f(*colours[c])
             draw_ppiped(p, *es)
 
-    # Find the floor below a given position.
-    # v is the point in space we want to start from.
-    # Returns one of the dictionaries from World["floors"], or None.
-    # This assumes floors are horizontal axis-aligned rectangles.
-    def find_floor_below(self, v):
-        found = None
-        for f in self.floors:
-            pos = f["pos"]
-            edg = f["edges"]
-
-            if v.x < pos[0] or v.y < pos[1]:
-                continue
-            if v.x > pos[0] + edg[0][0] or v.y > pos[1]+edg[1][1]:
-                continue
-            if v.z < pos[2]:
-                continue
-            if found and pos[2] <= found["pos"][2]:
-                continue
-            found = f
-        return found
-
     # We have just moved from 'old' to 'new'.
     # margin is the bump margin.
     def collision (self, old, new, margin):
@@ -240,8 +211,4 @@ class World:
     # Check if the player has moved outside the world and died.
     def doomed (self, p):
         return p.z < self.doom_z
-
-    # Return our starting position
-    def start_pos (self):
-        return self.start
 
