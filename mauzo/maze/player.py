@@ -28,7 +28,7 @@ class Player:
 
         # This will be updated by the camera
         self.facing     = quat()
-        self.walking    = vec3(0)
+        self.walking    = zero3
 
     def init (self):
         # Compile a display list.
@@ -40,8 +40,8 @@ class Player:
         self.reset()
 
     def reset (self):
-        self.pos        = self.app.world.start_pos()
-        self.vel        = vec3(0)
+        self.pos        = self.world.start_pos()
+        self.vel        = zero3
         self.jumping    = False
         self.falling    = False
         self.have_key   = False
@@ -87,7 +87,7 @@ class Player:
 
     # Set our facing direction
     def face (self, angle):
-        self.facing = glm.rotate(quat(), radians(angle), vec3(0, 0, 1))
+        self.facing = glm.rotate(quat(), radians(angle), Zpos)
 
     # Set how we're trying to walk. We will only move if we're on the
     # ground. Don't attempt to set a Z coordinate
@@ -152,14 +152,17 @@ class Player:
 
     def check_collisions (self, vel, dt):
         pos     = self.pos
+        world   = self.world
 
-        while True:
+        npos    = pos + vel * dt
+        hit     = world.collision(pos, npos, self.bump)
+        if hit:
+            vel     = project_onto_plane(hit, vel)
             npos    = pos + vel * dt
-            hit = self.world.collision(pos, npos, self.bump)
+            hit     = world.collision(pos, npos, self.bump)
             if hit:
-                vel = project_onto_plane(hit, vel)
-            else:
-                break
+                vel     = zero3
+                npos    = pos
 
         self.pos    = npos
         self.vel    = vel
