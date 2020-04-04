@@ -107,7 +107,8 @@ class World:
         self.draw_lights(level)
         self.draw_floors(level)
         self.draw_walls(level)
-        self.draw_from_plan("levels/testwalls.png")
+        if "plan" in level:
+            self.draw_from_plan("levels/" + level["plan"] + ".png")
         draw_origin_marker()
         glEndList()
 

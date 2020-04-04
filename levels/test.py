@@ -45,6 +45,8 @@
         },
     ],
 
+    "plan": "testwalls",
+
     "items": [
     ],
 
