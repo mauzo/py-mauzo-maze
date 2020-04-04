@@ -3,6 +3,7 @@
 
 import  numpy       as      np
 from    OpenGL.GL   import  *
+import  PIL.Image
 
 from    .drawing    import *
 from    .exceptions import *
@@ -106,6 +107,7 @@ class World:
         self.draw_lights(level)
         self.draw_floors(level)
         self.draw_walls(level)
+        self.draw_from_plan("levels/testwalls.png")
         draw_origin_marker()
         glEndList()
 
@@ -174,6 +176,17 @@ class World:
 
             glColor3f(*colours[c])
             draw_ppiped(p, *es)
+
+    def draw_from_plan (self, plan):
+        image = PIL.Image.open(plan)
+        for p in range(image.width):
+            for q in range(image.height):
+                c = image.getpixel((p, q))
+                if c == (0, 0, 0):
+                    continue
+                print("PIXEL", (p, q), "colour", c)
+                glColor3f(c[0]/255, c[1]/255, c[2]/255)
+                draw_ppiped((p/10, q/6, 0), (0, 0.1, 0), (0.1, 0, 0), (0, 0, 5))
 
     # We have just moved from 'old' to 'new'.
     # margin is the bump margin.
