@@ -13,7 +13,7 @@
     },
 
     # The player's starting position
-    "start":      (10, 10, 0),
+    "start":      (5, 5, 0),
     "start_angle": (90, -10),
 
     # The lights.
