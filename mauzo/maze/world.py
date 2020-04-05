@@ -62,54 +62,40 @@ class World:
         self.doom_z         = level["doom_z"]
 
         self.init_dl(level)
-        self.init_shader_lights(level)
-        self.init_items(level)
-        self.init_collision(level)
 
-    def init_collision (self, level):
-        coll = []
-        for f in level["floors"]:
-            p           = vec3(f["pos"])
-            e1, e2      = (vec3(e) for e in f["edges"])
-            e3          = vec3(0, 0, -FLOOR_THICKNESS)
-            px          = p + e1 + e2 + e3
-            coll.append((
-                plane_from_vectors(p, e1, e2),
-                plane_from_vectors(p, e2, e3),
-                plane_from_vectors(p, e3, e1),
-                plane_from_vectors(px, e2, e1),
-                plane_from_vectors(px, e3, e2),
-                plane_from_vectors(px, e1, e3),
-            ))
-
-        for w in level["walls"]:
-            p           = vec3(w["pos"])
-            e1, e2, e3  = (vec3(e) for e in w["edges"]) 
-            px          = p + e1 + e2 + e3
-            coll.append((
-                plane_from_vectors(p, e1, e2),
-                plane_from_vectors(p, e2, e3),
-                plane_from_vectors(p, e3, e1),
-                plane_from_vectors(px, e2, e1),
-                plane_from_vectors(px, e3, e2),
-                plane_from_vectors(px, e1, e3),
-            ))
-
-        self.collision_list = coll
-        print("Collision:", coll)
-
-    # Build a display list representing the world, so we don't have to
-    # calculate all the triangles every frame.
     def init_dl (self, level):
-        self.dl = glGenLists(1)
-        glNewList(self.dl, GL_COMPILE)
-        #draw_cube_10()
+        self.start_dl()
+        self.init_collision()
         self.draw_lights(level)
         self.draw_floors(level)
         self.draw_walls(level)
         if "plan" in level:
             self.draw_from_plan("levels/" + level["plan"] + ".png")
+        self.finish_dl()
+        self.init_shader_lights(level)
+        self.init_items(level)
+
+    def init_collision (self):
+        self.collision_list = []
+
+    def add_collision_block (self, p, e1, e2, e3):
+        p, e1, e2, e3   = (vec3(v) for v in (p, e1, e2, e3))
+        px              = p + e1 + e2 + e3
+        self.collision_list.append((
+            plane_from_vectors(p, e1, e2),
+            plane_from_vectors(p, e2, e3),
+            plane_from_vectors(p, e3, e1),
+            plane_from_vectors(px, e2, e1),
+            plane_from_vectors(px, e3, e2),
+            plane_from_vectors(px, e1, e3),
+        ))
+
+    def start_dl (self):
+        self.dl = glGenLists(1)
+        glNewList(self.dl, GL_COMPILE)
         draw_origin_marker()
+
+    def finish_dl (self):
         glEndList()
 
     def init_shader_lights (self, level):
@@ -167,6 +153,7 @@ class World:
             e3          = [0, 0, -FLOOR_THICKNESS]
             
             draw_ppiped(p, e1, e2, e3)
+            self.add_collision_block(p, e1, e2, e3)
 
     def draw_walls (self, level):
         colours = level["colours"]
@@ -177,6 +164,7 @@ class World:
 
             glColor3f(*colours[c])
             draw_ppiped(p, *es)
+            self.add_collision_block(p, *es)
 
     def draw_from_plan (self, plan):
         image = PIL.Image.open(plan)
