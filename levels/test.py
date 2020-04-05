@@ -39,13 +39,13 @@
     # can see.
     "walls": [
          
-        { "pos":        (0, 0, -1),
+        { "pos":        (0, 0, -0.5),
           "edges":      ((60, 0, 0), (0, 60, 0), (0, 0, -0.5)),
           "colour":     "Red",
         },
     ],
 
-    "plan": "testwalls",
+    "plan": "flashlight_drawing",
 
     "items": [
     ],
