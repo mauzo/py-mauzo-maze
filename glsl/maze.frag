@@ -33,6 +33,7 @@ in      vec3        v_view_dir;
 out     vec4        f_color;
 
 uniform Material    u_material;
+uniform vec3        u_emission;
 uniform DirLight    u_sun;
 
 LightColor  light_basic         (LightColor l, LightParams p);
@@ -80,6 +81,9 @@ main ()
 
     // directional light
     vec3    result  = light_directional(u_sun, p);
+
+    // emissive light
+    result          += u_emission;
 
     f_color         = vec4(result, 1.0);
 }

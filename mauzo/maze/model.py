@@ -24,6 +24,8 @@ class Mesh:
         self.diffuse    = glm.vec3(mat.diffuse)
         self.specular   = mat.specular[0]
         self.shininess  = mat.shininess
+        self.emission   = glm.vec3(mat.emissive)
+
         if mat.texture:
             self.diffuseT   = gl.Texture(file=mat.texture.path)
         else:
@@ -56,6 +58,7 @@ class Mesh:
         prg.u_material_diffuse(self.diffuse)
         prg.u_material_specular(self.specular)
         prg.u_material_shininess(self.shininess)
+        prg.u_emission(self.emission)
 
         self.vao.use()
 
