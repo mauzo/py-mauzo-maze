@@ -10,10 +10,9 @@ struct LightParams {
     vec3    position;
     vec3    normal;
     vec3    view_dir;
+    vec3    light_dir;
 
-    vec3    color;
-    float   hilite;
-    float   shininess;
+    Material    material;
 };
 
 struct LightColor {
@@ -27,37 +26,36 @@ struct DirLight {
     LightColor  color;
 };
 
-in      vec3    v_pos;
-in      vec3    v_normal;
-in      vec2    v_tex;
+in      vec3        v_pos;
+in      vec3        v_normal;
+in      vec3        v_view_dir;
 
-out     vec4    f_color;
-
-uniform vec3        u_view_pos;
+out     vec4        f_color;
 
 uniform Material    u_material;
 uniform DirLight    u_sun;
 
-LightColor  light_basic         (LightColor l, LightParams p, vec3 light_dir);
+LightColor  light_basic         (LightColor l, LightParams p);
 vec3        light_directional   (DirLight light, LightParams p);
 
 LightColor
-light_basic (LightColor l, LightParams p, vec3 light_dir)
+light_basic (LightColor l, LightParams p)
 {
     LightColor  res;
+    Material    m   = p.material;
 
     // ambient
-    res.ambient         = l.ambient * p.color;
+    res.ambient         = l.ambient * m.diffuse;
 
     // diffuse
-    float   diff        = max(dot(p.normal, light_dir), 0.0);
-    res.diffuse         = l.diffuse * diff * p.color;
+    float   diff        = max(dot(p.normal, p.light_dir), 0.0);
+    res.diffuse         = l.diffuse * diff * m.diffuse;
 
     // specular
-    vec3    reflect_dir = reflect(-light_dir, p.normal);
+    vec3    reflect_dir = reflect(-p.light_dir, p.normal);
     float   spec_base   = max(dot(p.view_dir, reflect_dir), 0.0);
-    float   spec        = pow(spec_base, p.shininess);
-    res.specular        = l.specular * spec * p.hilite;
+    float   spec        = pow(spec_base, m.shininess);
+    res.specular        = l.specular * spec * m.specular;
 
     return res;
 }
@@ -65,8 +63,8 @@ light_basic (LightColor l, LightParams p, vec3 light_dir)
 vec3 
 light_directional (DirLight light, LightParams p)
 {
-    vec3        light_dir   = normalize(-light.direction);
-    LightColor  l           = light_basic(light.color, p, light_dir);
+    p.light_dir     = normalize(-light.direction);
+    LightColor  l   = light_basic(light.color, p);
 
     return l.ambient + l.diffuse + l.specular;
 }
@@ -74,14 +72,11 @@ light_directional (DirLight light, LightParams p)
 void 
 main ()
 {
-    // fragment parameters
     LightParams p;
-    p.position  = v_pos;
-    p.normal    = normalize(v_normal);
-    p.view_dir  = normalize(u_view_pos - v_pos);
-    p.color     = u_material.diffuse;
-    p.hilite    = u_material.specular;
-    p.shininess = u_material.shininess;
+    p.position      = v_pos;
+    p.normal        = v_normal;
+    p.view_dir      = v_view_dir;
+    p.material      = u_material;
 
     // directional light
     vec3    result  = light_directional(u_sun, p);
