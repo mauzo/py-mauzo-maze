@@ -20,9 +20,9 @@
     "lights":   [
         {   "type":         "directional",
             "direction":    (0.3, -1.2, 0.4),
-            "ambient":      (0.3, 0.3, 0.3),
-            "diffuse":      (0.7, 0.7, 0.7),
-            "specular":     (0.7, 0.7, 0.7),
+            "ambient":      (0.5, 0.5, 0.5),
+            "diffuse":      (0.9, 0.9, 0.9),
+            "specular":     (1.0, 1.0, 1.0),
         },
     ],
 
