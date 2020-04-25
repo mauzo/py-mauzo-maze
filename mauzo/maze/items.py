@@ -61,7 +61,6 @@ class Key (Item):
         prg     = ctx.shader
         now     = ctx.now
         model   = glm.translate(mat4(1), self.pos)
-        model   = glm.scale(model, vec3(0.2))
         model   = glm.rotate(model, 0.8 * PI * now, vec3(0, 0, 1))
         model   = glm.rotate(model, PI/3, vec3(0, 1, 0))
         normal  = gl.make_normal_matrix(model)
@@ -94,11 +93,7 @@ class Portal (Item):
 
     def render (self, ctx):
         prg     = ctx.shader
-        model   = glm.translate(mat4(1), self.pos + vec3(0, 0, -1))
-        model   = glm.rotate(model, HALFPI, glm.vec3(0, 1, 0))
-        model   = glm.rotate(model, HALFPI, glm.vec3(0, 0, -1))
-        model   = glm.rotate(model, PI,     glm.vec3(1, 0, 0))
-        model   = glm.scale(model, vec3(0.8))
+        model   = glm.translate(mat4(1), self.pos)
         normal  = gl.make_normal_matrix(model)
 
         prg.use()
