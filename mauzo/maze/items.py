@@ -80,6 +80,7 @@ class Portal (Item):
     __slots__ = [
         "model",        # Our model
         "to",           # The level to port to
+        "dir",          # The direction the portal is facing
     ]
 
     def __init__ (self, to, **kws):
@@ -110,3 +111,8 @@ class Portal (Item):
         print("PORT TO", self.to)
         raise XPortal(self.to)
 
+    def collide (self, pos, bump):
+        if super().collide(pos, bump) == False:
+            return False
+        
+            
