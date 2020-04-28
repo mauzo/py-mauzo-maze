@@ -34,19 +34,40 @@ class Item:
     def reset (self):
         pass
 
-class Key (Item):
+class ModelItem (Item):
     __slots__ = [
-        "model",    # our model
+        "model",    # Our model
+    ]
+
+    def __init__ (self, **kws):
+        super().__init__(**kws) 
+
+        render       = self.world.app.render
+        self.model   = render.load_model(self.model_name)
+
+    def model_matrix (self, ctx):
+        return glm.translate(mat4(1), self.pos)
+
+    def render (self, ctx):
+        prg     = ctx.shader
+        model   = self.model_matrix(ctx)
+        normal  = gl.make_normal_matrix(model)
+
+        prg.use()
+        prg.u_model(model)
+        prg.u_normal_matrix(normal)
+        self.model.render(prg)
+
+class Key (ModelItem):
+    __slots__ = [
         "visible",  # Can you  see it?
     ]
+
+    model_name  = "key"
 
     def __init__ (self, **kws):
         # Call up to the parent class __init__
         super().__init__(**kws)
-
-        # Now do our own stuff
-        render       = self.world.app.render
-        self.model   = render.load_model("key")
 
         self.reset()
 
@@ -54,34 +75,28 @@ class Key (Item):
         super().reset()
         self.visible = True  
 
-    def render (self, ctx):
-        if not self.visible:
-            return
-
-        prg     = ctx.shader
-        now     = ctx.now
-        model   = glm.translate(mat4(1), self.pos)
-        model   = glm.scale(model, vec3(0.2))
-        model   = glm.rotate(model, 0.8 * PI * now, vec3(0, 0, 1))
+    def model_matrix (self, ctx):
+        model   = super().model_matrix(ctx)
+        model   = glm.rotate(model, 0.8 * PI * ctx.now, vec3(0, 0, 1))
         model   = glm.rotate(model, PI/3, vec3(0, 1, 0))
-        normal  = gl.make_normal_matrix(model)
+        return model
 
-        prg.use()
-        prg.u_model(model)
-        prg.u_normal_matrix(normal)
-        self.model.render(prg)
+    def render (self, ctx):
+        if self.visible:
+            super().render(ctx)
 
     def activate (self, player):
         if self.visible:
             player.have_key = True
             self.visible = False
 
-class Portal (Item):
+class Portal (ModelItem):
     __slots__ = [
-        "model",        # Our model
         "to",           # The level to port to
         "dir",          # The direction the portal is facing
     ]
+
+    model_name  = "portal"
 
     def __init__ (self, to, **kws):
         # Call up to the parent's __init__
@@ -89,23 +104,6 @@ class Portal (Item):
 
         # Now do our own stuff
         self.to     = to
-
-        render      = self.world.app.render
-        self.model  = render.load_model("portal")
-
-    def render (self, ctx):
-        prg     = ctx.shader
-        model   = glm.translate(mat4(1), self.pos + vec3(0, 0, -1))
-        model   = glm.rotate(model, HALFPI, glm.vec3(0, 1, 0))
-        model   = glm.rotate(model, HALFPI, glm.vec3(0, 0, -1))
-        model   = glm.rotate(model, PI,     glm.vec3(1, 0, 0))
-        model   = glm.scale(model, vec3(0.8))
-        normal  = gl.make_normal_matrix(model)
-
-        prg.use()
-        prg.u_model(model)
-        prg.u_normal_matrix(normal)
-        self.model.render(prg)
 
     def activate (self, player):
         print("PORT TO", self.to)
