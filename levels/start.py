@@ -60,6 +60,7 @@
         {   "type":     "Portal",
             "pos":      (20.5, 1, 6),
             "to":       "key",
+            "angle":    0
         },
     ],
 

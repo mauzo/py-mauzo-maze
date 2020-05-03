@@ -77,8 +77,8 @@ class Key (ModelItem):
 
     def model_matrix (self, ctx):
         model   = super().model_matrix(ctx)
-        model   = glm.rotate(model, 0.8 * PI * ctx.now, vec3(0, 0, 1))
-        model   = glm.rotate(model, PI/3, vec3(0, 1, 0))
+        model   = glm.rotate(model, 0.8 * PI * ctx.now, Zpos)
+        model   = glm.rotate(model, PI/3, Ypos)
         return model
 
     def render (self, ctx):
@@ -93,24 +93,31 @@ class Key (ModelItem):
 class Portal (ModelItem):
     __slots__ = [
         "to",           # The level to port to
-        "dir",          # The direction the portal is facing
+        "angle",        # The angle the portal is facing
     ]
 
     model_name  = "portal"
 
-    def __init__ (self, to, **kws):
+    def __init__ (self, to, angle, **kws):
         # Call up to the parent's __init__
         super().__init__(**kws)
 
         # Now do our own stuff
         self.to     = to
+        self.angle  = angle * PI
 
     def activate (self, player):
         print("PORT TO", self.to)
         raise XPortal(self.to)
 
+    def model_matrix (self, ctx):
+        model   = super().model_matrix(ctx)
+        model   = glm.rotate(model, self.angle, Zpos)
+        return model
+
     def collide (self, pos, bump):
         if super().collide(pos, bump) == False:
             return False
+        return True
         
             

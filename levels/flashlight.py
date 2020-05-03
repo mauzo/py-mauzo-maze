@@ -424,6 +424,7 @@
         {   "type":     "Portal",
             "pos":      (25, 1, 0),
             "to":       None,
+            "angle":    0
         },
     ],
 

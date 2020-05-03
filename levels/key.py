@@ -123,6 +123,7 @@
         {   "type":     "Portal",
             "pos":      (11, 8.5, 7),
             "to":       "enemy",
+            "angle":    0,
         },
     ],
 
