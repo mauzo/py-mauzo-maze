@@ -66,7 +66,7 @@ class Overlay:
             view    = mat4(1)
             model   = mat4(1)
             model   = glm.translate(model, vec3(30, 100, 0))
-            model   = glm.scale(model, vec3(20, 20, 1))
+            model   = glm.scale(model, vec3(100, 100, 5))
             model   = glm.rotate(model, HALFPI + 0.2, Xneg)
             model   = glm.rotate(model, PI, Zpos)
             normal  = gl.make_normal_matrix(model)
