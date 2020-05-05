@@ -49,9 +49,14 @@
 
     "items": [
         {   "type":     "Portal",
-            "pos":      (5, 0, 0),
+            "pos":      (15, 0, 0),
             "angle":    0,
             "to":       "test",
+        },
+        {   "type":     "Spike",
+            "pos":      (4, 0, -0.5),
+            "angle":    0,
+            "size":     1,
         },
     ],
 

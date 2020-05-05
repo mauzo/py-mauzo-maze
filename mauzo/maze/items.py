@@ -120,4 +120,33 @@ class Portal (ModelItem):
             return False
         return True
         
-            
+class Spike (ModelItem):
+    __slots__ = [
+        "angle",        # The angle the spike is facing
+        "size",         # How large it is 
+    ]
+
+    model_name  = "spike"
+
+    def __init__ (self, angle, size, **kws):
+        # Call up to the parent's __init__
+        super().__init__(**kws)
+
+        # Now do our own stuff
+        self.angle  = angle * PI
+        self.size   = size * 5
+        
+    def activate (self, player):
+        print("SPIKE")
+
+    def model_matrix (self, ctx):
+        model   = super().model_matrix(ctx)
+        model   = glm.rotate(model, self.angle, Zpos)
+        model   = glm.scale(model, vec3(self.size))
+        return model
+
+    def collide (self, pos, bump):
+        if super().collide(pos, bump) == False:
+            return False
+        return True
+        
