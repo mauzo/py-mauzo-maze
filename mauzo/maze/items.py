@@ -98,7 +98,7 @@ class Portal (ModelItem):
 
     model_name  = "portal"
 
-    def __init__ (self, to, angle, **kws):
+    def __init__ (self, angle, to=None, **kws):
         # Call up to the parent's __init__
         super().__init__(**kws)
 

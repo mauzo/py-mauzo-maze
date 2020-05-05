@@ -13,16 +13,16 @@
     },
 
     # The player's starting position
-    "start":      (5, 5, 0),
-    "start_angle": (90, -10),
+    "start":        (0, 0, 0),
+    "start_angle":  (0, -10),
 
     # The lights.
     "lights":   [
         {   "type":         "directional",
-            "direction":    (0.3, -1.2, 0.4),
-            "ambient":      (0.3, 0.3, 0.3),
-            "diffuse":      (0.7, 0.7, 0.7),
-            "specular":     (0.7, 0.7, 0.7),
+            "direction":    (0.3, 1.2, 0.4),
+            "ambient":      (0.5, 0.5, 0.5),
+            "diffuse":      (0.9, 0.9, 0.9),
+            "specular":     (1.0, 1.0, 1.0),
         },
     ],
 
@@ -39,15 +39,20 @@
     # can see.
     "walls": [
          
-        { "pos":        (0, 0, -0.5),
+        { "pos":        (-30, -30, -0.5),
           "edges":      ((60, 0, 0), (0, 60, 0), (0, 0, -0.5)),
           "colour":     "Red",
         },
     ],
 
-    "plan": "flashlight_drawing",
+    #"plan": "flashlight_drawing",
 
     "items": [
+        {   "type":     "Portal",
+            "pos":      (5, 0, 0),
+            "angle":    0,
+            "to":       "test",
+        },
     ],
 
     # We die if we fall this low.
