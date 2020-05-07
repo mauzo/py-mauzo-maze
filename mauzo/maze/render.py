@@ -95,7 +95,6 @@ class Renderer:
         gl.load_ffp_matrix(view)
         app.world.render()
         app.player.render()
-        self.overlay.render()
 
         prg.use()
         prg.u_proj(proj)
@@ -103,4 +102,4 @@ class Renderer:
         prg.u_view_pos(glm.inverse(view) * vec4(0, 0, 0, 1))
         world.render_items(ctx)
 
-        self.overlay.render_gl3(ctx)
+        self.overlay.render(ctx)

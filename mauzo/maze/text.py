@@ -3,7 +3,8 @@
 from    OpenGL.GL       import *
 import  pygame.freetype
 
-from    .       import gl
+from    .geometry   import *
+from    .           import gl
 
 TWO16   = 2**16
 TWO32   = 2**32
@@ -62,7 +63,7 @@ class Glyph:
             pen     = ctx.pen
 
             pen.update_buf(x + m[0], y + m[2], x + m[1], y + m[3])
-            pen.set_texture(self.texture)
+            pen.set_mask(self.texture)
             pen.render()
 
         ctx.x   += m[4]
@@ -76,30 +77,24 @@ class Pen:
     ]
 
     def __init__ (self, slc):
-        prg     = slc.build_shader(vert="plain", frag="text")
+        prg     = slc.build_shader(vert="2d", frag="text")
         vao     = gl.VAO()
         vbo     = gl.Buffer("vbo")
 
         buf     = gl.make_buffer([
             # vertices: to be updated
-            0, 0, 0,    0, 0, 0,    0, 0, 0,    0, 0, 0,
+            0, 0,   0, 0,   0, 0,   0, 0,
             # tex coords: static
-            0, 0,       0, 1,       1, 1,       1, 0,
+            0, 0,   0, 1,   1, 1,   1, 0,
         ])
 
         vbo.bind()
         vbo.load(buf, GL_STREAM_DRAW)
 
         vao.bind()
-        vao.add_attrib(prg.b_pos, 3, 3, 0)
-        vao.add_attrib(prg.b_tex, 2, 2, 12)
-        (x, y)  = (ctx.x, ctx.y)
-        pen     = ctx.pen
-
-        pen.update_buf(x + m[0], y + m[2], x + m[1], y + m[3])
-        pen.set_texture(self.texture)
-        pen.render()
-        vao.add_primitive(GL_QUADS, 0, 4)
+        vao.add_attrib(prg.b_pos, 2, 2, 0)
+        vao.add_attrib(prg.b_tex, 2, 2, 8)
+        vao.add_primitive(GL_TRIANGLE_FAN, 0, 4)
         vao.unbind()
         vbo.unbind()
 
@@ -111,17 +106,23 @@ class Pen:
         self.shader.use()
         self.vao.use()
 
+    def set_projection (self, proj):
+        self.shader.u_proj(proj)
+
     def set_origin_scale (self, x, y, scale):
         model   = glm.translate(mat4(1), vec3(x, y, 0))
         model   = glm.scale(model, vec3(scale))
         self.shader.u_model(model)
 
-    def set_texture (self, tex):
-        self.shader.u_char_texture(tex)
+    def set_mask (self, tex):
+        self.shader.u_mask(tex)
+
+    def set_color (self, color):
+        self.shader.u_color(color)
 
     def update_buf (self, x0, y0, x1, y1):
         buf     = gl.make_buffer([
-            x0, y1, 0,  x0, y0, 0,  x1, y0, 0,  x1, y1, 0,
+            x0, y1, x0, y0, x1, y0, x1, y1,
         ])
         self.vbo.update(0, buf)
 
@@ -188,4 +189,6 @@ class GLFont:
         pen.use()
         pen.set_origin_scale(x, y, size)
         for c in msg:
-            chars[c].show(ctx)
+            chars[c].show3(ctx)
+
+        return (ctx.x, ctx.y)
