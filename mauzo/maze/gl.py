@@ -51,6 +51,9 @@ def load_ffp_matrix (mat):
 def make_normal_matrix (model):
     return glm.transpose(glm.inverse(glm.mat3(model)))
 
+def make_buffer (pyary):
+    return np.array(pyary, dtype=GLfloat)
+
 # Used by Texture below.
 _tex_wrap = {
     False:      GL_CLAMP,
@@ -378,9 +381,13 @@ class Buffer:
     def unbind (self):
         glBindBuffer(self.targ, 0)
 
-    def load (self, data):
+    def load (self, data, usage=GL_STATIC_DRAW):
         self.bind()
-        glBufferData(self.targ, data, GL_STATIC_DRAW)
+        glBufferData(self.targ, data, usage)
+
+    def update (self, offset, data):
+        self.bind()
+        glBufferSubData(self.targ, offset, None, data)
 
 # VAOs
 
