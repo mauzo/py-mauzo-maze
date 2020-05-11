@@ -146,7 +146,7 @@ class Spike (ModelItem):
 
         # Now do our own stuff
         self.angle  = angle * PI
-        self.size   = size * 5
+        self.size   = size * 3
 
         model   = glm.translate(Id4, self.pos)
         model   = glm.rotate(model, self.angle, Zpos)
@@ -156,8 +156,11 @@ class Spike (ModelItem):
     def activate (self, player):
         print("SPIKE")
 
-    def collide (self, pos, bump):
-        if super().collide(pos, bump) == False:
-            return False
-        return True
-        
+    def collide (self, opos, bump):
+        pos = self.inverse_matrix * vec4(opos, 1)
+        if pos.x < 1 and pos.x > -1 \
+           and pos.y < 1 and pos.y > -1 \
+           and pos.z > 0 and pos.z < 0.3:
+            print("SPIKE:", opos, pos)
+            return True
+        return False

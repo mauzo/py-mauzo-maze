@@ -13,7 +13,7 @@
     },
 
     # The player's starting position
-    "start":        (0, 0, 0),
+    "start":        (6, 6, 6),
     "start_angle":  (0, -10),
 
     # The lights.
@@ -39,7 +39,7 @@
     # can see.
     "walls": [
          
-        { "pos":        (-30, -30, -0.5),
+        { "pos":        (-30, -30, 0),
           "edges":      ((60, 0, 0), (0, 60, 0), (0, 0, -0.5)),
           "colour":     "Red",
         },
@@ -48,13 +48,8 @@
     #"plan": "flashlight_drawing",
 
     "items": [
-        {   "type":     "Portal",
-            "pos":      (15, 0, 0),
-            "angle":    0,
-            "to":       "test",
-        },
         {   "type":     "Spike",
-            "pos":      (4, 0, -0.5),
+            "pos":      (15, 15, 0),
             "angle":    0,
             "size":     1,
         },
