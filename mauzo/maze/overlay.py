@@ -53,7 +53,7 @@ class Overlay:
         pen.use()
         pen.set_projection(proj)
         pen.set_color(vec4(1, 0.5, 0, 0.8))
-        self.font.show3(pen, "PAUSED", 0, 0, 100)
+        self.font.show3(pen, "PAUSED", 0, 0, 0.1)
 
     def render_key (self, ctx):
         if not self.player.have_key:
@@ -63,8 +63,8 @@ class Overlay:
         proj    = self.display.overlay
         view    = Id4
         model   = Id4
-        model   = glm.translate(model, vec3(30, 100, 0))
-        model   = glm.scale(model, vec3(100, 100, 5))
+        model   = glm.translate(model, vec3(0.05, 0.13, 0))
+        model   = glm.scale(model, vec3(0.2))
         model   = glm.rotate(model, HALFPI + 0.2, Xneg)
         model   = glm.rotate(model, PI, Zpos)
         normal  = gl.make_normal_matrix(model)

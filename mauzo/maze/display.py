@@ -39,7 +39,10 @@ class Display:
         glViewport(0, 0, w, h)
 
         self.perspective    = glm.perspective(glm.radians(45), aspect, 1, 100)
-        self.overlay        = glm.ortho(0, w, 0, h, -1, 1)
+        if w > h:
+            self.overlay    = glm.ortho(0, aspect, 0, 1, -1, 1)
+        else:
+            self.overlay    = glm.ortho(0, 1, 0, 1/aspect, -1, 1)
 
         glMatrixMode(GL_PROJECTION)
         gl.load_ffp_matrix(self.perspective)
