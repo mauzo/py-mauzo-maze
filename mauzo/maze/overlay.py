@@ -61,8 +61,8 @@ class Overlay:
 
         prg     = self.shader
         proj    = self.display.overlay
-        view    = mat4(1)
-        model   = mat4(1)
+        view    = Id4
+        model   = Id4
         model   = glm.translate(model, vec3(30, 100, 0))
         model   = glm.scale(model, vec3(100, 100, 5))
         model   = glm.rotate(model, HALFPI + 0.2, Xneg)

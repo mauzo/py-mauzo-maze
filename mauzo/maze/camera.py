@@ -6,6 +6,8 @@ from    glm         import degrees, radians, vec2, vec3, vec4
 from    math        import fmod
 from    OpenGL.GL   import *
 
+from    .geometry   import *
+
 # This is the speed the camera pans at, in radians/second.
 CAMERA_PAN  = radians(60)
 
@@ -87,7 +89,7 @@ class Camera:
         angle   = self.angle
         
         # Start from the identity transformation.
-        view    = glm.mat4(1)
+        view    = Id4
         # Annoyingly, the camera starts pointing down (-Z).
         # Rotate so we are pointing down +X with +Z upwards.
         view    = glm.rotate(view, HALFPI, vec3(0, 0, 1))

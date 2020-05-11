@@ -11,6 +11,11 @@ Yneg    = vec3(0, -1, 0)
 Zpos    = vec3(0, 0, 1)
 Zneg    = vec3(0, 0, -1)
 
+Id4     = mat4(1)
+Id3     = mat3(1)
+
+quat0   = quat()
+
 PI      = glm.pi()
 TWOPI   = glm.two_pi()
 HALFPI  = glm.half_pi()

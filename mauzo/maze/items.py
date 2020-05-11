@@ -51,7 +51,7 @@ class ModelItem (Item):
         render       = self.world.app.render
         self.model   = render.load_model(self.model_name)
 
-        self.set_model_matrix(glm.translate(mat4(1), self.pos))
+        self.set_model_matrix(glm.translate(Id4, self.pos))
 
     def set_model_matrix (self, model):
         self.model_matrix       = model
@@ -88,7 +88,7 @@ class Key (ModelItem):
     def update (self, ctx):
         super().update(ctx)
 
-        model   = glm.translate(mat4(1), self.pos)
+        model   = glm.translate(Id4, self.pos)
         model   = glm.rotate(model, 0.8 * PI * ctx.now, Zpos)
         model   = glm.rotate(model, PI/3, Ypos)
 
@@ -119,7 +119,7 @@ class Portal (ModelItem):
         self.to     = to
         self.angle  = angle * PI
 
-        model   = glm.translate(mat4(1), self.pos)
+        model   = glm.translate(Id4, self.pos)
         model   = glm.rotate(model, self.angle, Zpos)
         self.set_model_matrix(model)
 
@@ -148,7 +148,7 @@ class Spike (ModelItem):
         self.angle  = angle * PI
         self.size   = size * 5
 
-        model   = glm.translate(mat4(1), self.pos)
+        model   = glm.translate(Id4, self.pos)
         model   = glm.rotate(model, self.angle, Zpos)
         model   = glm.scale(model, vec3(self.size))
         self.set_model_matrix(model)
