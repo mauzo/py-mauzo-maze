@@ -151,11 +151,12 @@ class MazeApp:
 
     def physics (self):
         # Run the physics. Pass in the time taken since the last frame.
-        dt = self.clock.dt
+        ctx = self.clock
 
         try:
-            self.player.physics(dt)
-            self.camera.physics(dt)
+            self.player.physics(ctx)
+            self.camera.physics(ctx)
+            self.world.physics(ctx)
         except exceptions.XMaze as x:
             x.handle(self)
 

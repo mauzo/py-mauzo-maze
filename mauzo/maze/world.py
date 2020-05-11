@@ -180,6 +180,10 @@ class World:
                 draw_ppiped(pos, *edges)
                 self.add_collision_block(pos, *edges)
 
+    def physics (self, ctx):
+        for i in self.items:
+            i.update(ctx)
+
     # We have just moved from 'old' to 'new'.
     # margin is the bump margin.
     def collision (self, old, new, margin):

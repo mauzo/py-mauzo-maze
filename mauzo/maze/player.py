@@ -169,8 +169,8 @@ class Player:
         self.check_collisions(vel, dt)
 
     # Run the player physics. dt the time since the last frame, in seconds.
-    def physics(self, dt):
-        self.update_position(dt)
+    def physics(self, ctx):
+        self.update_position(ctx.dt)
         pos     = self.pos
         world   = self.world
 

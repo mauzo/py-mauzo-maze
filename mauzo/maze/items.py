@@ -34,9 +34,15 @@ class Item:
     def reset (self):
         pass
 
+    def update (self, ctx):
+        pass
+
 class ModelItem (Item):
     __slots__ = [
-        "model",    # Our model
+        "model",            # Our model
+        "model_matrix",     # Our model matrix
+        "inverse_matrix",   # The inverse of model_matrix
+        "normal_matrix",    # The matrix to use for mormals
     ]
 
     def __init__ (self, **kws):
@@ -45,13 +51,17 @@ class ModelItem (Item):
         render       = self.world.app.render
         self.model   = render.load_model(self.model_name)
 
-    def model_matrix (self, ctx):
-        return glm.translate(mat4(1), self.pos)
+        self.set_model_matrix(glm.translate(mat4(1), self.pos))
+
+    def set_model_matrix (self, model):
+        self.model_matrix       = model
+        self.inverse_matrix     = glm.inverse(model)
+        self.normal_matrix      = gl.make_normal_matrix(model)
 
     def render (self, ctx):
         prg     = ctx.shader
-        model   = self.model_matrix(ctx)
-        normal  = gl.make_normal_matrix(model)
+        model   = self.model_matrix
+        normal  = self.normal_matrix
 
         prg.use()
         prg.u_model(model)
@@ -75,11 +85,14 @@ class Key (ModelItem):
         super().reset()
         self.visible = True  
 
-    def model_matrix (self, ctx):
-        model   = super().model_matrix(ctx)
+    def update (self, ctx):
+        super().update(ctx)
+
+        model   = glm.translate(mat4(1), self.pos)
         model   = glm.rotate(model, 0.8 * PI * ctx.now, Zpos)
         model   = glm.rotate(model, PI/3, Ypos)
-        return model
+
+        self.set_model_matrix(model)
 
     def render (self, ctx):
         if self.visible:
@@ -106,14 +119,13 @@ class Portal (ModelItem):
         self.to     = to
         self.angle  = angle * PI
 
+        model   = glm.translate(mat4(1), self.pos)
+        model   = glm.rotate(model, self.angle, Zpos)
+        self.set_model_matrix(model)
+
     def activate (self, player):
         print("PORT TO", self.to)
         raise XPortal(self.to)
-
-    def model_matrix (self, ctx):
-        model   = super().model_matrix(ctx)
-        model   = glm.rotate(model, self.angle, Zpos)
-        return model
 
     def collide (self, pos, bump):
         if super().collide(pos, bump) == False:
@@ -135,15 +147,14 @@ class Spike (ModelItem):
         # Now do our own stuff
         self.angle  = angle * PI
         self.size   = size * 5
+
+        model   = glm.translate(mat4(1), self.pos)
+        model   = glm.rotate(model, self.angle, Zpos)
+        model   = glm.scale(model, vec3(self.size))
+        self.set_model_matrix(model)
         
     def activate (self, player):
         print("SPIKE")
-
-    def model_matrix (self, ctx):
-        model   = super().model_matrix(ctx)
-        model   = glm.rotate(model, self.angle, Zpos)
-        model   = glm.scale(model, vec3(self.size))
-        return model
 
     def collide (self, pos, bump):
         if super().collide(pos, bump) == False:

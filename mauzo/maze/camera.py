@@ -78,8 +78,8 @@ class Camera:
         self.update_player_face()
 
     # Update the camera
-    def physics (self, dt):
-        self.do_pan(dt)
+    def physics (self, ctx):
+        self.do_pan(ctx.dt)
 
     # Build a view matrix for the current camera position.
     def view_matrix (self):
