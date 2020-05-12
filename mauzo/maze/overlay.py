@@ -23,15 +23,13 @@ class Overlay:
         self.display    = app.display
         self.player     = app.player
 
-    def init (self):
+    def init (self, slc):
         text.init()
         self.font   = text.GLFont("stencil.ttf", 100)
         self.key    = self.app.render.load_model("key")
 
-        slc         = gl.ShaderCompiler()
         self.shader = slc.build_shader(vert="plain", frag="overlay")
         self.pen    = text.Pen(slc)
-        slc.delete()
 
     def render (self, ctx):
         glPushAttrib(GL_ENABLE_BIT|GL_TEXTURE_BIT)

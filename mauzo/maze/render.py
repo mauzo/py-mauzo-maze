@@ -33,16 +33,13 @@ class Renderer:
 
     def init (self):
         gl.init()
-        self.overlay.init()
-        self.init_shader()
         self.register_options()
 
-    def init_shader (self):
-        slc     = gl.ShaderCompiler()
-        shader  = slc.build_shader(vert="plain", frag="maze")
-        slc.delete()
+        slc         = gl.ShaderCompiler()
+        self.shader = slc.build_shader(vert="plain", frag="maze")
 
-        self.shader = shader
+        self.overlay.init(slc)
+        slc.delete()
 
     def wireframe_on (self):
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
