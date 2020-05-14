@@ -4,6 +4,7 @@ import  glm
 from    glm     import mat3, mat4, quat, radians, vec2, vec3, vec4
 
 zero3   = vec3(0, 0, 0)
+zero4   = vec4(0, 0, 0, 0)
 Xpos    = vec3(1, 0, 0)
 Xneg    = vec3(-1, 0, 0)
 Ypos    = vec3(0, 1, 0)
@@ -32,6 +33,10 @@ def plane_from_vectors (p, a, b):
 # plane. This assumes planes/vectors through the origin.
 # XXX I think there must be an easier algorithm here...
 def project_onto_plane (p, v):
+    print(f"project_onto_plane: p {p!r} v {v!r}")
+    if glm.length(p) == 0:
+        raise RuntimeError("Can't project onto (0,0,0)!")
+
     r   = glm.cross(p, v)
     if r == zero3:
         return zero3 

@@ -1,6 +1,7 @@
 # world.py - World definitions
 # This defines the world (the level layout).
 
+import  math
 import  numpy       as      np
 from    OpenGL.GL   import  *
 import  PIL.Image
@@ -185,12 +186,16 @@ class World:
     # We have just moved from 'old' to 'new'.
     # margin is the bump margin.
     def collision (self, old, new, margin):
+        if math.isnan(new.x):
+            raise RuntimeError("NaNs not allowed!")
+            
         old4    = vec4(old, 1)
         new4    = vec4(new, 1)
         for pls in self.collision_list:
             # Assume we collide with this object.
             collide = True
-            outside  = []
+            #outside  = []
+            bump    = 0.0
             for pl in pls:
                 d   = glm.dot(new4, pl)
                 # If we are outside any of the planes...
@@ -198,15 +203,15 @@ class World:
                     # we do not collide.
                     collide = False
                     break
-                elif d > 0:
-                    outside.append(pl)
-            if collide:
-                if len(outside) > 1:
-                    print("Collision, outside", outside)
+                if d > 0:
+                    bump += d
+            if collide and bump < margin:
                 # Find the plane we collided with
-                for pl in pls:
+                for pl in [*pls, zero4]:
                     if glm.dot(old4, pl) > margin:
                         break
+                print(f"Collide: {old4!r} -> {new4!r}\n"\
+                    f"  bump {bump:.2} plane {pl!r}")
                 return vec3(pl)
         return None
 

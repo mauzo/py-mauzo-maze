@@ -1,5 +1,6 @@
 # player.py - The player character
 
+import  math
 from    OpenGL.GL       import *
 from    OpenGL.GLU      import *
 
@@ -153,14 +154,20 @@ class Player:
         walk    = self.facing * self.walking
         walk_n  = glm.normalize(walk)
 
+        print(f"walk_velocity: floor {floor!r} walk {walk!r}")
+        
         if self.jumping:
             vel             = vec3(walk.xy, self.speed["jump"])
             self.jumping    = False
             self.falling    = True
+        elif glm.length(floor) == 0:
+            vel     = walk
         elif glm.dot(walk_n, floor) > -0.5:
             vel     = project_onto_plane(floor, walk)
             #vel     *= glm.clamp(1 + 2 * cos_th, 0, 1)
         else:
+            if walk != zero3:
+                print(f"Cannot walk, too steep: {floor!r}")
             vel = vec3(0)
 
         return vel 
@@ -169,6 +176,7 @@ class Player:
         pos     = self.pos
         world   = self.world
 
+        print(f"check_collisions: vel {vel!r}")
         npos    = pos + vel * dt
         hit     = world.collision(pos, npos, self.bump)
         if hit:
