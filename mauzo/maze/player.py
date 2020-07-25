@@ -50,6 +50,7 @@ class Player:
     def reset (self):
         self.respawn()
         self.have_key   = False
+        self.hearts     = 3
         print("RESET", self.pos, self.vel)
 
     # The speeds at which the player walks, jumps and falls.
@@ -103,6 +104,12 @@ class Player:
     # ground.
     def jump (self, j):
         self.jumping = j
+
+    def lose_heart (self):
+        h = self.hearts - 1
+        self.hearts = h
+        if h == 0:
+            raise XDie()
 
     bump = 0.49
 
@@ -185,7 +192,6 @@ class Player:
 
         # If we fall too far we die.
         if world.doomed(pos):
-            if self.hearts != 0:
-                raise XRespawn()
-            else:
-                raise XDie()
+            self.lose_heart()
+            raise XRespawn()
+          
