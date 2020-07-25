@@ -40,6 +40,7 @@ class Overlay:
 
         self.render_pause(ctx)
         self.render_key(ctx)
+        self.render_heart(ctx)
 
         glPopAttrib()
 
@@ -77,3 +78,14 @@ class Overlay:
 
         self.key.render(prg)
 
+    def render_heart (self, ctx):
+
+        proj    = self.display.overlay
+        pen     = self.pen
+    
+        pen.use()
+        pen.set_projection(proj)
+        pen.set_color(vec4(1, 0.5, 0, 0.8))
+        self.font.show3(pen, "H", 0, 0.2, 0.1)
+
+        
