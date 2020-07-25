@@ -18,6 +18,7 @@ class Player:
         "jumping",      # True if we are currently jumping.
         "have_key",     # Do we have the key?
         "world",        # The world
+        "hearts",       # How many hearts we have
     ]
 
     def __init__ (self, app):
@@ -28,6 +29,8 @@ class Player:
         self.facing     = quat()
         self.walking    = zero3
 
+        self.hearts     = 3
+
     def init (self):
         # Compile a display list.
         self.DL = glGenLists(1)
@@ -37,11 +40,15 @@ class Player:
 
         self.reset()
 
-    def reset (self):
+    def respawn (self):
         self.pos        = self.world.start
         self.vel        = zero3
         self.jumping    = False
         self.falling    = False
+        print("RESPAWN")
+        
+    def reset (self):
+        self.respawn()
         self.have_key   = False
         print("RESET", self.pos, self.vel)
 
@@ -178,4 +185,7 @@ class Player:
 
         # If we fall too far we die.
         if world.doomed(pos):
-            raise XDie()
+            if self.hearts != 0:
+                raise XRespawn()
+            else:
+                raise XDie()

@@ -4,6 +4,11 @@
 class XMaze (Exception):
     def handle (self, app):
         raise RuntimeError("attempt to .handle XMaze")
+    
+# The player goes back to the start of the level without resetting the level.
+class XRespawn (XMaze):
+    def handle (self, app):
+        app.player.respawn()
 
 # The player has died
 class XDie (XMaze):

@@ -86,6 +86,6 @@ class Overlay:
         pen.use()
         pen.set_projection(proj)
         pen.set_color(vec4(1, 0.5, 0, 0.8))
-        self.font.show3(pen, "H", 0, 0.2, 0.1)
+        self.font.show3(pen, "H" * self.player.hearts, 0, 0.2, 0.1)
 
         
