@@ -12,10 +12,11 @@ class Overlay:
         "app",      # our app
         "display",  # our display
         "font",     # our font
+        "heart",    # the heart model
         "key",      # the key model
+        "pen",      # for drawing the text
         "player",   # the player
         "shader",   # our shader program
-        "pen",      # for drawing the text
     ]
 
     def __init__ (self, app):
@@ -27,6 +28,7 @@ class Overlay:
         text.init()
         self.font   = text.GLFont("stencil.ttf", 100)
         self.key    = self.app.render.load_model("key")
+        self.heart  = self.app.render.load_model("heart")
 
         slc         = gl.ShaderCompiler()
         self.shader = slc.build_shader(vert="plain", frag="overlay")
@@ -78,14 +80,26 @@ class Overlay:
 
         self.key.render(prg)
 
-    def render_heart (self, ctx):
+    def render_heart (self, ctx):     
 
+        prg     = self.shader
         proj    = self.display.overlay
-        pen     = self.pen
-    
-        pen.use()
-        pen.set_projection(proj)
-        pen.set_color(vec4(1, 0.5, 0, 0.8))
-        self.font.show3(pen, "H" * self.player.hearts, 0, 0.2, 0.1)
-
+        view    = Id4
         
+        prg.use()
+        prg.u_proj(proj)
+        prg.u_view(view)
+
+        for h in range(self.player.hearts):
+            model   = Id4
+            model   = glm.translate(model, vec3(0.1 * h + 0.05, 0.23, 0))
+            model   = glm.scale(model, vec3(0.2))
+            model   = glm.rotate(model, HALFPI, Xpos)
+            normal  = gl.make_normal_matrix(model)
+            
+            prg.u_model(model)
+            prg.u_normal_matrix(normal)
+            
+            self.heart.render(prg)
+            
+    

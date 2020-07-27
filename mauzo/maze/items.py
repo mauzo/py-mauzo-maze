@@ -164,3 +164,6 @@ class Spike (ModelItem):
             print("SPIKE:", opos, pos)
             return True
         return False
+
+class Heart (ModelItem):
+    model_name = "heart"
