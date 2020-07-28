@@ -65,7 +65,7 @@
         },
         {   "type":     "Portal",
             "pos":      (32, 0, -2),
-            "to":       "flashlight",
+            "to":       "test",
             "angle":    0
         },
     ],
