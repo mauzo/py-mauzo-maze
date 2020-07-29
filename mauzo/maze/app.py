@@ -154,7 +154,7 @@ class MazeApp:
         ctx = self.clock
 
         try:
-            self.player.physics(ctx)
+            self.player.update(ctx)
             self.camera.physics(ctx)
             self.world.physics(ctx)
         except exceptions.XMaze as x:

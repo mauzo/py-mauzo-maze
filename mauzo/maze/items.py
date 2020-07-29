@@ -154,7 +154,7 @@ class Spike (ModelItem):
         self.set_model_matrix(model)
         
     def activate (self, player):
-        print("SPIKE")
+        player.set_damage()
 
     def collide (self, opos, bump):
         pos = self.inverse_matrix * vec4(opos, 1)

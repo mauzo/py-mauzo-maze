@@ -19,6 +19,8 @@ class Player:
         "have_key",     # Do we have the key?
         "world",        # The world
         "hearts",       # How many hearts we have
+        "damage_time",  # When you last took damage
+        "damage",       # Are web being damaged right now?
     ]
 
     def __init__ (self, app):
@@ -29,7 +31,9 @@ class Player:
         self.facing     = quat()
         self.walking    = zero3
 
-        self.hearts     = 3
+        self.hearts         = 3
+        self.damage         = False
+        self.damage_time    = 0
 
     def init (self):
         # Compile a display list.
@@ -104,6 +108,9 @@ class Player:
     # ground.
     def jump (self, j):
         self.jumping = j
+
+    def set_damage (self):
+        self.damage = True
 
     def lose_heart (self):
         h = self.hearts - 1
@@ -183,12 +190,22 @@ class Player:
         self.check_collisions(vel, dt)
 
     # Run the player physics. dt the time since the last frame, in seconds.
-    def physics(self, ctx):
+    def update (self, ctx):
         self.update_position(ctx.dt)
         pos     = self.pos
         world   = self.world
 
+        # Assume we don't need to take damage
+        self.damage = False
+
         world.check_item_collisions(self)
+
+        # If we have collided with something that damages us, lose hearts
+        if self.damage:
+            print("damage", ctx.now, self.damage_time)
+            if ctx.now - self.damage_time > 1:
+                self.lose_heart()
+                self.damage_time = ctx.now
 
         # If we fall too far we die.
         if world.doomed(pos):
