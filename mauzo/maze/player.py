@@ -61,7 +61,7 @@ class Player:
     speed = {
         "walk":     8.0,        # m/s
         "jump":     8.0,        # m/s
-        "fall":    16.0,       # m/s^2
+        "fall":    16.0,        # m/s^2
     }
 
     # Draw the player as a wireframe sphere.
