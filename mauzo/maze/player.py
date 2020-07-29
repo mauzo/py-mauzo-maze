@@ -200,15 +200,20 @@ class Player:
 
         world.check_item_collisions(self)
 
-        # If we have collided with something that damages us, lose hearts
+        self.check_damage(ctx)
+        self.check_doomed()
+
+    # If we have collided with something that damages us, lose hearts
+    def check_damage(self, ctx):
         if self.damage:
             print("damage", ctx.now, self.damage_time)
             if ctx.now - self.damage_time > 1:
                 self.lose_heart()
                 self.damage_time = ctx.now
 
-        # If we fall too far we die.
-        if world.doomed(pos):
+    # If we fall too far we die.
+    def check_doomed(self):
+        if self.world.doomed(self.pos):
             self.lose_heart()
             raise XRespawn()
           
