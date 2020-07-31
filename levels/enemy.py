@@ -65,7 +65,7 @@
         },
         {   "type":     "Portal",
             "pos":      (32, 0, -2),
-            "to":       "test",
+            "to":       "octopus",
             "angle":    0
         },
     ],
