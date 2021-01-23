@@ -29,7 +29,7 @@
     # A list of all the floors. Floors are horizontal rectangles. Each
     # floor has a dict with these keys:
     #   pos         The coordinates of one corner
-    #   edges       The vectors along the two edges, X first, then Y.
+    #   edges       The vectors along the two edges, X first, portalthen Y.
     #   colour      A tuple of (red, green, blue)
     "floors": [
     ],
@@ -52,6 +52,11 @@
             "pos":      (15, 15, 0),
             "angle":    0,
             "size":     1,
+        },
+        {   "type":     "LockedDoor",
+            "pos":      (10, 20, 0),
+            "to":       "test",
+            "angle":    1,
         },
     ],
 

@@ -131,6 +131,42 @@ class Portal (ModelItem):
         if super().collide(pos, bump) == False:
             return False
         return True
+
+class LockedDoor (ModelItem):
+    __slots__ = [
+        "to",           # The level to port to
+        "angle",        # The angle the portal is facing
+        "unlock",       # When you unlock the portal
+    ]
+
+    model_name  = "lock_portal"
+
+    def __init__ (self, angle, to=None, **kws):
+        # Call up to the parent's __init__
+        super().__init__(**kws)
+
+        # Now do our own stuff
+        self.to     = to
+        self.angle  = angle * PI
+        self.unlock = True
+
+        model   = glm.translate(Id4, self.pos)
+        model   = glm.rotate(model, self.angle, Zpos)
+        self.set_model_matrix(model)
+
+    def activate (self, player):
+        if self.unlock == True:
+            print("PORT TO", self.to)
+            raise XPortal(self.to)
+        else:
+            print("The door is locked")
+            
+
+    def collide (self, pos, bump):
+        if super().collide(pos, bump) == False:
+            return False
+        return True
+        
         
 class Spike (ModelItem):
     __slots__ = [
