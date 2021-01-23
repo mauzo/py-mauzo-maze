@@ -1,0 +1,17 @@
+Make it so you can't walk into doors from behind
+
+The door needs to not just be a point
+
+Door locking logic
+
+Make the Keys activate locked doors
+
+When you lose all of your lives...
+
+Fall damage
+
+Insert enemy
+
+Make it so you can't stand off the edge of a platform
+
+
