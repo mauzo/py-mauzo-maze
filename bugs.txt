@@ -15,5 +15,3 @@ Insert enemy
 Make it so you can't stand off the edge of a platform
 
 Animations
-
-Make spikes act as a block

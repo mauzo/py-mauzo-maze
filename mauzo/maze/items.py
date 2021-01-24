@@ -182,7 +182,7 @@ class Spike (ModelItem):
 
         # Now do our own stuff
         self.angle  = angle * PI
-        self.size   = size * 3
+        self.size   = size  * 2
 
         model   = glm.translate(Id4, self.pos)
         model   = glm.rotate(model, self.angle, Zpos)

@@ -51,7 +51,7 @@
         {   "type":     "Spike",
             "pos":      (15, 15, 0),
             "angle":    0,
-            "size":     1,
+            "size":     2,
         },
         {   "type":     "LockedDoor",
             "pos":      (10, 20, 0),
