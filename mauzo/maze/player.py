@@ -9,18 +9,18 @@ from    .geometry       import *
 class Player:
     __slots__ = [
         "app",          # A ref to our app
+        "damage",       # Are we being damaged right now?
+        "damage_time",  # When you last took damage
         "DL",           # Our display list number
+        "facing",       # Our current facing direction (a quaternion)
         "falling",      # Are we falling?
+        "have_key",     # Do we have the key?
+        "hearts",       # How many hearts we have
+        "jumping",      # True if we are currently jumping.
         "pos",          # Our current position
         "vel",          # Our current velocity
-        "walking",      # Our current walk speed.
-        "facing",       # Our current facing direction (a quaternion)
-        "jumping",      # True if we are currently jumping.
-        "have_key",     # Do we have the key?
         "world",        # The world
-        "hearts",       # How many hearts we have
-        "damage_time",  # When you last took damage
-        "damage",       # Are web being damaged right now?
+        "walking",      # Our current walk speed.
     ]
 
     def __init__ (self, app):
