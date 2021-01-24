@@ -138,6 +138,7 @@ class Player:
 
         if hit:
             if self.falling:
+                self.fall_damage()
                 self.vel    = vec3(0)
             self.falling    = False
             return hit
@@ -191,12 +192,12 @@ class Player:
 
     # Run the player physics. dt the time since the last frame, in seconds.
     def update (self, ctx):
+        # Assume we don't need to take damage
+        self.damage = False
+
         self.update_position(ctx.dt)
         pos     = self.pos
         world   = self.world
-
-        # Assume we don't need to take damage
-        self.damage = False
 
         world.check_item_collisions(self)
 
@@ -210,6 +211,11 @@ class Player:
             if ctx.now - self.damage_time > 1:
                 self.lose_heart()
                 self.damage_time = ctx.now
+                
+    def fall_damage(self):
+        print("fall speed", self.vel.z),
+        if self.vel.z < -16:
+            self.damage = True
 
     # If we fall too far we die.
     def check_doomed(self):

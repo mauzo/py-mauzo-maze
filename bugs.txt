@@ -8,8 +8,6 @@ Make the Keys activate locked doors
 
 When you lose all of your lives...
 
-Fall damage
-
 Insert enemy
 
 Make it so you can't stand off the edge of a platform
