@@ -9,7 +9,7 @@ from    .drawing    import *
 from    .exceptions import *
 from    .geometry   import *
 from    .           import gl
-from    .items      import *
+from    .           import items
 
 FLOOR_THICKNESS = 0.2
 
@@ -109,16 +109,14 @@ class World:
         prg.u_sun_color_specular(vec3(light["specular"]))
 
     def init_items (self, level):
-        items   = []
-        # XXX We look up the class for each item in the current module.
-        # This is perhaps not the best idea...
-        classes = globals()
+        itms    = []
+        classes = items.__dict__
 
         for i in level["items"]:
             Cls = classes[i["type"]]
-            items.append(Cls(world=self, **i))
+            itms.append(Cls(world=self, **i))
 
-        self.items  = items
+        self.items  = itms
 
     # Render the world using the display list
     def render (self):
